@@ -4,6 +4,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AnnotationNode;
 
 import java.util.List;
+import java.util.Objects;
 
 public class AnnotationValueDiffer implements IDiffer<Object, AnnotationValuePatch> {
   @Override
@@ -38,5 +39,10 @@ public class AnnotationValueDiffer implements IDiffer<Object, AnnotationValuePat
       var objectDiffer = new ValueDiffer<Object>();
       return objectDiffer.distance(oldValue, newValue);
     }
+  }
+
+  @Override
+  public boolean canMatch(Object oldValue, Object newValue) {
+    return true;
   }
 }

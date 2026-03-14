@@ -71,4 +71,9 @@ public class ClassDiffer implements IDiffer<ClassNode, ClassPatch> {
     // TODO
     return 0;
   }
+
+  @Override
+  public boolean canMatch(ClassNode oldValue, ClassNode newValue) {
+    return Objects.equals(oldValue.name, newValue.name);
+  }
 }

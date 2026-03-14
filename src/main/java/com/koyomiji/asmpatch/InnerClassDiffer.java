@@ -2,6 +2,8 @@ package com.koyomiji.asmpatch;
 
 import org.objectweb.asm.tree.InnerClassNode;
 
+import java.util.Objects;
+
 public class InnerClassDiffer implements IDiffer<InnerClassNode, InnerClassPatch> {
   @Override
   public InnerClassPatch diff(InnerClassNode oldValue, InnerClassNode newValue) {
@@ -27,5 +29,10 @@ public class InnerClassDiffer implements IDiffer<InnerClassNode, InnerClassPatch
     distance += stringDiffer.distance(oldValue.innerName, newValue.innerName);
     distance += integerDiffer.distance(oldValue.access, newValue.access);
     return distance;
+  }
+
+  @Override
+  public boolean canMatch(InnerClassNode oldValue, InnerClassNode newValue) {
+    return Objects.equals(oldValue.name, newValue.name);
   }
 }

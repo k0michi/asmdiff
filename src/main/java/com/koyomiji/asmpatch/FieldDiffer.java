@@ -36,4 +36,9 @@ public class FieldDiffer implements IDiffer<FieldNode, FieldPatch> {
     distance += objectDiffer.distance(oldValue.value, newValue.value);
     return distance;
   }
+
+  @Override
+  public boolean canMatch(FieldNode oldValue, FieldNode newValue) {
+    return Objects.equals(oldValue.name, newValue.name);
+  }
 }

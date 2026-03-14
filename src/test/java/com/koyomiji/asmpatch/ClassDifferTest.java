@@ -58,9 +58,10 @@ class ClassDifferTest {
     var oldClassNode = TestUtil.readClassNode("/C3.class");
     var newClassNode = TestUtil.readClassNode("/C4.class");
     var diff = differ.diff(oldClassNode, newClassNode);
-    Assertions.assertEquals(1, diff.invisibleAnnotations.entries.size());
+    Assertions.assertEquals(2, diff.invisibleAnnotations.entries.size());
     var annotationEntry = diff.invisibleAnnotations.entries.get(0);
-    Assertions.assertSame(ListPatch.EntryType.MATCH, annotationEntry.type);
-    Assertions.assertEquals("LA2;", annotationEntry.patch.desc.newValue);
+    Assertions.assertSame(ListPatch.EntryType.ADD, annotationEntry.type);
+    Assertions.assertEquals("LA2;", annotationEntry.newValue.desc);
+    Assertions.assertSame(ListPatch.EntryType.REMOVE, diff.invisibleAnnotations.entries.get(1).type);
   }
 }

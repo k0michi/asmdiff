@@ -2,6 +2,8 @@ package com.koyomiji.asmpatch;
 
 import org.objectweb.asm.tree.AnnotationNode;
 
+import java.util.Objects;
+
 public class AnnotationDiffer implements IDiffer<AnnotationNode, AnnotationPatch> {
   @Override
   public AnnotationPatch diff(AnnotationNode oldValue, AnnotationNode newValue) {
@@ -33,5 +35,10 @@ public class AnnotationDiffer implements IDiffer<AnnotationNode, AnnotationPatch
             ListHelper.orEmpty(newValue == null ? null : newValue.values)
     );
     return distance;
+  }
+
+  @Override
+  public boolean canMatch(AnnotationNode oldValue, AnnotationNode newValue) {
+    return Objects.equals(oldValue.desc, newValue.desc);
   }
 }

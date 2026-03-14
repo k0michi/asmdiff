@@ -40,6 +40,11 @@ public class ListDiffer<T, U extends IPatch<T>, V> {
         int del = dp[i - 1][j] + delCosts[i - 1];
         int ins = dp[i][j - 1] + insCosts[j - 1];
 
+        if (!differ.canMatch(listA.get(i - 1), listB.get(j - 1))) {
+          dp[i][j] = Math.min(del, ins);
+          continue;
+        }
+
         int sub = dp[i - 1][j - 1] + differ.distance(listA.get(i - 1), listB.get(j - 1));
 
         dp[i][j] = Math.min(del, Math.min(ins, sub));
@@ -108,6 +113,12 @@ public class ListDiffer<T, U extends IPatch<T>, V> {
       for (int j = 1; j <= n; j++) {
         int del = dp[i - 1][j] + delCosts[i - 1];
         int ins = dp[i][j - 1] + insCosts[j - 1];
+
+        if (!differ.canMatch(listA.get(i - 1), listB.get(j - 1))) {
+          dp[i][j] = Math.min(del, ins);
+          continue;
+        }
+
         int sub = dp[i - 1][j - 1] + differ.distance(listA.get(i - 1), listB.get(j - 1));
 
         dp[i][j] = Math.min(del, Math.min(ins, sub));

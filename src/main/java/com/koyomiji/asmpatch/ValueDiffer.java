@@ -15,4 +15,9 @@ public class ValueDiffer<T> implements IDiffer<T, ValuePatch<T>> {
       return ValuePatch.changed(oldValue, newValue);
     }
   }
+
+  @Override
+  public boolean canMatch(T oldValue, T newValue) {
+    return true;
+  }
 }
