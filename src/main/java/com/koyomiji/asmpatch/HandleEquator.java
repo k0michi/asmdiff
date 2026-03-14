@@ -4,7 +4,7 @@ import org.objectweb.asm.Handle;
 
 import java.util.Objects;
 
-public class HandleEquator implements Equator<Handle> {
+public class HandleEquator implements IEquator<Handle> {
   @Override
   public boolean equals(Handle a, Handle b) {
     return Objects.equals(a.getTag(), b.getTag())

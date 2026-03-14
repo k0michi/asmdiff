@@ -2,7 +2,7 @@ package com.koyomiji.asmpatch;
 
 import org.objectweb.asm.TypePath;
 
-public class TypePathEquator implements Equator<TypePath> {
+public class TypePathEquator implements IEquator<TypePath> {
   @Override
   public boolean equals(TypePath a, TypePath b) {
     if (a.getLength() != b.getLength()) {

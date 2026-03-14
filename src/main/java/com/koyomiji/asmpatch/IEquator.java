@@ -1,5 +1,5 @@
 package com.koyomiji.asmpatch;
 
-public interface Equator<T> {
+public interface IEquator<T> {
   boolean equals(T a, T b);
 }
