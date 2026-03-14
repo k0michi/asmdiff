@@ -1,5 +1,6 @@
 package com.koyomiji.asmpatch;
 
+import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InnerClassNode;
 
@@ -16,7 +17,9 @@ public class ClassPatch implements IPatch<ClassNode> {
   public ValuePatch<String> outerClass;
   public ValuePatch<String> outerMethod;
   public ValuePatch<String> outerMethodDesc;
-  // TODO: annotations
+  public ListPatch<AnnotationNode, AnnotationPatch, Object> visibleAnnotations;
+  public ListPatch<AnnotationNode, AnnotationPatch, Object> invisibleAnnotations;
+  // TODO: type annotations
   // TODO: attributes
   public ListPatch<InnerClassNode, InnerClassPatch, String> innerClasses;
   public ValuePatch<String> nestHostClass;
@@ -25,10 +28,4 @@ public class ClassPatch implements IPatch<ClassNode> {
   // TODO: record components
   // TODO: fields
   // TODO: methods
-
-  @Override
-  public boolean isSame() {
-    // TODO
-    throw new UnsupportedOperationException("Not implemented yet");
-  }
 }

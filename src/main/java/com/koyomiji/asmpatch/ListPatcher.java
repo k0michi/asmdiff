@@ -5,11 +5,9 @@ import java.util.List;
 
 public class ListPatcher<T, U extends IPatch<T>, V> implements IPatcher<List<T>, ListPatch<T, U, V>> {
   private IPatcher<T, U> patcher;
-  private IKeyProvider<T, V> keyProvider;
 
-  public ListPatcher(IPatcher<T, U> patcher, IKeyProvider<T, V> keyProvider) {
+  public ListPatcher(IPatcher<T, U> patcher) {
     this.patcher = patcher;
-    this.keyProvider = keyProvider;
   }
 
   @Override
@@ -47,7 +45,6 @@ public class ListPatcher<T, U extends IPatch<T>, V> implements IPatcher<List<T>,
       switch (entry.type) {
         case MATCH, REMOVE:
           if (i >= oldValue.size()
-                  || !keyProvider.compareValueAndKey(oldValue.get(i), entry.key)
                   || !patcher.canPatch(oldValue.get(i), entry.patch)) {
             return false;
           }

@@ -15,17 +15,4 @@ public class ModulePatch implements IPatch<ModulePatch> {
   public ListPatch<String, ValuePatch<String>, String> uses;
   public ListPatch<String, ValuePatch<String>, String> provides;
 
-  @Override
-  public boolean isSame() {
-    return name.isSame()
-        && access.isSame()
-        && version.isSame()
-        && mainClass.isSame()
-        && packages.isSame()
-        && requires.isSame()
-        && exports.isSame()
-        && opens.isSame()
-        && uses.isSame()
-        && provides.isSame();
-  }
 }

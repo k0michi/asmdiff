@@ -1,4 +1,4 @@
 package com.koyomiji.asmpatch;
 
-public interface IPatch<T> {
+public class FieldKeyProvider {
 }

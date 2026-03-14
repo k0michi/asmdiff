@@ -1,22 +1,20 @@
 package com.koyomiji.asmpatch;
 
+import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InnerClassNode;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 public class ClassDiffer implements IDiffer<ClassNode, ClassPatch> {
-  @Override
-  public boolean canDiff(ClassNode oldValue, ClassNode newValue) {
-    return Objects.equals(oldValue.name, newValue.name);
-  }
-
   public ClassPatch diff(ClassNode classA, ClassNode classB) {
     var diff = new ClassPatch();
 
     var integerDiffer = new ValueDiffer<Integer>();
     var stringDiffer = new ValueDiffer<String>();
-    var stringsDiffer = new ListDiffer<String, ValuePatch<String>, String>(stringDiffer, new ValueKeyProvider<>());
+    var stringsDiffer = new ListDiffer<String, ValuePatch<String>, String>(stringDiffer);
 
     diff.version = integerDiffer.diff(classA.version, classB.version);
     diff.access = integerDiffer.diff(classA.access, classB.access);
@@ -33,20 +31,44 @@ public class ClassDiffer implements IDiffer<ClassNode, ClassPatch> {
     diff.outerMethod = stringDiffer.diff(classA.outerMethod, classB.outerMethod);
     diff.outerMethodDesc = stringDiffer.diff(classA.outerMethodDesc, classB.outerMethodDesc);
 
+    var annotationsDiffer = new ListDiffer<AnnotationNode, AnnotationPatch, Object>(
+            new AnnotationDiffer()
+    );
+
+    diff.visibleAnnotations = annotationsDiffer.diff(
+            ListHelper.orEmpty(classA.visibleAnnotations),
+            ListHelper.orEmpty(classB.visibleAnnotations)
+    );
+    diff.invisibleAnnotations = annotationsDiffer.diff(
+            ListHelper.orEmpty(classA.invisibleAnnotations),
+            ListHelper.orEmpty(classB.invisibleAnnotations)
+    );
+
     // TODO: annotations
     // TODO: attributes
 
     diff.innerClasses = new ListDiffer<InnerClassNode, InnerClassPatch, String>(
-            new InnerClassDiffer(),
-            new InnerClassKeyProvider()
+            new InnerClassDiffer()
     ).diff(classA.innerClasses, classB.innerClasses);
     diff.nestHostClass = stringDiffer.diff(classA.nestHostClass, classB.nestHostClass);
-    diff.nestMembers = stringsDiffer.diff(classA.nestMembers, classB.nestMembers);
-    diff.permittedSubclasses = stringsDiffer.diff(classA.permittedSubclasses, classB.permittedSubclasses);
+    diff.nestMembers = stringsDiffer.diff(
+            ListHelper.orEmpty(classA.nestMembers),
+            ListHelper.orEmpty(classB.nestMembers)
+    );
+    diff.permittedSubclasses = stringsDiffer.diff(
+            ListHelper.orEmpty(classA.permittedSubclasses),
+            ListHelper.orEmpty(classB.permittedSubclasses)
+    );
     // TODO: record components
     // TODO: fields
     // TODO: methods
 
     return diff;
+  }
+
+  @Override
+  public int distance(ClassNode oldValue, ClassNode newValue) {
+    // TODO
+    return 0;
   }
 }

@@ -18,9 +18,4 @@ public class ValuePatch<T> implements IPatch<T> {
   public static <T> ValuePatch<T> changed(T oldValue, T newValue) {
     return new ValuePatch<>(true, oldValue, newValue);
   }
-
-  @Override
-  public boolean isSame() {
-    return !changed;
-  }
 }
