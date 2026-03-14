@@ -1,6 +1,6 @@
 package com.koyomiji.asmpatch;
 
-public class ValuePatch<T> implements IPatch<T> {
+public class ValuePatch<T> {
   public boolean changed;
   public T oldValue;
   public T newValue;

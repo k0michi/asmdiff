@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class ListDiffer<T, U extends IPatch<T>, V> {
+public class ListDiffer<T, U, V> {
   private final IDiffer<T, U> differ;
 
   public ListDiffer(IDiffer<T, U> differ) {

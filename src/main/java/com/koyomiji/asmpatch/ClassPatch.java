@@ -4,7 +4,7 @@ import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InnerClassNode;
 
-public class ClassPatch implements IPatch<ClassNode> {
+public class ClassPatch {
   public ValuePatch<Integer> version;
   public ValuePatch<Integer> access;
   public ValuePatch<String> name;

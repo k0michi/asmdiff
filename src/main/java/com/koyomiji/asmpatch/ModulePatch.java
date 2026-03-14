@@ -3,7 +3,7 @@ package com.koyomiji.asmpatch;
 import org.objectweb.asm.tree.ModuleExportNode;
 import org.objectweb.asm.tree.ModuleRequireNode;
 
-public class ModulePatch implements IPatch<ModulePatch> {
+public class ModulePatch {
   public ValuePatch<String> name;
   public ValuePatch<Integer> access;
   public ValuePatch<String> version;

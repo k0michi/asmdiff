@@ -3,7 +3,7 @@ package com.koyomiji.asmpatch;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ListPatcher<T, U extends IPatch<T>, V> implements IPatcher<List<T>, ListPatch<T, U, V>> {
+public class ListPatcher<T, U, V> implements IPatcher<List<T>, ListPatch<T, U, V>> {
   private IPatcher<T, U> patcher;
 
   public ListPatcher(IPatcher<T, U> patcher) {

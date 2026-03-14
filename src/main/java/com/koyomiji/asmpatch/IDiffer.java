@@ -1,6 +1,6 @@
 package com.koyomiji.asmpatch;
 
-public interface IDiffer<T, U extends IPatch<T>> {
+public interface IDiffer<T, U> {
   /**
    * Calculate the patch to transform oldValue into newValue.
    * @param oldValue

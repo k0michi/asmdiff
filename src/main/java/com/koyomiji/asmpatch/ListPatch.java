@@ -2,12 +2,12 @@ package com.koyomiji.asmpatch;
 
 import java.util.List;
 
-public class ListPatch<T, U extends IPatch<T>, V> implements IPatch<List<T>> {
+public class ListPatch<T, U, V> {
   public enum EntryType {
     MATCH, ADD, REMOVE
   }
 
-  public static class Entry<T, U extends IPatch<T>, V> {
+  public static class Entry<T, U, V> {
     public EntryType type;
     public T newValue;
     public U patch;
@@ -18,15 +18,15 @@ public class ListPatch<T, U extends IPatch<T>, V> implements IPatch<List<T>> {
       this.patch = patch;
     }
 
-    public static <T, U extends IPatch<T>, V> Entry<T, U, V> match(U patch) {
+    public static <T, U, V> Entry<T, U, V> match(U patch) {
       return new Entry<>(EntryType.MATCH, null, patch);
     }
 
-    public static <T, U extends IPatch<T>, V> Entry<T, U, V> add(T value) {
+    public static <T, U, V> Entry<T, U, V> add(T value) {
       return new Entry<>(EntryType.ADD, value, null);
     }
 
-    public static <T, U extends IPatch<T>, V> Entry<T, U, V> remove() {
+    public static <T, U, V> Entry<T, U, V> remove() {
       return new Entry<>(EntryType.REMOVE, null, null);
     }
   }
