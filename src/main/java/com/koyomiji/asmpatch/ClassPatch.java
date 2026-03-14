@@ -3,6 +3,7 @@ package com.koyomiji.asmpatch;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InnerClassNode;
+import org.objectweb.asm.tree.TypeAnnotationNode;
 
 public class ClassPatch {
   public ValuePatch<Integer> version;
@@ -19,7 +20,8 @@ public class ClassPatch {
   public ValuePatch<String> outerMethodDesc;
   public ListPatch<AnnotationNode, AnnotationPatch, Object> visibleAnnotations;
   public ListPatch<AnnotationNode, AnnotationPatch, Object> invisibleAnnotations;
-  // TODO: type annotations
+  public ListPatch<TypeAnnotationNode, TypeAnnotationPatch, Object> visibleTypeAnnotations;
+  public ListPatch<TypeAnnotationNode, TypeAnnotationPatch, Object> invisibleTypeAnnotations;
   // TODO: attributes
   public ListPatch<InnerClassNode, InnerClassPatch, String> innerClasses;
   public ValuePatch<String> nestHostClass;

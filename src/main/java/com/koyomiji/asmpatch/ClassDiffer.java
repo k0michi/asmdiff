@@ -44,7 +44,19 @@ public class ClassDiffer implements IDiffer<ClassNode, ClassPatch> {
             ListHelper.orEmpty(classB.invisibleAnnotations)
     );
 
-    // TODO: annotations
+    var typeAnnotationsDiffer = new ListDiffer<>(
+            new TypeAnnotationDiffer()
+    );
+
+    diff.visibleTypeAnnotations = typeAnnotationsDiffer.diff(
+            ListHelper.orEmpty(classA.visibleTypeAnnotations),
+            ListHelper.orEmpty(classB.visibleTypeAnnotations)
+    );
+    diff.invisibleTypeAnnotations = typeAnnotationsDiffer.diff(
+            ListHelper.orEmpty(classA.invisibleTypeAnnotations),
+            ListHelper.orEmpty(classB.invisibleTypeAnnotations)
+    );
+
     // TODO: attributes
 
     diff.innerClasses = new ListDiffer<InnerClassNode, InnerClassPatch, String>(
