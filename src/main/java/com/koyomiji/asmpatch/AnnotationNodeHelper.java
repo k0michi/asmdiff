@@ -20,7 +20,7 @@ public class AnnotationNodeHelper {
       return false;
     }
 
-    if (!ListHelper.equals(a.values, b.values, Objects::equals)) {
+    if (!ListHelper.equals(a.values, b.values, AnnotationNodeHelper::equalsValue)) {
       return false;
     }
 
