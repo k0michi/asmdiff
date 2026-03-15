@@ -100,4 +100,16 @@ class ClassDifferTest {
     fieldEntry = diff.fields.entries.get(1);
     Assertions.assertSame(ListPatch.EntryType.ADD, fieldEntry.type);
   }
+
+  @Test
+  void testAddRecordComponent() {
+    var differ = new ClassDiffer();
+    var oldClassNode = TestUtil.readClassNode("/R1.class");
+    var newClassNode = TestUtil.readClassNode("/R2.class");
+    var diff = differ.diff(oldClassNode, newClassNode);
+    Assertions.assertEquals(1, diff.recordComponents.entries.size());
+    var recordComponentEntry = diff.recordComponents.entries.get(0);
+    Assertions.assertSame(ListPatch.EntryType.ADD, recordComponentEntry.type);
+    Assertions.assertEquals("x", recordComponentEntry.newValue.name);
+  }
 }

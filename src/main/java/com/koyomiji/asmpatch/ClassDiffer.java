@@ -69,7 +69,13 @@ public class ClassDiffer implements IDiffer<ClassNode, ClassPatch> {
             ListHelper.orEmpty(classA.permittedSubclasses),
             ListHelper.orEmpty(classB.permittedSubclasses)
     );
-    // TODO: record components
+    var recordComponentDiffer = new ListDiffer<>(
+            new RecordComponentDiffer()
+    );
+    diff.recordComponents = recordComponentDiffer.diff(
+            ListHelper.orEmpty(classA.recordComponents),
+            ListHelper.orEmpty(classB.recordComponents)
+    );
     var fieldsDiffer = new ListDiffer<>(
             new FieldDiffer()
     );

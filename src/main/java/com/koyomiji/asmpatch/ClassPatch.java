@@ -24,7 +24,7 @@ public class ClassPatch {
   public ValuePatch<String> nestHostClass;
   public ListPatch<String, ValuePatch<String>> nestMembers;
   public ListPatch<String, ValuePatch<String>> permittedSubclasses;
-  // TODO: record components
+  public ListPatch<RecordComponentNode, RecordComponentPatch> recordComponents;
   public ListPatch<FieldNode, FieldPatch> fields;
   // TODO: methods
 }

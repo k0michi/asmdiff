@@ -82,3 +82,15 @@ class C8 {
 @interface A8 {
   A3[] value();
 }
+
+record R1() {
+}
+
+record R2(int x) {
+}
+
+record R3(int x, int y) {
+}
+
+record R4(int y) {
+}

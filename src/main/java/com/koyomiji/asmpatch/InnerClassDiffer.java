@@ -7,6 +7,9 @@ import java.util.Objects;
 public class InnerClassDiffer implements IDiffer<InnerClassNode, InnerClassPatch> {
   @Override
   public InnerClassPatch diff(InnerClassNode oldValue, InnerClassNode newValue) {
+    oldValue = oldValue == null ? new InnerClassNode(null, null, null, 0) : oldValue;
+    newValue = newValue == null ? new InnerClassNode(null, null, null, 0) : newValue;
+
     var stringDiffer = new ValueDiffer<String>();
     var integerDiffer = new ValueDiffer<Integer>();
 
@@ -20,6 +23,9 @@ public class InnerClassDiffer implements IDiffer<InnerClassNode, InnerClassPatch
 
   @Override
   public int distance(InnerClassNode oldValue, InnerClassNode newValue) {
+    oldValue = oldValue == null ? new InnerClassNode(null, null, null, 0) : oldValue;
+    newValue = newValue == null ? new InnerClassNode(null, null, null, 0) : newValue;
+
     var stringDiffer = new ValueDiffer<String>();
     var integerDiffer = new ValueDiffer<Integer>();
 
