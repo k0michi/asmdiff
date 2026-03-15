@@ -1,6 +1,7 @@
 package com.koyomiji.asmpatch;
 
 import java.util.List;
+import java.util.Objects;
 
 public class ListHelper {
   public static <T> List<T> orEmpty(List<T> list) {
@@ -27,5 +28,9 @@ public class ListHelper {
     }
 
     return true;
+  }
+
+  public static <T> boolean equals(List<T> a, List<T> b) {
+    return equals(a, b, Objects::equals);
   }
 }
