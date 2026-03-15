@@ -4,6 +4,14 @@ import org.objectweb.asm.TypePath;
 
 public class TypePathHelper {
   public static boolean equals(TypePath a, TypePath b) {
+    if (a == b) {
+      return true;
+    }
+
+    if (a == null || b == null) {
+      return false;
+    }
+
     if (a.getLength() != b.getLength()) {
       return false;
     }

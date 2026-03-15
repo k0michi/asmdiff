@@ -16,6 +16,10 @@ public class AnnotationNodeHelper {
       return false;
     }
 
+    if (a.getClass() != b.getClass()) {
+      return false;
+    }
+
     if (!Objects.equals(a.desc, b.desc)) {
       return false;
     }
