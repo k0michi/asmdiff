@@ -92,4 +92,23 @@ class ClassDifferTest {
     Assertions.assertSame(ListPatch.EntryType.ADD, recordComponentEntry.type);
     Assertions.assertEquals("x", recordComponentEntry.newValue.name);
   }
+
+  @Test
+  void testRemoveRecordComponent() {
+    var diff = diff("/R2.class", "/R1.class");
+    Assertions.assertEquals(1, diff.recordComponents.entries.size());
+    var recordComponentEntry = diff.recordComponents.entries.get(0);
+    Assertions.assertSame(ListPatch.EntryType.REMOVE, recordComponentEntry.type);
+  }
+
+  @Test
+  void testChangeRecordComponent() {
+    var diff = diff("/R2.class", "/R4.class");
+    Assertions.assertEquals(2, diff.recordComponents.entries.size());
+    var recordComponentEntry = diff.recordComponents.entries.get(0);
+    Assertions.assertSame(ListPatch.EntryType.REMOVE, recordComponentEntry.type);
+    recordComponentEntry = diff.recordComponents.entries.get(1);
+    Assertions.assertSame(ListPatch.EntryType.ADD, recordComponentEntry.type);
+    Assertions.assertEquals("y", recordComponentEntry.newValue.name);
+  }
 }
