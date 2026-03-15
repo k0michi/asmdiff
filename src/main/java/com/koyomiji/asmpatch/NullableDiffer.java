@@ -59,12 +59,12 @@ public class NullableDiffer<T, U> {
     int j = n;
 
     while (i > 0 && j > 0) {
-      if (dp[i][j] == dp[i - 1][j] + delCosts[i - 1]) {
-        entries.add(NullablePatch.Entry.remove());
-        i--;
-      } else if (dp[i][j] == dp[i][j - 1] + insCosts[j - 1]) {
+      if (dp[i][j] == dp[i][j - 1] + insCosts[j - 1]) {
         entries.add(NullablePatch.Entry.add(newList.get(j - 1)));
         j--;
+      } else if (dp[i][j] == dp[i - 1][j] + delCosts[i - 1]) {
+        entries.add(NullablePatch.Entry.remove());
+        i--;
       } else {
         entries.add(NullablePatch.Entry.match(differ.diff(oldList.get(i - 1), newList.get(j - 1))));
         i--;

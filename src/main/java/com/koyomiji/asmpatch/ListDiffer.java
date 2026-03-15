@@ -56,12 +56,12 @@ public class ListDiffer<T, U> {
     int j = n;
 
     while (i > 0 && j > 0) {
-      if (dp[i][j] == dp[i - 1][j] + delCosts[i - 1]) {
-        entries.add(ListPatch.Entry.remove());
-        i--;
-      } else if (dp[i][j] == dp[i][j - 1] + insCosts[j - 1]) {
+      if (dp[i][j] == dp[i][j - 1] + insCosts[j - 1]) {
         entries.add(ListPatch.Entry.add(listB.get(j - 1)));
         j--;
+      } else if (dp[i][j] == dp[i - 1][j] + delCosts[i - 1]) {
+        entries.add(ListPatch.Entry.remove());
+        i--;
       } else {
         var patch = differ.diff(listA.get(i - 1), listB.get(j - 1));
         entries.add(ListPatch.Entry.match(patch));

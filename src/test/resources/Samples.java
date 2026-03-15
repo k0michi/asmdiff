@@ -43,6 +43,14 @@ class C5 {
 class C6 {
 }
 
+class C7 {
+  int f;
+}
+
+class C8 {
+  int g;
+}
+
 @interface A1 {
 }
 
