@@ -10,9 +10,9 @@ public class FieldPatch {
   public ValuePatch<String> desc;
   public ValuePatch<String> signature;
   public ValuePatch<Object> value;
-  public ListPatch<AnnotationNode, AnnotationPatch, String> invisibleAnnotations;
-  public ListPatch<AnnotationNode, AnnotationPatch, String> visibleAnnotations;
-  public ListPatch<TypeAnnotationNode, TypeAnnotationPatch, String> invisibleTypeAnnotations;
-  public ListPatch<TypeAnnotationNode, TypeAnnotationPatch, String> visibleTypeAnnotations;
+  public ListPatch<AnnotationNode, AnnotationPatch> invisibleAnnotations;
+  public ListPatch<AnnotationNode, AnnotationPatch> visibleAnnotations;
+  public ListPatch<TypeAnnotationNode, TypeAnnotationPatch> invisibleTypeAnnotations;
+  public ListPatch<TypeAnnotationNode, TypeAnnotationPatch> visibleTypeAnnotations;
   // TODO: attrs
 }

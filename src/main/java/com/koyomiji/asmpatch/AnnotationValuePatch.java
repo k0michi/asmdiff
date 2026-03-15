@@ -6,5 +6,5 @@ import org.objectweb.asm.tree.AnnotationNode;
 public class AnnotationValuePatch {
   public ValuePatch<Object> objectValue;
   public AnnotationPatch annotationValue;
-  public ListPatch<Object, AnnotationValuePatch, Object> annotationArrayValue;
+  public ListPatch<Object, AnnotationValuePatch> annotationArrayValue;
 }

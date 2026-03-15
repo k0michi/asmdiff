@@ -4,14 +4,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class ListDiffer<T, U, V> {
+public class ListDiffer<T, U> {
   private final IDiffer<T, U> differ;
 
   public ListDiffer(IDiffer<T, U> differ) {
     this.differ = differ;
   }
 
-  public ListPatch<T, U, V> diff(List<T> listA, List<T> listB) {
+  public ListPatch<T, U> diff(List<T> listA, List<T> listB) {
     int m = listA.size();
     int n = listB.size();
 
@@ -51,7 +51,7 @@ public class ListDiffer<T, U, V> {
       }
     }
 
-    var entries = new ArrayList<ListPatch.Entry<T, U, V>>();
+    var entries = new ArrayList<ListPatch.Entry<T, U>>();
     int i = m;
     int j = n;
 

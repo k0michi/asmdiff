@@ -16,7 +16,7 @@ public class ModuleOpenDiffer implements IDiffer<ModuleOpenNode, ModuleOpenPatch
             oldValue.access,
             newValue.access
     );
-    patch.modules = new ListDiffer<String, ValuePatch<String>, String>(new ValueDiffer<String>()).diff(
+    patch.modules = new ListDiffer<>(new ValueDiffer<String>()).diff(
             oldValue.modules,
             newValue.modules
     );
@@ -34,7 +34,7 @@ public class ModuleOpenDiffer implements IDiffer<ModuleOpenNode, ModuleOpenPatch
             oldValue.access,
             newValue.access
     );
-    distance += new ListDiffer<String, ValuePatch<String>, String>(new ValueDiffer<String>()).distance(
+    distance += new ListDiffer<>(new ValueDiffer<String>()).distance(
             oldValue.modules,
             newValue.modules
     );

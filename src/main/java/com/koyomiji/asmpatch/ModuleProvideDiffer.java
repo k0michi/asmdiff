@@ -12,7 +12,7 @@ public class ModuleProvideDiffer implements IDiffer<ModuleProvideNode, ModulePro
             oldValue.service,
             newValue.service
     );
-    patch.providers = new ListDiffer<String, ValuePatch<String>, String>(new ValueDiffer<String>()).diff(
+    patch.providers = new ListDiffer<>(new ValueDiffer<String>()).diff(
             oldValue.providers,
             newValue.providers
     );
@@ -26,7 +26,7 @@ public class ModuleProvideDiffer implements IDiffer<ModuleProvideNode, ModulePro
             oldValue.service,
             newValue.service
     );
-    distance += new ListDiffer<String, ValuePatch<String>, String>(new ValueDiffer<String>()).distance(
+    distance += new ListDiffer<>(new ValueDiffer<String>()).distance(
             oldValue.providers,
             newValue.providers
     );

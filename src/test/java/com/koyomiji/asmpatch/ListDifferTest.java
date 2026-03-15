@@ -8,7 +8,7 @@ import java.util.List;
 class ListDifferTest {
   @Test
   void testSameLists() {
-    var differ = new ListDiffer<String, ValuePatch<String>, String>(new ValueDiffer<>());
+    var differ = new ListDiffer<String, ValuePatch<String>>(new ValueDiffer<>());
     var listA = List.of("a", "b", "c");
     var listB = List.of("a", "b", "c");
     var diff = differ.diff(listA, listB);
@@ -19,7 +19,7 @@ class ListDifferTest {
 
   @Test
   void testDifferentLists() {
-    var differ = new ListDiffer<String, ValuePatch<String>, String>(new ValueDiffer<>());
+    var differ = new ListDiffer<String, ValuePatch<String>>(new ValueDiffer<>());
     var listA = List.of("a", "b", "c");
     var listB = List.of("a", "x", "c");
     var diff = differ.diff(listA, listB);
@@ -31,7 +31,7 @@ class ListDifferTest {
 
   @Test
   void testEmptyLists() {
-    var differ = new ListDiffer<String, ValuePatch<String>, String>(new ValueDiffer<>());
+    var differ = new ListDiffer<String, ValuePatch<String>>(new ValueDiffer<>());
     List<String> listA = List.of();
     List<String> listB = List.of();
     var diff = differ.diff(listA, listB);

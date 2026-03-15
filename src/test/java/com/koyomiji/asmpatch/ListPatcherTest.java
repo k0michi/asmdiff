@@ -8,9 +8,9 @@ import java.util.List;
 class ListPatcherTest {
   @Test
   void testPatch() {
-    var patcher = new ListPatcher<String, ValuePatch<String>, String>(new ValuePatcher<>());
+    var patcher = new ListPatcher<String, ValuePatch<String>>(new ValuePatcher<>());
     var oldList = List.of("a", "b", "c");
-    var patch = new ListPatch<String, ValuePatch<String>, String>(List.of(
+    var patch = new ListPatch<String, ValuePatch<String>>(List.of(
             ListPatch.Entry.match(ValuePatch.unchanged()),
             ListPatch.Entry.add("x"),
             ListPatch.Entry.match(ValuePatch.unchanged()),
@@ -23,16 +23,16 @@ class ListPatcherTest {
 
   @Test
   void testCanPatch() {
-    var patcher = new ListPatcher<String, ValuePatch<String>, String>(new ValuePatcher<>());
+    var patcher = new ListPatcher<String, ValuePatch<String>>(new ValuePatcher<>());
     var oldList = List.of("a", "b", "c");
 
-    Assertions.assertTrue(patcher.canPatch(oldList, new ListPatch<String, ValuePatch<String>, String>(List.of(
+    Assertions.assertTrue(patcher.canPatch(oldList, new ListPatch<>(List.of(
             ListPatch.Entry.match(ValuePatch.unchanged()),
             ListPatch.Entry.add("x"),
             ListPatch.Entry.match(ValuePatch.unchanged()),
             ListPatch.Entry.remove()
     ))));
-    Assertions.assertFalse(patcher.canPatch(oldList, new ListPatch<String, ValuePatch<String>, String>(List.of(
+    Assertions.assertFalse(patcher.canPatch(oldList, new ListPatch<>(List.of(
             ListPatch.Entry.match(ValuePatch.unchanged()),
             ListPatch.Entry.match(ValuePatch.unchanged()),
             ListPatch.Entry.match(ValuePatch.unchanged()),

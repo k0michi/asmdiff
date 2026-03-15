@@ -10,10 +10,10 @@ public class ModulePatch {
   public ValuePatch<Integer> access;
   public ValuePatch<String> version;
   public ValuePatch<String> mainClass;
-  public ListPatch<String, ValuePatch<String>, String> packages;
-  public ListPatch<ModuleRequireNode, ModuleRequirePatch, String> requires;
-  public ListPatch<ModuleExportNode, ModuleExportPatch, String> exports;
-  public ListPatch<ModuleOpenNode, ModuleOpenPatch, String> opens;
-  public ListPatch<String, ValuePatch<String>, String> uses;
-  public ListPatch<ModuleProvideNode, ModuleProvidePatch, String> provides;
+  public ListPatch<String, ValuePatch<String>> packages;
+  public ListPatch<ModuleRequireNode, ModuleRequirePatch> requires;
+  public ListPatch<ModuleExportNode, ModuleExportPatch> exports;
+  public ListPatch<ModuleOpenNode, ModuleOpenPatch> opens;
+  public ListPatch<String, ValuePatch<String>> uses;
+  public ListPatch<ModuleProvideNode, ModuleProvidePatch> provides;
 }

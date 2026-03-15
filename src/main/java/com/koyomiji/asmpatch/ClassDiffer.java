@@ -14,7 +14,7 @@ public class ClassDiffer implements IDiffer<ClassNode, ClassPatch> {
 
     var integerDiffer = new ValueDiffer<Integer>();
     var stringDiffer = new ValueDiffer<String>();
-    var stringsDiffer = new ListDiffer<String, ValuePatch<String>, String>(stringDiffer);
+    var stringsDiffer = new ListDiffer<>(stringDiffer);
 
     diff.version = integerDiffer.diff(classA.version, classB.version);
     diff.access = integerDiffer.diff(classA.access, classB.access);
@@ -29,7 +29,7 @@ public class ClassDiffer implements IDiffer<ClassNode, ClassPatch> {
     diff.outerMethod = stringDiffer.diff(classA.outerMethod, classB.outerMethod);
     diff.outerMethodDesc = stringDiffer.diff(classA.outerMethodDesc, classB.outerMethodDesc);
 
-    var annotationsDiffer = new ListDiffer<AnnotationNode, AnnotationPatch, Object>(
+    var annotationsDiffer = new ListDiffer<>(
             new AnnotationDiffer()
     );
 
@@ -57,7 +57,7 @@ public class ClassDiffer implements IDiffer<ClassNode, ClassPatch> {
 
     // TODO: attributes
 
-    diff.innerClasses = new ListDiffer<InnerClassNode, InnerClassPatch, String>(
+    diff.innerClasses = new ListDiffer<>(
             new InnerClassDiffer()
     ).diff(classA.innerClasses, classB.innerClasses);
     diff.nestHostClass = stringDiffer.diff(classA.nestHostClass, classB.nestHostClass);
