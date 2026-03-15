@@ -4,12 +4,16 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 class ClassDifferTest {
+  private ClassPatch diff(String oldClassPath, String newClassPath) {
+    var differ = new ClassDiffer();
+    var oldClassNode = TestUtil.readClassNode(oldClassPath);
+    var newClassNode = TestUtil.readClassNode(newClassPath);
+    return differ.diff(oldClassNode, newClassNode);
+  }
+
   @Test
   void testDiffUnchanged() {
-    var differ = new ClassDiffer();
-    var oldClassNode = TestUtil.readClassNode("/C1.class");
-    var newClassNode = TestUtil.readClassNode("/C1.class");
-    var diff = differ.diff(oldClassNode, newClassNode);
+    var diff = diff("/C1.class", "/C1.class");
     Assertions.assertEquals(false, diff.version.changed);
     Assertions.assertEquals(false, diff.access.changed);
     Assertions.assertEquals(false, diff.name.changed);
@@ -20,10 +24,7 @@ class ClassDifferTest {
 
   @Test
   void testDiffName() {
-    var differ = new ClassDiffer();
-    var oldClassNode = TestUtil.readClassNode("/C1.class");
-    var newClassNode = TestUtil.readClassNode("/C2.class");
-    var diff = differ.diff(oldClassNode, newClassNode);
+    var diff = diff("/C1.class", "/C2.class");
     Assertions.assertEquals(true, diff.name.changed);
     Assertions.assertEquals("C1", diff.name.oldValue);
     Assertions.assertEquals("C2", diff.name.newValue);
@@ -31,10 +32,7 @@ class ClassDifferTest {
 
   @Test
   void testAddAnnotation() {
-    var differ = new ClassDiffer();
-    var oldClassNode = TestUtil.readClassNode("/C1.class");
-    var newClassNode = TestUtil.readClassNode("/C3.class");
-    var diff = differ.diff(oldClassNode, newClassNode);
+    var diff = diff("/C1.class", "/C3.class");
     Assertions.assertEquals(1, diff.invisibleAnnotations.entries.size());
     var annotationEntry = diff.invisibleAnnotations.entries.get(0);
     Assertions.assertSame(ListPatch.EntryType.ADD, annotationEntry.type);
@@ -43,10 +41,7 @@ class ClassDifferTest {
 
   @Test
   void testRemoveAnnotation() {
-    var differ = new ClassDiffer();
-    var oldClassNode = TestUtil.readClassNode("/C3.class");
-    var newClassNode = TestUtil.readClassNode("/C1.class");
-    var diff = differ.diff(oldClassNode, newClassNode);
+    var diff = diff("/C3.class", "/C1.class");
     Assertions.assertEquals(1, diff.invisibleAnnotations.entries.size());
     var annotationEntry = diff.invisibleAnnotations.entries.get(0);
     Assertions.assertSame(ListPatch.EntryType.REMOVE, annotationEntry.type);
@@ -54,10 +49,7 @@ class ClassDifferTest {
 
   @Test
   void testChangeAnnotation() {
-    var differ = new ClassDiffer();
-    var oldClassNode = TestUtil.readClassNode("/C3.class");
-    var newClassNode = TestUtil.readClassNode("/C4.class");
-    var diff = differ.diff(oldClassNode, newClassNode);
+    var diff = diff("/C3.class", "/C4.class");
     Assertions.assertEquals(2, diff.invisibleAnnotations.entries.size());
     var annotationEntry = diff.invisibleAnnotations.entries.get(0);
     Assertions.assertSame(ListPatch.EntryType.REMOVE, annotationEntry.type);
@@ -67,10 +59,7 @@ class ClassDifferTest {
 
   @Test
   void testAddField() {
-    var differ = new ClassDiffer();
-    var oldClassNode = TestUtil.readClassNode("/C1.class");
-    var newClassNode = TestUtil.readClassNode("/C7.class");
-    var diff = differ.diff(oldClassNode, newClassNode);
+    var diff = diff("/C1.class", "/C7.class");
     Assertions.assertEquals(1, diff.fields.entries.size());
     var fieldEntry = diff.fields.entries.get(0);
     Assertions.assertSame(ListPatch.EntryType.ADD, fieldEntry.type);
@@ -79,10 +68,7 @@ class ClassDifferTest {
 
   @Test
   void testRemoveField() {
-    var differ = new ClassDiffer();
-    var oldClassNode = TestUtil.readClassNode("/C7.class");
-    var newClassNode = TestUtil.readClassNode("/C1.class");
-    var diff = differ.diff(oldClassNode, newClassNode);
+    var diff = diff("/C7.class", "/C1.class");
     Assertions.assertEquals(1, diff.fields.entries.size());
     var fieldEntry = diff.fields.entries.get(0);
     Assertions.assertSame(ListPatch.EntryType.REMOVE, fieldEntry.type);
@@ -90,10 +76,7 @@ class ClassDifferTest {
 
   @Test
   void testChangeField() {
-    var differ = new ClassDiffer();
-    var oldClassNode = TestUtil.readClassNode("/C7.class");
-    var newClassNode = TestUtil.readClassNode("/C8.class");
-    var diff = differ.diff(oldClassNode, newClassNode);
+    var diff = diff("/C7.class", "/C8.class");
     Assertions.assertEquals(2, diff.fields.entries.size());
     var fieldEntry = diff.fields.entries.get(0);
     Assertions.assertSame(ListPatch.EntryType.REMOVE, fieldEntry.type);
@@ -103,10 +86,7 @@ class ClassDifferTest {
 
   @Test
   void testAddRecordComponent() {
-    var differ = new ClassDiffer();
-    var oldClassNode = TestUtil.readClassNode("/R1.class");
-    var newClassNode = TestUtil.readClassNode("/R2.class");
-    var diff = differ.diff(oldClassNode, newClassNode);
+    var diff = diff("/R1.class", "/R2.class");
     Assertions.assertEquals(1, diff.recordComponents.entries.size());
     var recordComponentEntry = diff.recordComponents.entries.get(0);
     Assertions.assertSame(ListPatch.EntryType.ADD, recordComponentEntry.type);
