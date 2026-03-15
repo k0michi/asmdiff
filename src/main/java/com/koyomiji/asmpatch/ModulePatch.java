@@ -1,6 +1,8 @@
 package com.koyomiji.asmpatch;
 
 import org.objectweb.asm.tree.ModuleExportNode;
+import org.objectweb.asm.tree.ModuleOpenNode;
+import org.objectweb.asm.tree.ModuleProvideNode;
 import org.objectweb.asm.tree.ModuleRequireNode;
 
 public class ModulePatch {
@@ -11,8 +13,7 @@ public class ModulePatch {
   public ListPatch<String, ValuePatch<String>, String> packages;
   public ListPatch<ModuleRequireNode, ModuleRequirePatch, String> requires;
   public ListPatch<ModuleExportNode, ModuleExportPatch, String> exports;
-  public ListPatch<String, ValuePatch<String>, String> opens;
+  public ListPatch<ModuleOpenNode, ModuleOpenPatch, String> opens;
   public ListPatch<String, ValuePatch<String>, String> uses;
-  public ListPatch<String, ValuePatch<String>, String> provides;
-
+  public ListPatch<ModuleProvideNode, ModuleProvidePatch, String> provides;
 }

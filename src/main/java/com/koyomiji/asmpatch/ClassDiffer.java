@@ -23,9 +23,7 @@ public class ClassDiffer implements IDiffer<ClassNode, ClassPatch> {
     diff.superName = stringDiffer.diff(classA.superName, classB.superName);
     diff.interfaces = stringsDiffer.diff(classA.interfaces, classB.interfaces);
     diff.sourceFile = stringDiffer.diff(classA.sourceFile, classB.sourceFile);
-
-    // TODO: module
-
+    diff.module = new NullableDiffer<>(new ModuleDiffer()).diff(classA.module, classB.module);
     diff.sourceDebug = stringDiffer.diff(classA.sourceDebug, classB.sourceDebug);
     diff.outerClass = stringDiffer.diff(classA.outerClass, classB.outerClass);
     diff.outerMethod = stringDiffer.diff(classA.outerMethod, classB.outerMethod);

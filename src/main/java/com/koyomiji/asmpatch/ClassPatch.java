@@ -1,9 +1,6 @@
 package com.koyomiji.asmpatch;
 
-import org.objectweb.asm.tree.AnnotationNode;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.InnerClassNode;
-import org.objectweb.asm.tree.TypeAnnotationNode;
+import org.objectweb.asm.tree.*;
 
 public class ClassPatch {
   public ValuePatch<Integer> version;
@@ -14,7 +11,7 @@ public class ClassPatch {
   public ListPatch<String, ValuePatch<String>, String> interfaces;
   public ValuePatch<String> sourceFile;
   public ValuePatch<String> sourceDebug;
-  // TODO: module
+  public NullablePatch<ModuleNode, ModulePatch> module;
   public ValuePatch<String> outerClass;
   public ValuePatch<String> outerMethod;
   public ValuePatch<String> outerMethodDesc;

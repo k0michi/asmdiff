@@ -15,7 +15,6 @@ public interface IDiffer<T, U> {
    * @param newValue
    * @return
    */
-
   int distance(T oldValue, T newValue);
 
   /**

@@ -17,7 +17,6 @@ public class FieldDiffer implements IDiffer<FieldNode, FieldPatch> {
     patch.desc = stringDiffer.diff(oldValue.desc, newValue.desc);
     patch.signature = stringDiffer.diff(oldValue.signature, newValue.signature);
     patch.value = objectDiffer.diff(oldValue.value, newValue.value);
-    // TODO: annotations
     // TODO: attrs
     return patch;
   }
