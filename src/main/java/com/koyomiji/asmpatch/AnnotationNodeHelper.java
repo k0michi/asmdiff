@@ -32,14 +32,6 @@ public class AnnotationNodeHelper {
   }
 
   private static boolean equalsValue(Object a, Object b) {
-    if (a == b) {
-      return true;
-    }
-
-    if (a == null || b == null) {
-      return false;
-    }
-
     if (a instanceof AnnotationNode && b instanceof AnnotationNode) {
       if (!AnnotationNodeHelper.equals((AnnotationNode) a, (AnnotationNode) b)) {
         return false;
@@ -58,6 +50,6 @@ public class AnnotationNodeHelper {
       }
     }
 
-    return true;
+    return Objects.equals(a, b);
   }
 }
