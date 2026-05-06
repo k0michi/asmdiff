@@ -345,11 +345,11 @@ public class InsnListDiffUtils {
 
     List<InsnListDiff.Operation> result = new ArrayList<>();
 
-    boolean hasExact1 = ins1.stream().anyMatch(o -> o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BETWEEN);
-    boolean hasExact2 = ins2.stream().anyMatch(o -> o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BETWEEN);
+    boolean hasBetween1 = ins1.stream().anyMatch(o -> o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BETWEEN);
+    boolean hasBetween2 = ins2.stream().anyMatch(o -> o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BETWEEN);
 
-    if (hasExact1 && hasExact2) {
-      throw new ConflictException("Cannot insert with INSERT_EXACT at the same position");
+    if (hasBetween1 && hasBetween2) {
+      throw new ConflictException("Both diffs have BETWEEN insertions at the same position");
     }
 
     for (InsnListDiff.Operation o : ins2) {
