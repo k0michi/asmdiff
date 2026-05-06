@@ -44,4 +44,19 @@ public class InsnListListAdapter extends AbstractList<AbstractInsnNode> {
     insnList.remove(old);
     return old;
   }
+
+  @Override
+  public Iterator<AbstractInsnNode> iterator() {
+    return insnList.iterator();
+  }
+
+  @Override
+  public ListIterator<AbstractInsnNode> listIterator() {
+    return insnList.iterator();
+  }
+
+  @Override
+  public ListIterator<AbstractInsnNode> listIterator(int index) {
+    return insnList.iterator(index);
+  }
 }
