@@ -102,7 +102,7 @@ class InsnListDiffUtilsTest {
     ));
     InsnListDiff diff2 = new InsnListDiff(List.of(
     ));
-    Assertions.assertThrows(RuntimeException.class, () -> {
+    Assertions.assertThrows(IllegalDiffException.class, () -> {
       InsnListDiffUtils.commute(diff1, diff2);
     });
   }
@@ -114,7 +114,7 @@ class InsnListDiffUtilsTest {
     InsnListDiff diff2 = new InsnListDiff(List.of(
             new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, new InsnNode(Opcodes.NOP))
     ));
-    Assertions.assertThrows(RuntimeException.class, () -> {
+    Assertions.assertThrows(IllegalDiffException.class, () -> {
       InsnListDiffUtils.commute(diff1, diff2);
     });
   }
@@ -171,11 +171,8 @@ class InsnListDiffUtilsTest {
     InsnListDiff diff2 = new InsnListDiff(List.of(
             new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, new InsnNode(Opcodes.NOP))
     ));
-    InsnListDiff merged = InsnListDiffUtils.merge(diff1, diff2);
-    Assertions.assertEquals(2, merged.operations.size());
-    Assertions.assertEquals(InsnListDiff.Operation.Type.INSERT_EXACT, merged.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsns(merged.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
-    Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, merged.operations.get(1).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsns(merged.operations.get(1).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertThrows(IllegalDiffException.class, () -> {
+      InsnListDiffUtils.merge(diff1, diff2);
+    });
   }
 }

@@ -305,7 +305,7 @@ public class InsnListDiffUtils {
    */
   public static InsnListDiff merge(InsnListDiff diff1, InsnListDiff diff2) throws ConflictException {
     if (!compareBases(diff1, diff2)) {
-      throw new ConflictException("Cannot merge diffs with different bases");
+      throw new IllegalDiffException("Cannot merge diffs with different bases");
     }
 
     List<InsnListDiff.Operation> mergedOps = new ArrayList<>();
