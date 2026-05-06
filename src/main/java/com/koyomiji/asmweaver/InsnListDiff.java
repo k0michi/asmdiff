@@ -28,7 +28,7 @@ public class InsnListDiff {
     public Mode mode;
     /**
      * For MATCH, operand is the instruction that matches in both lists.
-     * For INSERT_EXACT/INSERT_BEFORE/INSERT_AFTER, operand is the instruction to insert into the original list.
+     * For INSERT, operand is the instruction to insert into the original list.
      * For DELETE, operand is the instruction to delete from the original list.
      */
     public AbstractInsnNode operand;
