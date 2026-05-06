@@ -27,5 +27,10 @@ public class InsnListDiff {
      * For DELETE, operand is the instruction to delete from the original list.
      */
     public AbstractInsnNode operand;
+
+    public Operation(Type type, AbstractInsnNode operand) {
+      this.type = type;
+      this.operand = operand;
+    }
   }
 }

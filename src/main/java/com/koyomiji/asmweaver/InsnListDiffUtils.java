@@ -1,5 +1,7 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.util.tuple.Pair;
+import com.koyomiji.asmweaver.util.PeekableIterator;
 import org.objectweb.asm.tree.*;
 
 import java.util.*;
@@ -9,23 +11,24 @@ public class InsnListDiffUtils {
     List<InsnListDiff.Operation> invertedOperations = new ArrayList<>();
 
     for (InsnListDiff.Operation op : diff.operations) {
-      InsnListDiff.Operation invertedOp = new InsnListDiff.Operation();
+      InsnListDiff.Operation invertedOp;
 
       switch (op.type) {
         case MATCH:
-          invertedOp.type = InsnListDiff.Operation.Type.MATCH;
+          invertedOp = new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, op.operand);
           break;
         case INSERT_EXACT:
         case INSERT_BEFORE:
         case INSERT_AFTER:
-          invertedOp.type = InsnListDiff.Operation.Type.DELETE;
+          invertedOp = new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, op.operand);
           break;
         case DELETE:
-          invertedOp.type = InsnListDiff.Operation.Type.INSERT_EXACT;
+          invertedOp = new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT_EXACT, op.operand);
           break;
+        default:
+          throw new IllegalStateException("Unexpected operation type: " + op.type);
       }
 
-      invertedOp.operand = op.operand;
       invertedOperations.add(invertedOp);
     }
 
@@ -140,8 +143,13 @@ public class InsnListDiffUtils {
     return Objects.equals(insn1, insn2);
   }
 
+  public static boolean compareInsns(AbstractInsnNode insn1, AbstractInsnNode insn2) {
+    return compareInsns(insn1, insn2, new HashMap<>());
+  }
+
   /**
    * Compare two instruction lists taking labels into account.
+   *
    * @param list1
    * @param list2
    * @param labelMap
@@ -179,6 +187,7 @@ public class InsnListDiffUtils {
 
   /**
    * Extracts the base instructions from the diff.
+   *
    * @param diff
    * @return
    */
@@ -196,6 +205,7 @@ public class InsnListDiffUtils {
 
   /**
    * Returns true if diff1 and diff2 have the same base instructions.
+   *
    * @param diff1
    * @param diff2
    * @return
@@ -204,6 +214,90 @@ public class InsnListDiffUtils {
     List<AbstractInsnNode> base1 = extractBase(diff1);
     List<AbstractInsnNode> base2 = extractBase(diff2);
     return compareInsnLists(base1, base2);
+  }
+
+  /**
+   * Attempts to commute p and q. If successful, returns a pair of diffs (q', p') such that applying q' then p' yields the same result as applying p then q.
+   *
+   * @param p
+   * @param q
+   * @throws ConflictException
+   */
+  public static Pair<InsnListDiff, InsnListDiff> commute(InsnListDiff p, InsnListDiff q) throws ConflictException {
+    List<InsnListDiff.Operation> qPrimeOps = new ArrayList<>();
+    List<InsnListDiff.Operation> pPrimeOps = new ArrayList<>();
+
+    Set<AbstractInsnNode> pInserted = collectInserted(p);
+    Iterator<InsnListDiff.Operation> itP = p.operations.iterator();
+    PeekableIterator<InsnListDiff.Operation> itQ = new PeekableIterator<>(q.operations.iterator());
+
+    while (itP.hasNext()) {
+      InsnListDiff.Operation opP = itP.next();
+
+      if (opP.type == InsnListDiff.Operation.Type.DELETE) {
+        qPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opP.operand));
+        pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, opP.operand));
+      } else if (opP.type == InsnListDiff.Operation.Type.MATCH || isInsert(opP)) {
+        while (itQ.hasNext() && isInsert(itQ.peek())) {
+          InsnListDiff.Operation opQIns = itQ.next();
+          // FIXME
+//          verifyNoInternalDependency(opQIns.operand, pInsertedNodes);
+
+          qPrimeOps.add(opQIns);
+          pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opQIns.operand));
+        }
+
+        if (!itQ.hasNext()) {
+          throw new IllegalDiffException("p has remaining operations after q is exhausted");
+        }
+        InsnListDiff.Operation opQBase = itQ.next();
+
+        // FIXME
+        if (!compareInsns(opP.operand, opQBase.operand, Collections.emptyMap())) {
+          throw new IllegalDiffException("p and q disagree on node identity");
+        }
+
+        if (opP.type == InsnListDiff.Operation.Type.MATCH) {
+          qPrimeOps.add(opQBase);
+          pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opP.operand));
+        } else {
+          if (opQBase.type == InsnListDiff.Operation.Type.DELETE) {
+            throw new ConflictException("p inserts a node that q deletes");
+          }
+
+          pPrimeOps.add(new InsnListDiff.Operation(opP.type, opP.operand));
+        }
+      }
+    }
+
+    while (itQ.hasNext()) {
+      InsnListDiff.Operation opQ = itQ.next();
+
+      if (isInsert(opQ)) {
+        qPrimeOps.add(opQ);
+        pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opQ.operand));
+      } else {
+        throw new IllegalDiffException("q has remaining operations after p is exhausted");
+      }
+    }
+
+    return new Pair<>(new InsnListDiff(qPrimeOps), new InsnListDiff(pPrimeOps));
+  }
+
+  private static boolean isInsert(InsnListDiff.Operation op) {
+    return op.type == InsnListDiff.Operation.Type.INSERT_EXACT || op.type == InsnListDiff.Operation.Type.INSERT_BEFORE || op.type == InsnListDiff.Operation.Type.INSERT_AFTER;
+  }
+
+  private static Set<AbstractInsnNode> collectInserted(InsnListDiff diff) {
+    Set<AbstractInsnNode> inserted = new HashSet<>();
+
+    for (InsnListDiff.Operation op : diff.operations) {
+      if (isInsert(op)) {
+        inserted.add(op.operand);
+      }
+    }
+
+    return inserted;
   }
 
   /**
