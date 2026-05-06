@@ -140,8 +140,22 @@ public class InsnListDiffUtils {
    * Compare two instruction lists taking labels into account.
    * @param list1
    * @param list2
+   * @param labelMap
    * @return
    */
+  public static boolean compareInsnLists(List<AbstractInsnNode> list1, List<AbstractInsnNode> list2, Map<LabelNode, LabelNode> labelMap) {
+    Iterator<AbstractInsnNode> iter1 = list1.iterator();
+    Iterator<AbstractInsnNode> iter2 = list2.iterator();
+
+    while (iter1.hasNext() && iter2.hasNext()) {
+      if (!compareInsns(iter1.next(), iter2.next(), labelMap)) {
+        return false;
+      }
+    }
+
+    return !iter1.hasNext() && !iter2.hasNext();
+  }
+
   public static boolean compareInsnLists(List<AbstractInsnNode> list1, List<AbstractInsnNode> list2) {
     List<LabelNode> labels1 = extractLabels(list1);
     List<LabelNode> labels2 = extractLabels(list2);
@@ -156,16 +170,7 @@ public class InsnListDiffUtils {
       labelMap.put(labels1.get(i), labels2.get(i));
     }
 
-    Iterator<AbstractInsnNode> iter1 = list1.iterator();
-    Iterator<AbstractInsnNode> iter2 = list2.iterator();
-
-    while (iter1.hasNext() && iter2.hasNext()) {
-      if (!compareInsns(iter1.next(), iter2.next(), labelMap)) {
-        return false;
-      }
-    }
-
-    return !iter1.hasNext() && !iter2.hasNext();
+    return compareInsnLists(list1, list2, labelMap);
   }
 
   /**
