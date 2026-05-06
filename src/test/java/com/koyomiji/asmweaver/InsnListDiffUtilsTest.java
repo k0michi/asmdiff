@@ -175,4 +175,30 @@ class InsnListDiffUtilsTest {
       InsnListDiffUtils.merge(diff1, diff2);
     });
   }
+
+  @Test
+  void test_merge_3() throws ConflictException {
+    InsnListDiff diff1 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, new InsnNode(Opcodes.NOP))
+    ));
+    InsnListDiff diff2 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, new InsnNode(Opcodes.NOP))
+    ));
+    Assertions.assertThrows(ConflictException.class, () -> {
+      InsnListDiffUtils.merge(diff1, diff2);
+    });
+  }
+
+  @Test
+  void test_merge_4() throws ConflictException {
+    InsnListDiff diff1 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT_EXACT, new InsnNode(Opcodes.NOP))
+    ));
+    InsnListDiff diff2 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT_EXACT, new InsnNode(Opcodes.NOP))
+    ));
+    Assertions.assertThrows(ConflictException.class, () -> {
+      InsnListDiffUtils.merge(diff1, diff2);
+    });
+  }
 }
