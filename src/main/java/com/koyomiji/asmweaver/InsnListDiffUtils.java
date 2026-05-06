@@ -63,6 +63,10 @@ public class InsnListDiffUtils {
   }
 
   public static boolean compareInsns(AbstractInsnNode insn1, AbstractInsnNode insn2, Map<LabelNode, LabelNode> labelMap) {
+    if (insn1.getOpcode() != insn2.getOpcode()) {
+      return false;
+    }
+
     if (insn1 instanceof InsnNode && insn2 instanceof InsnNode) {
       return true;
     } else if (insn1 instanceof IntInsnNode && insn2 instanceof IntInsnNode) {
