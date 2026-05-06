@@ -50,10 +50,10 @@ class InsnListDiffUtilsTest {
   @Test
   void test_commute_0() throws ConflictException {
     InsnListDiff diff1 = new InsnListDiff(List.of(
-            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, new InsnNode(Opcodes.NOP))
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, new InsnNode(Opcodes.NOP))
     ));
     InsnListDiff diff2 = new InsnListDiff(List.of(
-            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, new InsnNode(Opcodes.NOP))
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, new InsnNode(Opcodes.NOP))
     ));
     Pair<InsnListDiff, InsnListDiff> commuted = InsnListDiffUtils.commute(diff1, diff2);
     Assertions.assertEquals(1, commuted.first.operations.size());
@@ -67,15 +67,15 @@ class InsnListDiffUtilsTest {
   @Test
   void test_commute_1() throws ConflictException {
     InsnListDiff diff1 = new InsnListDiff(List.of(
-            new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT_EXACT, new InsnNode(Opcodes.NOP))
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.NOP))
     ));
     InsnListDiff diff2 = new InsnListDiff(List.of(
-            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, new InsnNode(Opcodes.NOP))
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.NOP))
     ));
     Pair<InsnListDiff, InsnListDiff> commuted = InsnListDiffUtils.commute(diff1, diff2);
     Assertions.assertEquals(0, commuted.first.operations.size());
     Assertions.assertEquals(1, commuted.second.operations.size());
-    Assertions.assertEquals(InsnListDiff.Operation.Type.INSERT_EXACT, commuted.second.operations.get(0).type);
+    Assertions.assertEquals(InsnListDiff.Operation.Type.INSERT, commuted.second.operations.get(0).type);
     Assertions.assertTrue(InsnListDiffUtils.compareInsns(commuted.second.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
   }
 
@@ -84,11 +84,11 @@ class InsnListDiffUtilsTest {
     InsnListDiff diff1 = new InsnListDiff(List.of(
     ));
     InsnListDiff diff2 = new InsnListDiff(List.of(
-            new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT_EXACT, new InsnNode(Opcodes.NOP))
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.NOP))
     ));
     Pair<InsnListDiff, InsnListDiff> commuted = InsnListDiffUtils.commute(diff1, diff2);
     Assertions.assertEquals(1, commuted.first.operations.size());
-    Assertions.assertEquals(InsnListDiff.Operation.Type.INSERT_EXACT, commuted.first.operations.get(0).type);
+    Assertions.assertEquals(InsnListDiff.Operation.Type.INSERT, commuted.first.operations.get(0).type);
     Assertions.assertTrue(InsnListDiffUtils.compareInsns(commuted.first.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
     Assertions.assertEquals(1, commuted.second.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, commuted.second.operations.get(0).type);
@@ -98,7 +98,7 @@ class InsnListDiffUtilsTest {
   @Test
   void test_commute_3() {
     InsnListDiff diff1 = new InsnListDiff(List.of(
-            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, new InsnNode(Opcodes.NOP))
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, new InsnNode(Opcodes.NOP))
     ));
     InsnListDiff diff2 = new InsnListDiff(List.of(
     ));
@@ -112,7 +112,7 @@ class InsnListDiffUtilsTest {
     InsnListDiff diff1 = new InsnListDiff(List.of(
     ));
     InsnListDiff diff2 = new InsnListDiff(List.of(
-            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, new InsnNode(Opcodes.NOP))
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, new InsnNode(Opcodes.NOP))
     ));
     Assertions.assertThrows(IllegalDiffException.class, () -> {
       InsnListDiffUtils.commute(diff1, diff2);
@@ -122,10 +122,10 @@ class InsnListDiffUtilsTest {
   @Test
   void test_commute_5() {
     InsnListDiff diff1 = new InsnListDiff(List.of(
-            new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT_EXACT, new InsnNode(Opcodes.NOP))
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.NOP))
     ));
     InsnListDiff diff2 = new InsnListDiff(List.of(
-            new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, new InsnNode(Opcodes.NOP))
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.NOP))
     ));
     Assertions.assertThrows(ConflictException.class, () -> {
       InsnListDiffUtils.commute(diff1, diff2);
@@ -135,10 +135,10 @@ class InsnListDiffUtilsTest {
   @Test
   void test_merge_0() throws ConflictException {
     InsnListDiff diff1 = new InsnListDiff(List.of(
-            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, new InsnNode(Opcodes.NOP))
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, new InsnNode(Opcodes.NOP))
     ));
     InsnListDiff diff2 = new InsnListDiff(List.of(
-            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, new InsnNode(Opcodes.NOP))
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, new InsnNode(Opcodes.NOP))
     ));
     InsnListDiff merged = InsnListDiffUtils.merge(diff1, diff2);
     Assertions.assertEquals(1, merged.operations.size());
@@ -149,27 +149,27 @@ class InsnListDiffUtilsTest {
   @Test
   void test_merge_1() throws ConflictException {
     InsnListDiff diff1 = new InsnListDiff(List.of(
-            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, new InsnNode(Opcodes.NOP))
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, new InsnNode(Opcodes.NOP))
     ));
     InsnListDiff diff2 = new InsnListDiff(List.of(
-            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, new InsnNode(Opcodes.NOP)),
-            new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT_EXACT, new InsnNode(Opcodes.NOP))
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, new InsnNode(Opcodes.NOP)),
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.NOP))
     ));
     InsnListDiff merged = InsnListDiffUtils.merge(diff1, diff2);
     Assertions.assertEquals(2, merged.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, merged.operations.get(0).type);
     Assertions.assertTrue(InsnListDiffUtils.compareInsns(merged.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
-    Assertions.assertEquals(InsnListDiff.Operation.Type.INSERT_EXACT, merged.operations.get(1).type);
+    Assertions.assertEquals(InsnListDiff.Operation.Type.INSERT, merged.operations.get(1).type);
     Assertions.assertTrue(InsnListDiffUtils.compareInsns(merged.operations.get(1).operand, new InsnNode(Opcodes.NOP)));
   }
 
   @Test
   void test_merge_2() throws ConflictException {
     InsnListDiff diff1 = new InsnListDiff(List.of(
-            new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT_EXACT, new InsnNode(Opcodes.NOP))
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.NOP))
     ));
     InsnListDiff diff2 = new InsnListDiff(List.of(
-            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, new InsnNode(Opcodes.NOP))
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, new InsnNode(Opcodes.NOP))
     ));
     Assertions.assertThrows(IllegalDiffException.class, () -> {
       InsnListDiffUtils.merge(diff1, diff2);
@@ -179,10 +179,10 @@ class InsnListDiffUtilsTest {
   @Test
   void test_merge_3() throws ConflictException {
     InsnListDiff diff1 = new InsnListDiff(List.of(
-            new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, new InsnNode(Opcodes.NOP))
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.NOP))
     ));
     InsnListDiff diff2 = new InsnListDiff(List.of(
-            new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, new InsnNode(Opcodes.NOP))
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.NOP))
     ));
     Assertions.assertThrows(ConflictException.class, () -> {
       InsnListDiffUtils.merge(diff1, diff2);
@@ -192,10 +192,10 @@ class InsnListDiffUtilsTest {
   @Test
   void test_merge_4() throws ConflictException {
     InsnListDiff diff1 = new InsnListDiff(List.of(
-            new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT_EXACT, new InsnNode(Opcodes.NOP))
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.NOP))
     ));
     InsnListDiff diff2 = new InsnListDiff(List.of(
-            new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT_EXACT, new InsnNode(Opcodes.NOP))
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.NOP))
     ));
     Assertions.assertThrows(ConflictException.class, () -> {
       InsnListDiffUtils.merge(diff1, diff2);

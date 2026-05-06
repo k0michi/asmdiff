@@ -14,13 +14,18 @@ public class InsnListDiff {
   public static class Operation {
     public enum Type {
       MATCH,
-      INSERT_EXACT,
-      INSERT_BEFORE,
-      INSERT_AFTER,
+      INSERT,
       DELETE
     }
 
+    public enum Mode {
+      BETWEEN,
+      BEFORE,
+      AFTER
+    }
+
     public Type type;
+    public Mode mode;
     /**
      * For MATCH, operand is the instruction that matches in both lists.
      * For INSERT_EXACT/INSERT_BEFORE/INSERT_AFTER, operand is the instruction to insert into the original list.
@@ -28,8 +33,9 @@ public class InsnListDiff {
      */
     public AbstractInsnNode operand;
 
-    public Operation(Type type, AbstractInsnNode operand) {
+    public Operation(Type type, Mode mode, AbstractInsnNode operand) {
       this.type = type;
+      this.mode = mode;
       this.operand = operand;
     }
   }

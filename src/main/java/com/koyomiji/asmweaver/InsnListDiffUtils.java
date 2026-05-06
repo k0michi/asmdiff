@@ -15,15 +15,13 @@ public class InsnListDiffUtils {
 
       switch (op.type) {
         case MATCH:
-          invertedOp = new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, op.operand);
+          invertedOp = new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, op.operand);
           break;
-        case INSERT_EXACT:
-        case INSERT_BEFORE:
-        case INSERT_AFTER:
-          invertedOp = new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, op.operand);
+        case INSERT:
+          invertedOp = new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, op.mode, op.operand);
           break;
         case DELETE:
-          invertedOp = new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT_EXACT, op.operand);
+          invertedOp = new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, op.mode, op.operand);
           break;
         default:
           throw new IllegalStateException("Unexpected operation type: " + op.type);
@@ -235,8 +233,8 @@ public class InsnListDiffUtils {
       InsnListDiff.Operation opP = itP.next();
 
       if (opP.type == InsnListDiff.Operation.Type.DELETE) {
-        qPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opP.operand));
-        pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, opP.operand));
+        qPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opP.mode, opP.operand));
+        pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, opP.mode, opP.operand));
       } else if (opP.type == InsnListDiff.Operation.Type.MATCH || isInsert(opP)) {
         while (itQ.hasNext() && isInsert(itQ.peek())) {
           InsnListDiff.Operation opQIns = itQ.next();
@@ -244,7 +242,7 @@ public class InsnListDiffUtils {
 //          verifyNoInternalDependency(opQIns.operand, pInsertedNodes);
 
           qPrimeOps.add(opQIns);
-          pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opQIns.operand));
+          pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opQIns.mode, opQIns.operand));
         }
 
         if (!itQ.hasNext()) {
@@ -259,13 +257,13 @@ public class InsnListDiffUtils {
 
         if (opP.type == InsnListDiff.Operation.Type.MATCH) {
           qPrimeOps.add(opQBase);
-          pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opP.operand));
+          pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opP.mode, opP.operand));
         } else {
           if (opQBase.type == InsnListDiff.Operation.Type.DELETE) {
             throw new ConflictException("p inserts a node that q deletes");
           }
 
-          pPrimeOps.add(new InsnListDiff.Operation(opP.type, opP.operand));
+          pPrimeOps.add(new InsnListDiff.Operation(opP.type, opP.mode, opP.operand));
         }
       }
     }
@@ -275,7 +273,7 @@ public class InsnListDiffUtils {
 
       if (isInsert(opQ)) {
         qPrimeOps.add(opQ);
-        pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opQ.operand));
+        pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opQ.mode, opQ.operand));
       } else {
         throw new IllegalDiffException("q has remaining operations after p is exhausted");
       }
@@ -285,7 +283,7 @@ public class InsnListDiffUtils {
   }
 
   private static boolean isInsert(InsnListDiff.Operation op) {
-    return op.type == InsnListDiff.Operation.Type.INSERT_EXACT || op.type == InsnListDiff.Operation.Type.INSERT_BEFORE || op.type == InsnListDiff.Operation.Type.INSERT_AFTER;
+    return op.type == InsnListDiff.Operation.Type.INSERT;
   }
 
   private static Set<AbstractInsnNode> collectInserted(InsnListDiff diff) {
@@ -335,7 +333,7 @@ public class InsnListDiffUtils {
                 (op1.type == InsnListDiff.Operation.Type.DELETE || op2.type == InsnListDiff.Operation.Type.DELETE)
                         ? InsnListDiff.Operation.Type.DELETE : InsnListDiff.Operation.Type.MATCH;
 
-        mergedOps.add(new InsnListDiff.Operation(targetType, op1.operand));
+        mergedOps.add(new InsnListDiff.Operation(targetType, op1.mode, op1.operand));
       }
     }
     return new InsnListDiff(mergedOps);
@@ -347,32 +345,32 @@ public class InsnListDiffUtils {
 
     List<InsnListDiff.Operation> result = new ArrayList<>();
 
-    boolean hasExact1 = ins1.stream().anyMatch(o -> o.type == InsnListDiff.Operation.Type.INSERT_EXACT);
-    boolean hasExact2 = ins2.stream().anyMatch(o -> o.type == InsnListDiff.Operation.Type.INSERT_EXACT);
+    boolean hasExact1 = ins1.stream().anyMatch(o -> o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BETWEEN);
+    boolean hasExact2 = ins2.stream().anyMatch(o -> o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BETWEEN);
 
     if (hasExact1 && hasExact2) {
       throw new ConflictException("Cannot insert with INSERT_EXACT at the same position");
     }
 
     for (InsnListDiff.Operation o : ins2) {
-      if (o.type == InsnListDiff.Operation.Type.INSERT_AFTER) result.add(o);
+      if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.AFTER) result.add(o);
     }
     for (InsnListDiff.Operation o : ins1) {
-      if (o.type == InsnListDiff.Operation.Type.INSERT_AFTER) result.add(o);
+      if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.AFTER) result.add(o);
     }
 
     for (InsnListDiff.Operation o : ins1) {
-      if (o.type == InsnListDiff.Operation.Type.INSERT_EXACT) result.add(o);
+        if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BETWEEN) result.add(o);
     }
     for (InsnListDiff.Operation o : ins2) {
-      if (o.type == InsnListDiff.Operation.Type.INSERT_EXACT) result.add(o);
+      if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BETWEEN) result.add(o);
     }
 
     for (InsnListDiff.Operation o : ins1) {
-      if (o.type == InsnListDiff.Operation.Type.INSERT_BEFORE) result.add(o);
+        if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BEFORE) result.add(o);
     }
     for (InsnListDiff.Operation o : ins2) {
-      if (o.type == InsnListDiff.Operation.Type.INSERT_BEFORE) result.add(o);
+      if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BEFORE) result.add(o);
     }
 
     return result;
