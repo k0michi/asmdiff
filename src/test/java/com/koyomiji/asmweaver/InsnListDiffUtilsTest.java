@@ -131,4 +131,51 @@ class InsnListDiffUtilsTest {
       InsnListDiffUtils.commute(diff1, diff2);
     });
   }
+
+  @Test
+  void test_merge_0() throws ConflictException {
+    InsnListDiff diff1 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, new InsnNode(Opcodes.NOP))
+    ));
+    InsnListDiff diff2 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, new InsnNode(Opcodes.NOP))
+    ));
+    InsnListDiff merged = InsnListDiffUtils.merge(diff1, diff2);
+    Assertions.assertEquals(1, merged.operations.size());
+    Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, merged.operations.get(0).type);
+    Assertions.assertTrue(InsnListDiffUtils.compareInsns(merged.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+  }
+
+  @Test
+  void test_merge_1() throws ConflictException {
+    InsnListDiff diff1 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, new InsnNode(Opcodes.NOP))
+    ));
+    InsnListDiff diff2 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, new InsnNode(Opcodes.NOP)),
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT_EXACT, new InsnNode(Opcodes.NOP))
+    ));
+    InsnListDiff merged = InsnListDiffUtils.merge(diff1, diff2);
+    Assertions.assertEquals(2, merged.operations.size());
+    Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, merged.operations.get(0).type);
+    Assertions.assertTrue(InsnListDiffUtils.compareInsns(merged.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertEquals(InsnListDiff.Operation.Type.INSERT_EXACT, merged.operations.get(1).type);
+    Assertions.assertTrue(InsnListDiffUtils.compareInsns(merged.operations.get(1).operand, new InsnNode(Opcodes.NOP)));
+  }
+
+  @Test
+  void test_merge_2() throws ConflictException {
+    InsnListDiff diff1 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT_EXACT, new InsnNode(Opcodes.NOP))
+    ));
+    InsnListDiff diff2 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, new InsnNode(Opcodes.NOP))
+    ));
+    InsnListDiff merged = InsnListDiffUtils.merge(diff1, diff2);
+    Assertions.assertEquals(2, merged.operations.size());
+    Assertions.assertEquals(InsnListDiff.Operation.Type.INSERT_EXACT, merged.operations.get(0).type);
+    Assertions.assertTrue(InsnListDiffUtils.compareInsns(merged.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, merged.operations.get(1).type);
+    Assertions.assertTrue(InsnListDiffUtils.compareInsns(merged.operations.get(1).operand, new InsnNode(Opcodes.NOP)));
+  }
 }

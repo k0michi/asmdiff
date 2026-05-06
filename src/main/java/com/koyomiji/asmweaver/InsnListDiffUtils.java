@@ -303,10 +303,88 @@ public class InsnListDiffUtils {
   /**
    * Note that this merge is not symmetric with respect to diff1 and diff2; directional insertions (INSERT_BEFORE/INSERT_AFTER) will be sorted according to the order of diff1 and diff2.
    */
-//  public static InsnListDiff merge(InsnListDiff diff1, InsnListDiff diff2) throws ConflictException {
-//    if (!compareBases(diff1, diff2)) {
-//      throw new ConflictException("Cannot merge diffs with different bases");
-//    }
-//
-//  }
+  public static InsnListDiff merge(InsnListDiff diff1, InsnListDiff diff2) throws ConflictException {
+    if (!compareBases(diff1, diff2)) {
+      throw new ConflictException("Cannot merge diffs with different bases");
+    }
+
+    List<InsnListDiff.Operation> mergedOps = new ArrayList<>();
+    PeekableIterator<InsnListDiff.Operation> it1 = new PeekableIterator<>(diff1.operations.iterator());
+    PeekableIterator<InsnListDiff.Operation> it2 = new PeekableIterator<>(diff2.operations.iterator());
+
+    while (it1.hasNext() || it2.hasNext()) {
+      List<InsnListDiff.Operation> ins1 = collectInsertions(it1);
+      List<InsnListDiff.Operation> ins2 = collectInsertions(it2);
+
+      mergedOps.addAll(mergeInsertionSlot(ins1, ins2));
+
+      if (it1.hasNext() && it2.hasNext()) {
+        InsnListDiff.Operation op1 = it1.next();
+        InsnListDiff.Operation op2 = it2.next();
+
+        // FIXME:
+        if (!compareInsns(op1.operand, op2.operand, Collections.emptyMap())) {
+          throw new IllegalDiffException("Diffs have different base instructions at the same position");
+        }
+
+        if (op1.type == InsnListDiff.Operation.Type.DELETE && op2.type == InsnListDiff.Operation.Type.DELETE) {
+          throw new ConflictException("Both diffs delete the same instruction");
+        }
+
+        InsnListDiff.Operation.Type targetType =
+                (op1.type == InsnListDiff.Operation.Type.DELETE || op2.type == InsnListDiff.Operation.Type.DELETE)
+                        ? InsnListDiff.Operation.Type.DELETE : InsnListDiff.Operation.Type.MATCH;
+
+        mergedOps.add(new InsnListDiff.Operation(targetType, op1.operand));
+      }
+    }
+    return new InsnListDiff(mergedOps);
+  }
+
+  private static List<InsnListDiff.Operation> mergeInsertionSlot(
+          List<InsnListDiff.Operation> ins1,
+          List<InsnListDiff.Operation> ins2) throws ConflictException {
+
+    List<InsnListDiff.Operation> result = new ArrayList<>();
+
+    boolean hasExact1 = ins1.stream().anyMatch(o -> o.type == InsnListDiff.Operation.Type.INSERT_EXACT);
+    boolean hasExact2 = ins2.stream().anyMatch(o -> o.type == InsnListDiff.Operation.Type.INSERT_EXACT);
+
+    if (hasExact1 && hasExact2) {
+      throw new ConflictException("Cannot insert with INSERT_EXACT at the same position");
+    }
+
+    for (InsnListDiff.Operation o : ins2) {
+      if (o.type == InsnListDiff.Operation.Type.INSERT_AFTER) result.add(o);
+    }
+    for (InsnListDiff.Operation o : ins1) {
+      if (o.type == InsnListDiff.Operation.Type.INSERT_AFTER) result.add(o);
+    }
+
+    for (InsnListDiff.Operation o : ins1) {
+      if (o.type == InsnListDiff.Operation.Type.INSERT_EXACT) result.add(o);
+    }
+    for (InsnListDiff.Operation o : ins2) {
+      if (o.type == InsnListDiff.Operation.Type.INSERT_EXACT) result.add(o);
+    }
+
+    for (InsnListDiff.Operation o : ins1) {
+      if (o.type == InsnListDiff.Operation.Type.INSERT_BEFORE) result.add(o);
+    }
+    for (InsnListDiff.Operation o : ins2) {
+      if (o.type == InsnListDiff.Operation.Type.INSERT_BEFORE) result.add(o);
+    }
+
+    return result;
+  }
+
+  private static List<InsnListDiff.Operation> collectInsertions(PeekableIterator<InsnListDiff.Operation> it) {
+    List<InsnListDiff.Operation> insertions = new ArrayList<>();
+
+    while (it.hasNext() && isInsert(it.peek())) {
+      insertions.add(it.next());
+    }
+
+    return insertions;
+  }
 }
