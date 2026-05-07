@@ -58,10 +58,10 @@ class InsnListDiffUtilsTest {
     Pair<InsnListDiff, InsnListDiff> commuted = InsnListDiffUtils.commute(diff1, diff2);
     Assertions.assertEquals(1, commuted.first.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, commuted.first.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsns(commuted.first.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabels(commuted.first.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
     Assertions.assertEquals(1, commuted.second.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, commuted.second.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsns(commuted.second.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabels(commuted.second.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
   }
 
   @Test
@@ -76,7 +76,7 @@ class InsnListDiffUtilsTest {
     Assertions.assertEquals(0, commuted.first.operations.size());
     Assertions.assertEquals(1, commuted.second.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.INSERT, commuted.second.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsns(commuted.second.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabels(commuted.second.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
   }
 
   @Test
@@ -89,10 +89,10 @@ class InsnListDiffUtilsTest {
     Pair<InsnListDiff, InsnListDiff> commuted = InsnListDiffUtils.commute(diff1, diff2);
     Assertions.assertEquals(1, commuted.first.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.INSERT, commuted.first.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsns(commuted.first.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabels(commuted.first.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
     Assertions.assertEquals(1, commuted.second.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, commuted.second.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsns(commuted.second.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabels(commuted.second.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
   }
 
   @Test
@@ -143,7 +143,7 @@ class InsnListDiffUtilsTest {
     InsnListDiff merged = InsnListDiffUtils.merge(diff1, diff2);
     Assertions.assertEquals(1, merged.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, merged.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsns(merged.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabels(merged.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
   }
 
   @Test
@@ -158,9 +158,9 @@ class InsnListDiffUtilsTest {
     InsnListDiff merged = InsnListDiffUtils.merge(diff1, diff2);
     Assertions.assertEquals(2, merged.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, merged.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsns(merged.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabels(merged.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
     Assertions.assertEquals(InsnListDiff.Operation.Type.INSERT, merged.operations.get(1).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsns(merged.operations.get(1).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabels(merged.operations.get(1).operand, new InsnNode(Opcodes.NOP)));
   }
 
   @Test
@@ -214,7 +214,7 @@ class InsnListDiffUtilsTest {
     InsnListDiff composed = InsnListDiffUtils.compose(diff1, diff2);
     Assertions.assertEquals(1, composed.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, composed.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsns(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabels(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
   }
 
   @Test
@@ -256,9 +256,9 @@ class InsnListDiffUtilsTest {
     InsnListDiff composed = InsnListDiffUtils.compose(diff1, diff2);
     Assertions.assertEquals(2, composed.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, composed.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsns(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabels(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
     Assertions.assertEquals(InsnListDiff.Operation.Type.INSERT, composed.operations.get(1).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsns(composed.operations.get(1).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabels(composed.operations.get(1).operand, new InsnNode(Opcodes.NOP)));
   }
 
   // insert -> delete
@@ -286,7 +286,7 @@ class InsnListDiffUtilsTest {
     InsnListDiff composed = InsnListDiffUtils.compose(diff1, diff2);
     Assertions.assertEquals(1, composed.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, composed.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsns(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabels(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
   }
 
   // match -> delete
@@ -301,7 +301,7 @@ class InsnListDiffUtilsTest {
     InsnListDiff composed = InsnListDiffUtils.compose(diff1, diff2);
     Assertions.assertEquals(1, composed.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.DELETE, composed.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsns(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabels(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
   }
 
   // insert -> match
@@ -316,7 +316,7 @@ class InsnListDiffUtilsTest {
     InsnListDiff composed = InsnListDiffUtils.compose(diff1, diff2);
     Assertions.assertEquals(1, composed.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.INSERT, composed.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsns(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabels(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
   }
 
   @Test
@@ -338,6 +338,6 @@ class InsnListDiffUtilsTest {
     InsnListDiff composed = InsnListDiffUtils.compose(diff1, diff2);
     Assertions.assertEquals(1, composed.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, composed.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsns(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabels(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
   }
 }

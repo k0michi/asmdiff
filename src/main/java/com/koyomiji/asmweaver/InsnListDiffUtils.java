@@ -5,6 +5,7 @@ import com.koyomiji.asmweaver.util.PeekableIterator;
 import org.objectweb.asm.tree.*;
 
 import java.util.*;
+import java.util.function.Function;
 
 public class InsnListDiffUtils {
   public static InsnListDiff invert(InsnListDiff diff) {
@@ -45,17 +46,17 @@ public class InsnListDiffUtils {
     return labels;
   }
 
-  public static boolean compareLabels(LabelNode label1, LabelNode label2, Map<LabelNode, LabelNode> labelMap) {
-    return labelMap.get(label1) == label2;
+  public static boolean compareLabels(LabelNode label1, LabelNode label2, Function<LabelNode, LabelNode> labelMap) {
+    return labelMap.apply(label1) == label2;
   }
 
-  public static boolean compareLabels(List<LabelNode> labels1, List<LabelNode> labels2, Map<LabelNode, LabelNode> labelMap) {
+  public static boolean compareLabels(List<LabelNode> labels1, List<LabelNode> labels2, Function<LabelNode, LabelNode> labelMap) {
     if (labels1.size() != labels2.size()) {
       return false;
     }
 
     for (int i = 0; i < labels1.size(); i++) {
-      if (labelMap.get(labels1.get(i)) != labels2.get(i)) {
+      if (!compareLabels(labels1.get(i), labels2.get(i), labelMap)) {
         return false;
       }
     }
@@ -63,7 +64,7 @@ public class InsnListDiffUtils {
     return true;
   }
 
-  public static boolean compareInsns(AbstractInsnNode insn1, AbstractInsnNode insn2, Map<LabelNode, LabelNode> labelMap) {
+  public static boolean compareInsns(AbstractInsnNode insn1, AbstractInsnNode insn2, Function<LabelNode, LabelNode> labelMap) {
     if (insn1.getOpcode() != insn2.getOpcode()) {
       return false;
     }
@@ -118,7 +119,7 @@ public class InsnListDiffUtils {
     } else if (insn1 instanceof LookupSwitchInsnNode && insn2 instanceof LookupSwitchInsnNode) {
       LookupSwitchInsnNode switch1 = (LookupSwitchInsnNode) insn1;
       LookupSwitchInsnNode switch2 = (LookupSwitchInsnNode) insn2;
-      return switch1.dflt == labelMap.get(switch2.dflt)
+      return compareLabels(switch1.dflt, switch2.dflt, labelMap)
               && Objects.equals(switch1.keys, switch2.keys)
               && compareLabels(switch1.labels, switch2.labels, labelMap);
     } else if (insn1 instanceof MultiANewArrayInsnNode && insn2 instanceof MultiANewArrayInsnNode) {
@@ -141,8 +142,8 @@ public class InsnListDiffUtils {
     return Objects.equals(insn1, insn2);
   }
 
-  public static boolean compareInsns(AbstractInsnNode insn1, AbstractInsnNode insn2) {
-    return compareInsns(insn1, insn2, new HashMap<>());
+  public static boolean compareInsnsIgnoreLabels(AbstractInsnNode insn1, AbstractInsnNode insn2) {
+    return compareInsns(insn1, insn2, Function.identity());
   }
 
   /**
@@ -158,7 +159,7 @@ public class InsnListDiffUtils {
     Iterator<AbstractInsnNode> iter2 = list2.iterator();
 
     while (iter1.hasNext() && iter2.hasNext()) {
-      if (!compareInsns(iter1.next(), iter2.next(), labelMap)) {
+      if (!compareInsns(iter1.next(), iter2.next(), labelMap::get)) {
         return false;
       }
     }
@@ -251,7 +252,7 @@ public class InsnListDiffUtils {
         InsnListDiff.Operation opQBase = itQ.next();
 
         // FIXME
-        if (!compareInsns(opP.operand, opQBase.operand, Collections.emptyMap())) {
+        if (!compareInsns(opP.operand, opQBase.operand, Function.identity())) {
           throw new IllegalDiffException("p and q disagree on node identity");
         }
 
@@ -321,7 +322,7 @@ public class InsnListDiffUtils {
         InsnListDiff.Operation op2 = it2.next();
 
         // FIXME:
-        if (!compareInsns(op1.operand, op2.operand, Collections.emptyMap())) {
+        if (!compareInsns(op1.operand, op2.operand, Function.identity())) {
           throw new IllegalDiffException("Diffs have different base instructions at the same position");
         }
 
@@ -407,7 +408,7 @@ public class InsnListDiffUtils {
         InsnListDiff.Operation opQ = itQ.next();
 
         // FIXME:
-        if (!compareInsns(opP.operand, opQ.operand, Collections.emptyMap())) {
+        if (!compareInsns(opP.operand, opQ.operand, Function.identity())) {
           throw new IllegalDiffException("Composition Error: Operand mismatch at B.");
         }
 
@@ -420,7 +421,7 @@ public class InsnListDiffUtils {
         int matchIndex = -1;
         for (int i = 0; i < qInsertions.size(); i++) {
           // FIXME:
-          if (compareInsns(qInsertions.get(i).operand, opP.operand, Collections.emptyMap())) {
+          if (compareInsns(qInsertions.get(i).operand, opP.operand, Function.identity())) {
             matchIndex = i;
             break;
           }
@@ -449,7 +450,7 @@ public class InsnListDiffUtils {
         InsnListDiff.Operation opQ = itQ.next();
 
         // FIXME:
-        if (!compareInsns(opP.operand, opQ.operand, Collections.emptyMap())) {
+        if (!compareInsns(opP.operand, opQ.operand, Function.identity())) {
           throw new IllegalDiffException("Composition Error: Operand mismatch at C.");
         }
 
