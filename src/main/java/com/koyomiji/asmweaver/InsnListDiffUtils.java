@@ -1,8 +1,8 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.util.BiHashMap;
-import com.koyomiji.asmweaver.util.tuple.Pair;
 import com.koyomiji.asmweaver.util.PeekableIterator;
+import com.koyomiji.asmweaver.util.tuple.Pair;
 import org.objectweb.asm.tree.*;
 
 import java.util.*;
@@ -362,14 +362,14 @@ public class InsnListDiffUtils {
     }
 
     for (InsnListDiff.Operation o : ins1) {
-        if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BETWEEN) result.add(o);
+      if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BETWEEN) result.add(o);
     }
     for (InsnListDiff.Operation o : ins2) {
       if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BETWEEN) result.add(o);
     }
 
     for (InsnListDiff.Operation o : ins1) {
-        if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BEFORE) result.add(o);
+      if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BEFORE) result.add(o);
     }
     for (InsnListDiff.Operation o : ins2) {
       if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BEFORE) result.add(o);
@@ -433,13 +433,15 @@ public class InsnListDiffUtils {
           ins2.addAll(qInsertions);
 
           result.addAll(mergeInsertionSlot(ins1, ins2));
-          ins1.clear(); ins2.clear();
+          ins1.clear();
+          ins2.clear();
 
           result.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, matchingInsert.mode, opP.operand));
         } else {
           ins2.addAll(qInsertions);
           result.addAll(mergeInsertionSlot(ins1, ins2));
-          ins1.clear(); ins2.clear();
+          ins1.clear();
+          ins2.clear();
           result.add(opP);
         }
       } else { // MATCH
@@ -456,7 +458,8 @@ public class InsnListDiffUtils {
         }
 
         result.addAll(mergeInsertionSlot(ins1, ins2));
-        ins1.clear(); ins2.clear();
+        ins1.clear();
+        ins2.clear();
 
         result.add(new InsnListDiff.Operation(opQ.type, opQ.mode, opP.operand));
       }
