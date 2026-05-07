@@ -385,4 +385,84 @@ public class InsnListDiffUtils {
 
     return insertions;
   }
+
+  public static InsnListDiff compose(InsnListDiff p, InsnListDiff q) throws ConflictException {
+    List<InsnListDiff.Operation> result = new ArrayList<>();
+
+    PeekableIterator<InsnListDiff.Operation> itP = new PeekableIterator<>(p.operations.iterator());
+    PeekableIterator<InsnListDiff.Operation> itQ = new PeekableIterator<>(q.operations.iterator());
+
+    List<InsnListDiff.Operation> ins1 = new ArrayList<>();
+    List<InsnListDiff.Operation> ins2 = new ArrayList<>();
+
+    while (itP.hasNext()) {
+      InsnListDiff.Operation opP = itP.next();
+
+      if (opP.type == InsnListDiff.Operation.Type.INSERT) {
+        ins2.addAll(collectInsertions(itQ));
+
+        if (!itQ.hasNext()) {
+          throw new IllegalDiffException("Composition Error: q is shorter than intermediate B.");
+        }
+        InsnListDiff.Operation opQ = itQ.next();
+
+        // FIXME:
+        if (!compareInsns(opP.operand, opQ.operand, Collections.emptyMap())) {
+          throw new IllegalDiffException("Composition Error: Operand mismatch at B.");
+        }
+
+        if (opQ.type == InsnListDiff.Operation.Type.MATCH) {
+          ins1.add(opP);
+        }
+      } else if (opP.type == InsnListDiff.Operation.Type.DELETE) {
+        List<InsnListDiff.Operation> qInsertions = collectInsertions(itQ);
+
+        int matchIndex = -1;
+        for (int i = 0; i < qInsertions.size(); i++) {
+          // FIXME:
+          if (compareInsns(qInsertions.get(i).operand, opP.operand, Collections.emptyMap())) {
+            matchIndex = i;
+            break;
+          }
+        }
+
+        if (matchIndex != -1) {
+          InsnListDiff.Operation matchingInsert = qInsertions.remove(matchIndex);
+          ins2.addAll(qInsertions);
+
+          result.addAll(mergeInsertionSlot(ins1, ins2));
+          ins1.clear(); ins2.clear();
+
+          result.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, matchingInsert.mode, opP.operand));
+        } else {
+          ins2.addAll(qInsertions);
+          result.addAll(mergeInsertionSlot(ins1, ins2));
+          ins1.clear(); ins2.clear();
+          result.add(opP);
+        }
+      } else { // MATCH
+        ins2.addAll(collectInsertions(itQ));
+
+        if (!itQ.hasNext()) {
+          throw new IllegalDiffException("Composition Error: q is shorter than intermediate B.");
+        }
+        InsnListDiff.Operation opQ = itQ.next();
+
+        // FIXME:
+        if (!compareInsns(opP.operand, opQ.operand, Collections.emptyMap())) {
+          throw new IllegalDiffException("Composition Error: Operand mismatch at C.");
+        }
+
+        result.addAll(mergeInsertionSlot(ins1, ins2));
+        ins1.clear(); ins2.clear();
+
+        result.add(new InsnListDiff.Operation(opQ.type, opQ.mode, opP.operand));
+      }
+    }
+
+    ins2.addAll(collectInsertions(itQ));
+    result.addAll(mergeInsertionSlot(ins1, ins2));
+
+    return new InsnListDiff(result);
+  }
 }

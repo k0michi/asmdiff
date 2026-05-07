@@ -201,4 +201,143 @@ class InsnListDiffUtilsTest {
       InsnListDiffUtils.merge(diff1, diff2);
     });
   }
+
+  // match -> match
+  @Test
+  void test_compose_0() throws ConflictException {
+    InsnListDiff diff1 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, new InsnNode(Opcodes.NOP))
+    ));
+    InsnListDiff diff2 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, new InsnNode(Opcodes.NOP))
+    ));
+    InsnListDiff composed = InsnListDiffUtils.compose(diff1, diff2);
+    Assertions.assertEquals(1, composed.operations.size());
+    Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, composed.operations.get(0).type);
+    Assertions.assertTrue(InsnListDiffUtils.compareInsns(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+  }
+
+  @Test
+  void test_compose_1() throws ConflictException {
+    InsnListDiff diff1 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, new InsnNode(Opcodes.NOP)),
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, new InsnNode(Opcodes.NOP))
+    ));
+    InsnListDiff diff2 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, new InsnNode(Opcodes.NOP))
+    ));
+    Assertions.assertThrows(IllegalDiffException.class, () -> {
+      InsnListDiffUtils.compose(diff1, diff2);
+    });
+  }
+
+  @Test
+  void test_compose_2() throws ConflictException {
+    InsnListDiff diff1 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, new InsnNode(Opcodes.NOP))
+    ));
+    InsnListDiff diff2 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, new InsnNode(Opcodes.ACONST_NULL))
+    ));
+    Assertions.assertThrows(IllegalDiffException.class, () -> {
+      InsnListDiffUtils.compose(diff1, diff2);
+    });
+  }
+
+  @Test
+  void test_compose_3() throws ConflictException {
+    InsnListDiff diff1 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, new InsnNode(Opcodes.NOP))
+    ));
+    InsnListDiff diff2 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, new InsnNode(Opcodes.NOP)),
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.NOP))
+    ));
+    InsnListDiff composed = InsnListDiffUtils.compose(diff1, diff2);
+    Assertions.assertEquals(2, composed.operations.size());
+    Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, composed.operations.get(0).type);
+    Assertions.assertTrue(InsnListDiffUtils.compareInsns(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertEquals(InsnListDiff.Operation.Type.INSERT, composed.operations.get(1).type);
+    Assertions.assertTrue(InsnListDiffUtils.compareInsns(composed.operations.get(1).operand, new InsnNode(Opcodes.NOP)));
+  }
+
+  // insert -> delete
+  @Test
+  void test_compose_4() throws ConflictException {
+    InsnListDiff diff1 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.NOP))
+    ));
+    InsnListDiff diff2 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.NOP))
+    ));
+    InsnListDiff composed = InsnListDiffUtils.compose(diff1, diff2);
+    Assertions.assertEquals(0, composed.operations.size());
+  }
+
+  // delete -> insert
+  @Test
+  void test_compose_5() throws ConflictException {
+    InsnListDiff diff1 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.NOP))
+    ));
+    InsnListDiff diff2 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.NOP))
+    ));
+    InsnListDiff composed = InsnListDiffUtils.compose(diff1, diff2);
+    Assertions.assertEquals(1, composed.operations.size());
+    Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, composed.operations.get(0).type);
+    Assertions.assertTrue(InsnListDiffUtils.compareInsns(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+  }
+
+  // match -> delete
+  @Test
+  void test_compose_6() throws ConflictException {
+    InsnListDiff diff1 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, new InsnNode(Opcodes.NOP))
+    ));
+    InsnListDiff diff2 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.NOP))
+    ));
+    InsnListDiff composed = InsnListDiffUtils.compose(diff1, diff2);
+    Assertions.assertEquals(1, composed.operations.size());
+    Assertions.assertEquals(InsnListDiff.Operation.Type.DELETE, composed.operations.get(0).type);
+    Assertions.assertTrue(InsnListDiffUtils.compareInsns(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+  }
+
+  // insert -> match
+  @Test
+  void test_compose_7() throws ConflictException {
+    InsnListDiff diff1 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.NOP))
+    ));
+    InsnListDiff diff2 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, new InsnNode(Opcodes.NOP))
+    ));
+    InsnListDiff composed = InsnListDiffUtils.compose(diff1, diff2);
+    Assertions.assertEquals(1, composed.operations.size());
+    Assertions.assertEquals(InsnListDiff.Operation.Type.INSERT, composed.operations.get(0).type);
+    Assertions.assertTrue(InsnListDiffUtils.compareInsns(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+  }
+
+  @Test
+  void test_compose_invert_0() throws ConflictException {
+    InsnListDiff diff1 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.NOP))
+    ));
+    InsnListDiff diff2 = InsnListDiffUtils.invert(diff1);
+    InsnListDiff composed = InsnListDiffUtils.compose(diff1, diff2);
+    Assertions.assertEquals(0, composed.operations.size());
+  }
+
+  @Test
+  void test_compose_invert_1() throws ConflictException {
+    InsnListDiff diff1 = new InsnListDiff(List.of(
+            new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.NOP))
+    ));
+    InsnListDiff diff2 = InsnListDiffUtils.invert(diff1);
+    InsnListDiff composed = InsnListDiffUtils.compose(diff1, diff2);
+    Assertions.assertEquals(1, composed.operations.size());
+    Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, composed.operations.get(0).type);
+    Assertions.assertTrue(InsnListDiffUtils.compareInsns(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+  }
 }
