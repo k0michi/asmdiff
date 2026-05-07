@@ -764,16 +764,6 @@ public class InsnListDiffUtils {
     return insn.getPrevious();
   }
 
-  private static AbstractInsnNode getPrevious(List<AbstractInsnNode> insns, AbstractInsnNode insn) {
-    if (insn == null) {
-      if (insns.isEmpty()) return null;
-      return insns.get(insns.size() - 1);
-    }
-    int idx = insns.indexOf(insn);
-    if (idx <= 0) return null;
-    return insns.get(idx - 1);
-  }
-
   private static void removeDeadLabels(
           State state,
           Map<LabelNode, AbstractInsnNode> lastOccurrenceMapA,
@@ -789,7 +779,7 @@ public class InsnListDiffUtils {
     var currentLabelMap = state.labelMap;
 
     // --- Process A ---
-    var prevA = getPrevious(insnsA, insnA);
+    var prevA = getOrNull(insnsA, state.idxA - 1);
     if (prevA != null) {
       var labels = getLabelTargets(prevA);
       for (var label : labels) {
@@ -811,7 +801,7 @@ public class InsnListDiffUtils {
     }
 
     // --- Process B ---
-    var prevB = getPrevious(insnsB, insnB);
+    var prevB = getOrNull(insnsB, state.idxB - 1);
     if (prevB != null) {
       var labels = getLabelTargets(prevB);
       for (var label : labels) {
