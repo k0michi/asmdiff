@@ -509,7 +509,7 @@ public class InsnListDiffUtils {
     }
   }
 
-  private static class MyersFuzzyDistanceHeuristic extends Heuristic {
+  public static class MyersFuzzyDistanceHeuristic extends Heuristic {
     private final List<AbstractInsnNode> src;
     private final List<AbstractInsnNode> dst;
     private final int n;
@@ -531,40 +531,35 @@ public class InsnListDiffUtils {
     }
 
     /**
-     * 対角線ごとに到達した最大のx座標と、そのときの距離dの履歴を管理するクラス
+     * 終端から逆向きに計算した際の到達履歴を管理するクラス
      */
     private static class DiagonalHistory {
-      // プリミティブ配列を用いることでオブジェクトのオーバーヘッドを削減
-      int[] xs = new int[4];
+      int[] us = new int[4];
       int[] ds = new int[4];
       int size = 0;
 
-      void add(int x, int d) {
-        // 単調増加性を保証（既に同じかそれ以上のxに到達済みの場合は記録しない）
-        if (size > 0 && xs[size - 1] >= x) {
+      void add(int u, int d) {
+        if (size > 0 && us[size - 1] >= u) {
           return;
         }
-        if (size == xs.length) {
-          xs = Arrays.copyOf(xs, size * 2);
+        if (size == us.length) {
+          us = Arrays.copyOf(us, size * 2);
           ds = Arrays.copyOf(ds, size * 2);
         }
-        xs[size] = x;
+        us[size] = u;
         ds[size] = d;
         size++;
       }
 
-      /**
-       * 指定されたx以上に到達した最初のdを二分探索で取得する
-       */
-      int getD(int targetX) {
+      int getD(int targetU) {
         int left = 0;
         int right = size - 1;
         int ans = -1;
         while (left <= right) {
           int mid = (left + right) >>> 1;
-          if (xs[mid] >= targetX) {
+          if (us[mid] >= targetU) {
             ans = ds[mid];
-            right = mid - 1; // 最小のdを探すためさらに左を探索
+            right = mid - 1;
           } else {
             left = mid + 1;
           }
@@ -573,63 +568,62 @@ public class InsnListDiffUtils {
       }
     }
 
-    /**
-     * 座標 (targetX, targetY) までの最小編集距離を遅延計算で取得する
-     */
+    @Override
     public int calculate(int targetX, int targetY, BiHashMap<LabelNode, LabelNode> labelMap) {
       if (targetX < 0 || targetY < 0 || targetX > n || targetY > m) {
         throw new IndexOutOfBoundsException();
       }
 
-      int targetK = targetX - targetY;
+      // 元のFuzzyDistanceHeuristicに合わせるため、終端 (n, m) を始点 (0, 0) とみなす座標変換
+      int targetU = n - targetX;
+      int targetW = m - targetY;
+      int targetK = targetU - targetW;
+
       DiagonalHistory hist = historyMap.get(targetK);
       if (hist != null) {
-        int d = hist.getD(targetX);
+        int d = hist.getD(targetU);
         if (d != -1) {
-          return d; // 既に計算済みの履歴があればそれを返す
+          return d;
         }
       }
 
-      // 目的の座標が埋まるまでMyersを回す
       while (currentD < n + m) {
         currentD++;
         boolean targetReachedInCurrentD = false;
 
         for (int k = -currentD; k <= currentD; k += 2) {
-          int x;
+          int u; // 逆向きのX座標（終端からの距離）
           int vPrev = v.getOrDefault(k - 1, -1);
           int vNext = v.getOrDefault(k + 1, -1);
 
           if (k == -currentD || (k != currentD && vPrev < vNext)) {
-            x = vNext; // 削除経由
+            u = vNext;
           } else {
-            x = vPrev + 1; // 挿入経由
+            u = vPrev + 1;
           }
 
-          int y = x - k;
+          int w = u - k; // 逆向きのY座標
 
           // スネーク（一致移動）を処理
-          while (x < n && y < m && compareInsnsIgnoreLabels(src.get(x), dst.get(y))) {
-            x++;
-            y++;
+          // 配列の後ろ（n-1, m-1）から前へ向かって比較する
+          while (u < n && w < m && compareInsnsIgnoreLabels(src.get(n - 1 - u), dst.get(m - 1 - w))) {
+            u++;
+            w++;
           }
-          v.put(k, x);
+          v.put(k, u);
 
-          // 対角線上の有効な最大xを算出して履歴に記録
-          int maxXForK = Math.min(n, m + k);
-          int recordX = Math.min(x, maxXForK);
-          if (recordX >= 0) {
+          int maxUForK = Math.min(n, m + k);
+          int recordU = Math.min(u, maxUForK);
+          if (recordU >= 0) {
             DiagonalHistory h = historyMap.computeIfAbsent(k, key -> new DiagonalHistory());
-            h.add(recordX, currentD);
+            h.add(recordU, currentD);
           }
 
-          // このイテレーションでターゲットに到達したか確認
-          if (k == targetK && recordX >= targetX) {
+          if (k == targetK && recordU >= targetU) {
             targetReachedInCurrentD = true;
           }
         }
 
-        // DPの整合性を保つため、同じdに対するkのループがすべて完了してからreturnする
         if (targetReachedInCurrentD) {
           return currentD;
         }
