@@ -6,6 +6,13 @@ public class BiHashMap<K, V> {
   private final Map<K, V> forwardMap = new HashMap<>();
   private final Map<V, K> reverseMap = new HashMap<>();
 
+  public BiHashMap() {}
+
+  public BiHashMap(BiHashMap<K, V> other) {
+    this.forwardMap.putAll(other.forwardMap);
+    this.reverseMap.putAll(other.reverseMap);
+  }
+
   public boolean canPut(K key, V value) {
     if (forwardMap.containsKey(key)) {
       V existingValue = forwardMap.get(key);
@@ -57,5 +64,17 @@ public class BiHashMap<K, V> {
   @Override
   public String toString() {
     return forwardMap.toString();
+  }
+
+  public HashMap<K, V> forwardMap() {
+    return new HashMap<>(forwardMap);
+  }
+
+  public HashMap<V, K> reverseMap() {
+    return new HashMap<>(reverseMap);
+  }
+
+  public int size() {
+    return forwardMap.size();
   }
 }

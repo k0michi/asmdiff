@@ -3,11 +3,15 @@ package com.koyomiji.asmweaver;
 import com.koyomiji.asmweaver.util.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.InsnNode;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 class InsnListDiffUtilsTest {
   @Test
@@ -339,5 +343,79 @@ class InsnListDiffUtilsTest {
     Assertions.assertEquals(1, composed.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, composed.operations.get(0).type);
     Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabels(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+  }
+
+  @Test
+  void test_diff_0() {
+    InsnList list1 = new InsnList();
+    list1.add(new InsnNode(Opcodes.NOP));
+    InsnList list2 = new InsnList();
+    list2.add(new InsnNode(Opcodes.NOP));
+    InsnListDiff diff = InsnListDiffUtils.diff(
+            new InsnListListAdapter(list1),
+            new InsnListListAdapter(list2)
+    );
+    Assertions.assertEquals(1, diff.operations.size());
+    Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, diff.operations.get(0).type);
+    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabels(diff.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+  }
+
+  @Test
+  void test_diff_1() {
+    InsnList list1 = new InsnList();
+    list1.add(new InsnNode(Opcodes.NOP));
+    InsnList list2 = new InsnList();
+    list2.add(new InsnNode(Opcodes.ACONST_NULL));
+    InsnListDiff diff = InsnListDiffUtils.diff(
+            new InsnListListAdapter(list1),
+            new InsnListListAdapter(list2)
+    );
+    Assertions.assertEquals(2, diff.operations.size());
+    Assertions.assertEquals(InsnListDiff.Operation.Type.DELETE, diff.operations.get(0).type);
+    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabels(diff.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertEquals(InsnListDiff.Operation.Type.INSERT, diff.operations.get(1).type);
+    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabels(diff.operations.get(1).operand, new InsnNode(Opcodes.ACONST_NULL)));
+  }
+
+  @Test
+  void test_diff_2() {
+    InsnList list1 = new InsnList();
+    list1.add(new InsnNode(Opcodes.NOP));
+    list1.add(new InsnNode(Opcodes.NOP));
+    InsnList list2 = new InsnList();
+    list2.add(new InsnNode(Opcodes.NOP));
+    InsnListDiff diff = InsnListDiffUtils.diff(
+            new InsnListListAdapter(list1),
+            new InsnListListAdapter(list2)
+    );
+    Assertions.assertEquals(2, diff.operations.size());
+    Assertions.assertEquals(InsnListDiff.Operation.Type.DELETE, diff.operations.get(0).type);
+    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabels(diff.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, diff.operations.get(1).type);
+    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabels(diff.operations.get(1).operand, new InsnNode(Opcodes.NOP)));
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1, 10, 100, 1000, 10000, 100000})
+  @Timeout(value = 5, unit = TimeUnit.SECONDS)
+  void test_diff_3(int numInsns) {
+    InsnList list1 = new InsnList();
+    for (int i = 0; i < numInsns; i++) {
+      list1.add(new InsnNode(Opcodes.NOP));
+    }
+    InsnList list2 = new InsnList();
+//    list2.add(new InsnNode(Opcodes.NOP));
+    for (int i = 0; i < numInsns; i++) {
+      list2.add(new InsnNode(Opcodes.NOP));
+    }
+    InsnListDiff diff = InsnListDiffUtils.diff(
+            new InsnListListAdapter(list1),
+            new InsnListListAdapter(list2)
+    );
+    Assertions.assertEquals(numInsns, diff.operations.size());
+    for (int i = 0; i < numInsns; i++) {
+      Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, diff.operations.get(i).type);
+      Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabels(diff.operations.get(i).operand, new InsnNode(Opcodes.NOP)));
+    }
   }
 }

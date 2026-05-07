@@ -472,7 +472,7 @@ public class InsnListDiffUtils {
   }
 
   private static abstract class Heuristic {
-    public abstract int calculate(int indexA, int indexB, BiHashMap<AbstractInsnNode, AbstractInsnNode> labels);
+    public abstract int calculate(int indexA, int indexB, BiHashMap<LabelNode, LabelNode> labelMap);
   }
 
   private static class FuzzyDistanceHeuristic extends Heuristic {
@@ -504,8 +504,497 @@ public class InsnListDiffUtils {
     }
 
     @Override
-    public int calculate(int indexA, int indexB, BiHashMap<AbstractInsnNode, AbstractInsnNode> labels) {
+    public int calculate(int indexA, int indexB, BiHashMap<LabelNode, LabelNode> labelMap) {
       return table[indexA][indexB];
     }
+  }
+
+  private static class MyersFuzzyDistanceHeuristic extends Heuristic {
+    private final List<AbstractInsnNode> src;
+    private final List<AbstractInsnNode> dst;
+    private final int n;
+    private final int m;
+
+    // DPテーブル: key = (x << 32 | y), value = 距離d
+    private final Map<Long, Integer> dpTable = new HashMap<>();
+
+    // Myersの状態管理
+    private final Map<Integer, Integer> v = new HashMap<>();
+    private int currentD = -1;
+
+    public MyersFuzzyDistanceHeuristic(List<AbstractInsnNode> src, List<AbstractInsnNode> dst) {
+      this.src = src;
+      this.dst = dst;
+      this.n = src.size();
+      this.m = dst.size();
+      this.v.put(1, 0); // 初期値
+    }
+
+    /**
+     * 座標 (targetX, targetY) までの最小編集距離を遅延計算で取得する
+     */
+//    public int getDistance(int targetX, int targetY) {
+    public int calculate(int targetX, int targetY, BiHashMap<LabelNode, LabelNode> labelMap) {
+      System.out.println("Calculating heuristic for (" + targetX + ", " + targetY + ") with currentD = " + currentD);
+      if (targetX < 0 || targetY < 0 || targetX > n || targetY > m) {
+        throw new IndexOutOfBoundsException();
+      }
+
+      long targetKey = pack(targetX, targetY);
+      if (dpTable.containsKey(targetKey)) {
+        return dpTable.get(targetKey);
+      }
+
+      // 目的の座標が埋まるまでMyersを回す
+      while (currentD < n + m) {
+        currentD++;
+
+        for (int k = -currentD; k <= currentD; k += 2) {
+          int x;
+          int vPrev = v.getOrDefault(k - 1, -1);
+          int vNext = v.getOrDefault(k + 1, -1);
+
+          if (k == -currentD || (k != currentD && vPrev < vNext)) {
+            x = vNext; // 削除経由
+          } else {
+            x = vPrev + 1; // 挿入経由
+          }
+
+          int y = x - k;
+
+          // スネーク（一致移動）を処理してテーブルを埋める
+          x = traverseSnake(x, y, currentD);
+          v.put(k, x);
+
+          if (dpTable.containsKey(targetKey)) {
+            return currentD;
+          }
+        }
+      }
+      return -1;
+    }
+
+    private int traverseSnake(int x, int y, int d) {
+      // 移動直後の座標を記録
+      recordDp(x, y, d);
+
+      // 一致する限りコスト0で進む
+//      while (x < n && y < m && src.get(x).equals(dst.get(y))) {
+      while (x < n && y < m && compareInsnsIgnoreLabels(src.get(x), dst.get(y))) {
+        x++;
+        y++;
+        recordDp(x, y, d);
+      }
+      return x;
+    }
+
+    private void recordDp(int x, int y, int d) {
+      if (x >= 0 && y >= 0 && x <= n && y <= m) {
+        long key = pack(x, y);
+        // 既に値がある場合は、BFSの性質上それが最小値なので上書きしない
+        dpTable.putIfAbsent(key, d);
+      }
+    }
+
+    private long pack(int x, int y) {
+      return ((long) x << 32) | (y & 0xFFFFFFFFL);
+    }
+  }
+
+  public static class State implements Comparable<State> {
+    final int idxA;
+    final int idxB;
+    final int g;
+    final int h; // Heuristic
+
+    // Mapping from labels in A to labels in B
+//    Map<LabelNode, LabelNode> aToB;
+//    Map<LabelNode, LabelNode> bToA;
+    BiHashMap<LabelNode, LabelNode> labelMap;
+
+    final List<InsnListDiff.Operation> operations;
+
+    public State(int idxA, int idxB, int g, int h,
+                 BiHashMap<LabelNode, LabelNode> labelMap,
+                 List<InsnListDiff.Operation> operations) {
+      this.idxA = idxA;
+      this.idxB = idxB;
+      this.g = g;
+      this.h = h;
+      this.labelMap = labelMap;
+      this.operations = operations;
+    }
+
+    public static State create(int idxA, int idxB, BiHashMap<LabelNode, LabelNode> labelMap, List<InsnListDiff.Operation> operations, Heuristic heuristicProvider) {
+      int h = heuristicProvider.calculate(idxA, idxB, labelMap);
+      int g = 0;
+
+      for (InsnListDiff.Operation op : operations) {
+        if (op.type == InsnListDiff.Operation.Type.INSERT || op.type == InsnListDiff.Operation.Type.DELETE) {
+          g++;
+        }
+      }
+
+//      return new State(idxA, idxB, h, labelMap, operations);
+      return new State(idxA, idxB, g, h, labelMap, operations);
+    }
+
+    public int g() {
+      return g;
+    }
+
+    public int f() {
+      return g() + h;
+    }
+
+    public int getDistance() {
+      return g();
+    }
+
+    public List<InsnListDiff.Operation> getOperations() {
+      return operations;
+    }
+
+    @Override
+    public int compareTo(State o) {
+      return Integer.compare(this.f(), o.f());
+    }
+  }
+
+  public static class StateKey {
+    public final int idxA;
+    public final int idxB;
+    public final Map<LabelNode, LabelNode> aToB;
+
+    public StateKey(int idxA, int idxB, Map<LabelNode, LabelNode> aToB) {
+      this.idxA = idxA;
+      this.idxB = idxB;
+      this.aToB = aToB;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      StateKey stateKey = (StateKey) o;
+      return idxA == stateKey.idxA && idxB == stateKey.idxB && Objects.equals(aToB, stateKey.aToB);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(idxA, idxB, aToB);
+    }
+  }
+
+  private static ArrayList<InsnListDiff.Operation> concat(
+          List<InsnListDiff.Operation> ops,
+          InsnListDiff.Operation op
+  ) {
+    var newOps = new ArrayList<>(ops);
+    newOps.add(op);
+    return newOps;
+  }
+
+  private static AbstractInsnNode getOrNull(AbstractInsnNode[] arr, int idx) {
+    if (idx < 0 || idx >= arr.length) return null;
+    return arr[idx];
+  }
+
+  private static AbstractInsnNode getOrNull(InsnList insns, int idx) {
+    if (idx < 0 || idx >= insns.size()) return null;
+    return insns.get(idx);
+  }
+
+  private static AbstractInsnNode getOrNull(List<AbstractInsnNode> insns, int idx) {
+    if (idx < 0 || idx >= insns.size()) return null;
+    return insns.get(idx);
+  }
+
+  private static Map<LabelNode, AbstractInsnNode> lastLabelOccurrenceMap(AbstractInsnNode[] arr) {
+    Map<LabelNode, AbstractInsnNode> map = new HashMap<>();
+
+    for (AbstractInsnNode insn : arr) {
+      var labels = getLabelTargets(insn);
+
+      for (var label : labels) {
+        map.put(label, insn);
+      }
+    }
+
+    return map;
+  }
+
+  private static AbstractInsnNode getPrevious(InsnList insns, AbstractInsnNode insn) {
+    if (insn == null) return insns.getLast();
+    return insn.getPrevious();
+  }
+
+  private static AbstractInsnNode getPrevious(List<AbstractInsnNode> insns, AbstractInsnNode insn) {
+    if (insn == null) return insns.get(insns.size() - 1);
+    int idx = insns.indexOf(insn);
+    if (idx <= 0) return null;
+    return insns.get(idx - 1);
+  }
+
+  private static void removeDeadLabels(
+          State state,
+          Map<LabelNode, AbstractInsnNode> lastOccurrenceMapA,
+          Map<LabelNode, AbstractInsnNode> lastOccurrenceMapB,
+//          InsnList insnsA,
+//          InsnList insnsB
+          List<AbstractInsnNode> insnsA,
+          List<AbstractInsnNode> insnsB
+  ) {
+    var insnA = getOrNull(insnsA, state.idxA);
+    var insnB = getOrNull(insnsB, state.idxB);
+
+    var prevA = getPrevious(insnsA, insnA);
+
+    if (prevA != null) {
+      var labels = getLabelTargets(prevA);
+
+      for (var label : labels) {
+        if (lastOccurrenceMapA.get(label) == prevA) {
+//          var mappedB = state.aToB.get(label);
+          var mappedB = state.labelMap.get(label);
+
+          if (mappedB != null) {
+            var lastOccInsnB = lastOccurrenceMapB.get(mappedB);
+
+            if (insnsB.indexOf(lastOccInsnB) < state.idxB) {
+              // TODO: Avoid copy
+              state.labelMap = new BiHashMap<>(state.labelMap);
+              state.labelMap.remove(label);
+            }
+          }
+        }
+      }
+    }
+
+    var prevB = getPrevious(insnsB, insnB);
+
+    if (prevB != null) {
+      var labels = getLabelTargets(prevB);
+
+      for (var label : labels) {
+        if (lastOccurrenceMapB.get(label) == prevB) {
+//          var mappedA = state.bToA.get(label);
+          var mappedA = state.labelMap.getKey(label);
+
+          if (mappedA != null) {
+            var lastOccInsnA = lastOccurrenceMapA.get(mappedA);
+
+            if (insnsA.indexOf(lastOccInsnA) < state.idxA) {
+//              state.aToB = new HashMap<>(state.aToB);
+//              state.bToA = new HashMap<>(state.bToA);
+//              state.bToA.remove(label);
+//              state.aToB.remove(mappedA);
+              state.labelMap = new BiHashMap<>(state.labelMap);
+              state.labelMap.remove(mappedA);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  public static List<LabelNode> getLabelTargets(AbstractInsnNode insn) {
+    List<LabelNode> targets = new ArrayList<>();
+
+    if (insn instanceof JumpInsnNode) {
+      targets.add(((JumpInsnNode) insn).label);
+    } else if (insn instanceof LabelNode) {
+      targets.add((LabelNode) insn);
+    } else if (insn instanceof TableSwitchInsnNode) {
+      TableSwitchInsnNode tsw = (TableSwitchInsnNode) insn;
+      targets.add(tsw.dflt);
+      targets.addAll(tsw.labels);
+    } else if (insn instanceof LookupSwitchInsnNode) {
+      LookupSwitchInsnNode lsw = (LookupSwitchInsnNode) insn;
+      targets.add(lsw.dflt);
+      targets.addAll(lsw.labels);
+    }
+
+    // FIXME: Non-standard
+    return targets;
+  }
+
+  public static InsnListDiff diff(List<AbstractInsnNode> listA, List<AbstractInsnNode> listB) {
+//    AbstractInsnNode[] insnsA = listA.toArray();
+//    AbstractInsnNode[] insnsB = listB.toArray();
+    AbstractInsnNode[] insnsA = listA.toArray(new AbstractInsnNode[0]);
+    AbstractInsnNode[] insnsB = listB.toArray(new AbstractInsnNode[0]);
+
+    var heuristicProvider = new MyersFuzzyDistanceHeuristic(listA, listB);
+//    var heuristicProvider = new FuzzyDistanceHeuristic(listA, listB);
+
+    PriorityQueue<State> pq = new PriorityQueue<>();
+    Map<StateKey, Integer> visited = new HashMap<>();
+
+    var lastOccurrenceA = lastLabelOccurrenceMap(insnsA);
+    var lastOccurrenceB = lastLabelOccurrenceMap(insnsB);
+
+    // Initial state
+    {
+      var nextRealIdxA = 0;
+      var nextRealIdxB = 0;
+
+      tryAdd(pq, visited,
+              State.create(
+                      nextRealIdxA, nextRealIdxB,
+                      new BiHashMap<>(), new ArrayList<>(),
+                      heuristicProvider
+              )
+      );
+    }
+
+    int j = 0;
+
+    while (!pq.isEmpty()) {
+      State current = pq.poll();
+
+      if (current.idxA >= insnsA.length && current.idxB >= insnsB.length) {
+        return new InsnListDiff(current.operations);
+      }
+
+      var currentKey = new StateKey(current.idxA, current.idxB, current.labelMap.forwardMap());
+      if (visited.containsKey(currentKey) && visited.get(currentKey) < current.g()) {
+        continue;
+      }
+
+      if (j++ % 100000 == 0) {
+//        Logger.getInstance().log(
+        System.out.println(
+                String.format("State: idxA=%d, idxB=%d, g=%d, h=%d, f=%d, ops=%d",
+                        current.idxA, current.idxB,
+                        current.g(), current.h, current.f(),
+                        current.operations.size()
+                )
+        );
+        System.out.println(
+                String.format("  aToB mappings: %d", current.labelMap.size())
+        );
+        System.out.println(
+                String.format("  queue size: %d, visited size: %d",
+                        pq.size(), visited.size()
+                )
+        );
+        System.out.println(
+                String.format("  iteration: %d", j)
+        );
+      }
+
+      // Transition 1: Delete (consumes A)
+      if (current.idxA < insnsA.length) {
+        var nextRealIdxA = current.idxA + 1;
+
+        var state = State.create(
+                nextRealIdxA, current.idxB,
+//                heuristicProvider.calculate(nextRealIdxA, current.idxB),
+                current.labelMap,
+                concat(
+                        current.operations,
+//                        new Operation(Operation.Type.DELETE, insnsA[current.idxA], getOrNull(insnsB, current.idxB))
+                        new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, InsnListDiff.Operation.Mode.BETWEEN, insnsA[current.idxA])
+                ),
+                heuristicProvider
+        );
+//        removeLastLabels(state, lastOccurrenceA, insnsA[current.idxA]);
+        removeDeadLabels(state, lastOccurrenceA, lastOccurrenceB, listA, listB);
+        tryAdd(pq, visited, state);
+      }
+
+      // Transition 2: Insert (consumes B)
+      if (current.idxB < insnsB.length) {
+        var nextRealIdxB = current.idxB + 1;
+
+        var state = State.create(
+                current.idxA, nextRealIdxB,
+//                calcHeuristic(current.idxA, nextRealIdxB, insnsA, insnsB),
+//                heuristicProvider.calculate(current.idxA, nextRealIdxB),
+//                current.aToB, current.bToA,
+                current.labelMap,
+                concat(
+                        current.operations,
+//                        new Operation(Operation.Type.INSERT, getOrNull(insnsA, current.idxA), insnsB[current.idxB])
+                        new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, InsnListDiff.Operation.Mode.BETWEEN, insnsB[current.idxB])
+
+                ),
+                heuristicProvider
+        );
+        removeDeadLabels(state, lastOccurrenceA, lastOccurrenceB, listA, listB);
+        tryAdd(pq, visited, state);
+      }
+
+      // Transition 3: Match (consumes both A and B)
+      match:
+      if (current.idxA < insnsA.length && current.idxB < insnsB.length) {
+        AbstractInsnNode insnA = insnsA[current.idxA];
+        AbstractInsnNode insnB = insnsB[current.idxB];
+
+        List<LabelNode> targetsA = getLabelTargets(insnA);
+        List<LabelNode> targetsB = getLabelTargets(insnB);
+
+        // TODO: local
+//        boolean contentMatch = areNonLabelPropsEqual(insnA, insnB, listA, listB);
+        boolean contentMatch = compareInsnsIgnoreLabels(insnA, insnB);
+
+        // Having different number of target labels implies mismatch
+        if (targetsA.size() != targetsB.size()) {
+          contentMatch = false;
+        }
+
+        var nextRealIdxA = current.idxA + 1;
+        var nextRealIdxB = current.idxB + 1;
+
+        if (contentMatch) {
+//          Map<LabelNode, LabelNode> newAToB = new HashMap<>(current.aToB);
+//          Map<LabelNode, LabelNode> newBToA = new HashMap<>(current.bToA);
+          BiHashMap<LabelNode, LabelNode> newAToB = new BiHashMap<>(current.labelMap);
+
+          for (int i = 0; i < targetsA.size(); i++) {
+//            if (!canAddBijection(newAToB, newBToA, targetsA.get(i), targetsB.get(i))) {
+            if (!newAToB.canPut(targetsA.get(i), targetsB.get(i))) {
+              break match;
+            }
+
+//            addBijection(newAToB, newBToA, targetsA.get(i), targetsB.get(i));
+            newAToB.put(targetsA.get(i), targetsB.get(i));
+          }
+
+          var state = State.create(
+                  nextRealIdxA, nextRealIdxB,
+//                  heuristicProvider.calculate(nextRealIdxA, nextRealIdxB),
+//                  calcHeuristic(nextRealIdxA, nextRealIdxB, insnsA, insnsB),
+//                  newAToB, newBToA,
+                  newAToB,
+//                  current.operations,
+                  concat(
+                          current.operations,
+                          new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, insnA)
+                  ),
+                  heuristicProvider
+          );
+//          removeLastLabels(state, lastOccurrenceA, insnA);
+          removeDeadLabels(state, lastOccurrenceA, lastOccurrenceB, listA, listB);
+          tryAdd(pq, visited, state);
+        }
+      }
+    }
+    throw new IllegalStateException("Unreachable");
+  }
+
+  private static void tryAdd(PriorityQueue<State> pq, Map<StateKey, Integer> visited, State newState) {
+    var newStateKey = new StateKey(newState.idxA, newState.idxB, newState.labelMap.forwardMap());
+
+    if (visited.containsKey(newStateKey)) {
+      int prevG = visited.get(newStateKey);
+      if (prevG <= newState.g()) {
+        return;
+      }
+    }
+
+    visited.put(newStateKey, newState.g());
+    pq.add(newState);
   }
 }
