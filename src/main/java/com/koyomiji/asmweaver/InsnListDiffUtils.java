@@ -515,8 +515,8 @@ public class InsnListDiffUtils {
     private final int n;
     private final int m;
 
-    // DPテーブル: key = (x << 32 | y), value = 距離d
-    private final Map<Long, Integer> dpTable = new HashMap<>();
+    // 対角線ごとの到達履歴を保持する: key = k, value = DiagonalHistory
+    private final Map<Integer, DiagonalHistory> historyMap = new HashMap<>();
 
     // Myersの状態管理
     private final Map<Integer, Integer> v = new HashMap<>();
@@ -531,23 +531,69 @@ public class InsnListDiffUtils {
     }
 
     /**
+     * 対角線ごとに到達した最大のx座標と、そのときの距離dの履歴を管理するクラス
+     */
+    private static class DiagonalHistory {
+      // プリミティブ配列を用いることでオブジェクトのオーバーヘッドを削減
+      int[] xs = new int[4];
+      int[] ds = new int[4];
+      int size = 0;
+
+      void add(int x, int d) {
+        // 単調増加性を保証（既に同じかそれ以上のxに到達済みの場合は記録しない）
+        if (size > 0 && xs[size - 1] >= x) {
+          return;
+        }
+        if (size == xs.length) {
+          xs = Arrays.copyOf(xs, size * 2);
+          ds = Arrays.copyOf(ds, size * 2);
+        }
+        xs[size] = x;
+        ds[size] = d;
+        size++;
+      }
+
+      /**
+       * 指定されたx以上に到達した最初のdを二分探索で取得する
+       */
+      int getD(int targetX) {
+        int left = 0;
+        int right = size - 1;
+        int ans = -1;
+        while (left <= right) {
+          int mid = (left + right) >>> 1;
+          if (xs[mid] >= targetX) {
+            ans = ds[mid];
+            right = mid - 1; // 最小のdを探すためさらに左を探索
+          } else {
+            left = mid + 1;
+          }
+        }
+        return ans;
+      }
+    }
+
+    /**
      * 座標 (targetX, targetY) までの最小編集距離を遅延計算で取得する
      */
-//    public int getDistance(int targetX, int targetY) {
     public int calculate(int targetX, int targetY, BiHashMap<LabelNode, LabelNode> labelMap) {
-      System.out.println("Calculating heuristic for (" + targetX + ", " + targetY + ") with currentD = " + currentD);
       if (targetX < 0 || targetY < 0 || targetX > n || targetY > m) {
         throw new IndexOutOfBoundsException();
       }
 
-      long targetKey = pack(targetX, targetY);
-      if (dpTable.containsKey(targetKey)) {
-        return dpTable.get(targetKey);
+      int targetK = targetX - targetY;
+      DiagonalHistory hist = historyMap.get(targetK);
+      if (hist != null) {
+        int d = hist.getD(targetX);
+        if (d != -1) {
+          return d; // 既に計算済みの履歴があればそれを返す
+        }
       }
 
       // 目的の座標が埋まるまでMyersを回す
       while (currentD < n + m) {
         currentD++;
+        boolean targetReachedInCurrentD = false;
 
         for (int k = -currentD; k <= currentD; k += 2) {
           int x;
@@ -562,42 +608,33 @@ public class InsnListDiffUtils {
 
           int y = x - k;
 
-          // スネーク（一致移動）を処理してテーブルを埋める
-          x = traverseSnake(x, y, currentD);
+          // スネーク（一致移動）を処理
+          while (x < n && y < m && compareInsnsIgnoreLabels(src.get(x), dst.get(y))) {
+            x++;
+            y++;
+          }
           v.put(k, x);
 
-          if (dpTable.containsKey(targetKey)) {
-            return currentD;
+          // 対角線上の有効な最大xを算出して履歴に記録
+          int maxXForK = Math.min(n, m + k);
+          int recordX = Math.min(x, maxXForK);
+          if (recordX >= 0) {
+            DiagonalHistory h = historyMap.computeIfAbsent(k, key -> new DiagonalHistory());
+            h.add(recordX, currentD);
           }
+
+          // このイテレーションでターゲットに到達したか確認
+          if (k == targetK && recordX >= targetX) {
+            targetReachedInCurrentD = true;
+          }
+        }
+
+        // DPの整合性を保つため、同じdに対するkのループがすべて完了してからreturnする
+        if (targetReachedInCurrentD) {
+          return currentD;
         }
       }
       return -1;
-    }
-
-    private int traverseSnake(int x, int y, int d) {
-      // 移動直後の座標を記録
-      recordDp(x, y, d);
-
-      // 一致する限りコスト0で進む
-//      while (x < n && y < m && src.get(x).equals(dst.get(y))) {
-      while (x < n && y < m && compareInsnsIgnoreLabels(src.get(x), dst.get(y))) {
-        x++;
-        y++;
-        recordDp(x, y, d);
-      }
-      return x;
-    }
-
-    private void recordDp(int x, int y, int d) {
-      if (x >= 0 && y >= 0 && x <= n && y <= m) {
-        long key = pack(x, y);
-        // 既に値がある場合は、BFSの性質上それが最小値なので上書きしない
-        dpTable.putIfAbsent(key, d);
-      }
-    }
-
-    private long pack(int x, int y) {
-      return ((long) x << 32) | (y & 0xFFFFFFFFL);
     }
   }
 
@@ -968,11 +1005,11 @@ public class InsnListDiffUtils {
 //                  calcHeuristic(nextRealIdxA, nextRealIdxB, insnsA, insnsB),
 //                  newAToB, newBToA,
                   newAToB,
-//                  current.operations,
-                  concat(
-                          current.operations,
-                          new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, insnA)
-                  ),
+                  current.operations,
+//                  concat(
+//                          current.operations,
+//                          new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, insnA)
+//                  ),
                   heuristicProvider
           );
 //          removeLastLabels(state, lastOccurrenceA, insnA);
