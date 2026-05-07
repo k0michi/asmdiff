@@ -837,6 +837,8 @@ public class InsnListDiffUtils {
       LookupSwitchInsnNode lsw = (LookupSwitchInsnNode) insn;
       targets.add(lsw.dflt);
       targets.addAll(lsw.labels);
+    } else if (insn instanceof LineNumberNode) {
+      targets.add(((LineNumberNode) insn).start);
     }
 
     // FIXME: Non-standard
