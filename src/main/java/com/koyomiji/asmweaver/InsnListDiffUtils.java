@@ -839,9 +839,10 @@ public class InsnListDiffUtils {
       targets.addAll(lsw.labels);
     } else if (insn instanceof LineNumberNode) {
       targets.add(((LineNumberNode) insn).start);
+    } else if (insn instanceof IHasLabelNodes) {
+      targets.addAll(((IHasLabelNodes) insn).getLabels());
     }
 
-    // FIXME: Non-standard
     return targets;
   }
 
