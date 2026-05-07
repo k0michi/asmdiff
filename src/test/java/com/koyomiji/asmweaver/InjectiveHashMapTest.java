@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 
 class InjectiveHashMapTest {
   @Test
-  void testPut() {
+  void test_put() {
     var map = new InjectiveHashMap<String, Integer>();
     map.put("a", 1);
     map.put("b", 2);
@@ -15,7 +15,7 @@ class InjectiveHashMapTest {
   }
 
   @Test
-  void testPutDuplicateValue() {
+  void test_putDuplicateValue() {
     var map = new InjectiveHashMap<String, Integer>();
     map.put("a", 1);
     Assertions.assertThrows(IllegalArgumentException.class, () -> {
@@ -24,7 +24,7 @@ class InjectiveHashMapTest {
   }
 
   @Test
-  void testRemove() {
+  void test_remove() {
     var map = new InjectiveHashMap<String, Integer>();
     map.put("a", 1);
     map.put("b", 2);
