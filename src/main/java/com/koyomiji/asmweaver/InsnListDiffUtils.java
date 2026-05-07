@@ -765,7 +765,10 @@ public class InsnListDiffUtils {
   }
 
   private static AbstractInsnNode getPrevious(List<AbstractInsnNode> insns, AbstractInsnNode insn) {
-    if (insn == null) return insns.get(insns.size() - 1);
+    if (insn == null) {
+      if (insns.isEmpty()) return null;
+      return insns.get(insns.size() - 1);
+    }
     int idx = insns.indexOf(insn);
     if (idx <= 0) return null;
     return insns.get(idx - 1);
@@ -781,47 +784,57 @@ public class InsnListDiffUtils {
     var insnA = getOrNull(insnsA, state.idxA);
     var insnB = getOrNull(insnsB, state.idxB);
 
-    var prevA = getPrevious(insnsA, insnA);
+    // 実際に変更があったかどうかを追跡
+    boolean isCopied = false;
+    var currentLabelMap = state.labelMap;
 
+    // --- Process A ---
+    var prevA = getPrevious(insnsA, insnA);
     if (prevA != null) {
       var labels = getLabelTargets(prevA);
-
       for (var label : labels) {
         if (lastOccurrenceMapA.get(label) == prevA) {
-          var mappedB = state.labelMap.get(label);
-
+          var mappedB = currentLabelMap.get(label);
           if (mappedB != null) {
             var lastOccInsnB = lastOccurrenceMapB.get(mappedB);
-
             if (insnsB.indexOf(lastOccInsnB) < state.idxB) {
-              // TODO: Avoid copy
-              state.labelMap = new BiHashMap<>(state.labelMap);
-              state.labelMap.remove(label);
+              // 初回変更時のみコピーを作成
+              if (!isCopied) {
+                currentLabelMap = new BiHashMap<>(currentLabelMap);
+                isCopied = true;
+              }
+              currentLabelMap.remove(label);
             }
           }
         }
       }
     }
 
+    // --- Process B ---
     var prevB = getPrevious(insnsB, insnB);
-
     if (prevB != null) {
       var labels = getLabelTargets(prevB);
-
       for (var label : labels) {
         if (lastOccurrenceMapB.get(label) == prevB) {
-          var mappedA = state.labelMap.getKey(label);
-
+          var mappedA = currentLabelMap.getKey(label);
           if (mappedA != null) {
             var lastOccInsnA = lastOccurrenceMapA.get(mappedA);
-
             if (insnsA.indexOf(lastOccInsnA) < state.idxA) {
-              state.labelMap = new BiHashMap<>(state.labelMap);
-              state.labelMap.remove(mappedA);
+              // 初回変更時のみコピーを作成
+              if (!isCopied) {
+                currentLabelMap = new BiHashMap<>(currentLabelMap);
+                isCopied = true;
+              }
+              currentLabelMap.remove(mappedA);
             }
           }
         }
       }
+    }
+
+    // 変更があった場合のみ、元のStateに反映
+    if (isCopied) {
+      state.labelMap = currentLabelMap;
     }
   }
 
