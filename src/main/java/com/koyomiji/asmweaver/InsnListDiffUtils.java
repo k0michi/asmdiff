@@ -645,8 +645,6 @@ public class InsnListDiffUtils {
     final int h; // Heuristic
 
     // Mapping from labels in A to labels in B
-//    Map<LabelNode, LabelNode> aToB;
-//    Map<LabelNode, LabelNode> bToA;
     BiHashMap<LabelNode, LabelNode> labelMap;
 
     final List<InsnListDiff.Operation> operations;
@@ -777,8 +775,6 @@ public class InsnListDiffUtils {
           State state,
           Map<LabelNode, AbstractInsnNode> lastOccurrenceMapA,
           Map<LabelNode, AbstractInsnNode> lastOccurrenceMapB,
-//          InsnList insnsA,
-//          InsnList insnsB
           List<AbstractInsnNode> insnsA,
           List<AbstractInsnNode> insnsB
   ) {
@@ -792,7 +788,6 @@ public class InsnListDiffUtils {
 
       for (var label : labels) {
         if (lastOccurrenceMapA.get(label) == prevA) {
-//          var mappedB = state.aToB.get(label);
           var mappedB = state.labelMap.get(label);
 
           if (mappedB != null) {
@@ -815,17 +810,12 @@ public class InsnListDiffUtils {
 
       for (var label : labels) {
         if (lastOccurrenceMapB.get(label) == prevB) {
-//          var mappedA = state.bToA.get(label);
           var mappedA = state.labelMap.getKey(label);
 
           if (mappedA != null) {
             var lastOccInsnA = lastOccurrenceMapA.get(mappedA);
 
             if (insnsA.indexOf(lastOccInsnA) < state.idxA) {
-//              state.aToB = new HashMap<>(state.aToB);
-//              state.bToA = new HashMap<>(state.bToA);
-//              state.bToA.remove(label);
-//              state.aToB.remove(mappedA);
               state.labelMap = new BiHashMap<>(state.labelMap);
               state.labelMap.remove(mappedA);
             }
@@ -857,13 +847,10 @@ public class InsnListDiffUtils {
   }
 
   public static InsnListDiff diff(List<AbstractInsnNode> listA, List<AbstractInsnNode> listB) {
-//    AbstractInsnNode[] insnsA = listA.toArray();
-//    AbstractInsnNode[] insnsB = listB.toArray();
     AbstractInsnNode[] insnsA = listA.toArray(new AbstractInsnNode[0]);
     AbstractInsnNode[] insnsB = listB.toArray(new AbstractInsnNode[0]);
 
     var heuristicProvider = new MyersFuzzyDistanceHeuristic(listA, listB);
-//    var heuristicProvider = new FuzzyDistanceHeuristic(listA, listB);
 
     PriorityQueue<State> pq = new PriorityQueue<>();
     Map<StateKey, Integer> visited = new HashMap<>();
@@ -927,16 +914,13 @@ public class InsnListDiffUtils {
 
         var state = State.create(
                 nextRealIdxA, current.idxB,
-//                heuristicProvider.calculate(nextRealIdxA, current.idxB),
                 current.labelMap,
                 concat(
                         current.operations,
-//                        new Operation(Operation.Type.DELETE, insnsA[current.idxA], getOrNull(insnsB, current.idxB))
                         new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, InsnListDiff.Operation.Mode.BETWEEN, insnsA[current.idxA])
                 ),
                 heuristicProvider
         );
-//        removeLastLabels(state, lastOccurrenceA, insnsA[current.idxA]);
         removeDeadLabels(state, lastOccurrenceA, lastOccurrenceB, listA, listB);
         tryAdd(pq, visited, state);
       }
@@ -947,13 +931,9 @@ public class InsnListDiffUtils {
 
         var state = State.create(
                 current.idxA, nextRealIdxB,
-//                calcHeuristic(current.idxA, nextRealIdxB, insnsA, insnsB),
-//                heuristicProvider.calculate(current.idxA, nextRealIdxB),
-//                current.aToB, current.bToA,
                 current.labelMap,
                 concat(
                         current.operations,
-//                        new Operation(Operation.Type.INSERT, getOrNull(insnsA, current.idxA), insnsB[current.idxB])
                         new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, InsnListDiff.Operation.Mode.BETWEEN, insnsB[current.idxB])
 
                 ),
@@ -973,7 +953,6 @@ public class InsnListDiffUtils {
         List<LabelNode> targetsB = getLabelTargets(insnB);
 
         // TODO: local
-//        boolean contentMatch = areNonLabelPropsEqual(insnA, insnB, listA, listB);
         boolean contentMatch = compareInsnsIgnoreLabels(insnA, insnB);
 
         // Having different number of target labels implies mismatch
@@ -985,25 +964,18 @@ public class InsnListDiffUtils {
         var nextRealIdxB = current.idxB + 1;
 
         if (contentMatch) {
-//          Map<LabelNode, LabelNode> newAToB = new HashMap<>(current.aToB);
-//          Map<LabelNode, LabelNode> newBToA = new HashMap<>(current.bToA);
           BiHashMap<LabelNode, LabelNode> newAToB = new BiHashMap<>(current.labelMap);
 
           for (int i = 0; i < targetsA.size(); i++) {
-//            if (!canAddBijection(newAToB, newBToA, targetsA.get(i), targetsB.get(i))) {
             if (!newAToB.canPut(targetsA.get(i), targetsB.get(i))) {
               break match;
             }
 
-//            addBijection(newAToB, newBToA, targetsA.get(i), targetsB.get(i));
             newAToB.put(targetsA.get(i), targetsB.get(i));
           }
 
           var state = State.create(
                   nextRealIdxA, nextRealIdxB,
-//                  heuristicProvider.calculate(nextRealIdxA, nextRealIdxB),
-//                  calcHeuristic(nextRealIdxA, nextRealIdxB, insnsA, insnsB),
-//                  newAToB, newBToA,
                   newAToB,
                   current.operations,
 //                  concat(
@@ -1012,7 +984,6 @@ public class InsnListDiffUtils {
 //                  ),
                   heuristicProvider
           );
-//          removeLastLabels(state, lastOccurrenceA, insnA);
           removeDeadLabels(state, lastOccurrenceA, lastOccurrenceB, listA, listB);
           tryAdd(pq, visited, state);
         }
