@@ -7,6 +7,11 @@ public class InjectiveHashMap<K, V> {
   private final Map<V, K> reverseMap = new HashMap<>();
 
   public boolean canPut(K key, V value) {
+    if (forwardMap.containsKey(key)) {
+      V existingValue = forwardMap.get(key);
+      return Objects.equals(existingValue, value);
+    }
+
     if (reverseMap.containsKey(value)) {
       K existingKey = reverseMap.get(value);
       return Objects.equals(existingKey, key);
@@ -19,7 +24,7 @@ public class InjectiveHashMap<K, V> {
     if (!canPut(key, value)) {
       K existingKey = reverseMap.get(value);
       throw new IllegalArgumentException(
-        "Value '" + value + "' is already associated with key '" + existingKey + "'."
+              "Value '" + value + "' is already associated with key '" + existingKey + "'."
       );
     }
 
