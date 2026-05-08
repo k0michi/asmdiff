@@ -16,9 +16,9 @@ public class TryCatchBlockNodeHelper {
       return false;
     }
 
-    return labelMap.apply(node1.start) == labelMap.apply(node2.start)
-            && labelMap.apply(node1.end) == labelMap.apply(node2.end)
-            && labelMap.apply(node1.handler) == labelMap.apply(node2.handler)
+    return labelMap.apply(node1.start) == node2.start
+            && labelMap.apply(node1.end) == node2.end
+            && labelMap.apply(node1.handler) == node2.handler
             && Objects.equals(node1.type, node2.type)
             && ListHelper.equals(node1.visibleTypeAnnotations, node2.visibleTypeAnnotations, TypeAnnotationNodeHelper::equals)
             && ListHelper.equals(node1.invisibleTypeAnnotations, node2.invisibleTypeAnnotations, TypeAnnotationNodeHelper::equals);

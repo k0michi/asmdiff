@@ -62,4 +62,16 @@ class TryCatchBlockNodeHelperTest {
     TryCatchBlockNode node2 = new TryCatchBlockNode(l0, l1, l3, null);
     Assertions.assertFalse(TryCatchBlockNodeHelper.equals(node1, node2));
   }
+
+  @Test
+  void test_equals_8() {
+    TryCatchBlockNode node1 = new TryCatchBlockNode(l0, l0, l0, null);
+    TryCatchBlockNode node2 = new TryCatchBlockNode(l1, l1, l1, null);
+    Assertions.assertTrue(TryCatchBlockNodeHelper.equals(node1, node2, (l) -> {
+      if (l == l0) {
+        return l1;
+      }
+      throw new IllegalArgumentException("Unexpected label: " + l);
+    }));
+  }
 }
