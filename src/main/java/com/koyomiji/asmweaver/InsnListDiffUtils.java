@@ -643,31 +643,43 @@ public class InsnListDiffUtils {
     // Mapping from labels in A to labels in B
     BiHashMap<LabelNode, LabelNode> labelMap;
 
-    final List<InsnListDiff.Operation> operations;
+//    final List<InsnListDiff.Operation> operations;
+    final State previous;
+    final InsnListDiff.Operation operation;
 
     public State(int idxA, int idxB, int g, int h,
                  BiHashMap<LabelNode, LabelNode> labelMap,
-                 List<InsnListDiff.Operation> operations) {
+                  State previous, InsnListDiff.Operation operation) {
       this.idxA = idxA;
       this.idxB = idxB;
       this.g = g;
       this.h = h;
       this.labelMap = labelMap;
-      this.operations = operations;
+      this.previous = previous;
+      this.operation = operation;
     }
 
-    public static State create(int idxA, int idxB, BiHashMap<LabelNode, LabelNode> labelMap, List<InsnListDiff.Operation> operations, Heuristic heuristicProvider) {
+    public static State create(int idxA, int idxB, BiHashMap<LabelNode, LabelNode> labelMap, State previous, InsnListDiff.Operation operation, Heuristic heuristicProvider) {
       int h = heuristicProvider.calculate(idxA, idxB, labelMap);
-      int g = 0;
+//      int g = previous.g() + (operation.type == InsnListDiff.Operation.Type.MATCH ? 0 : 1);
 
-      for (InsnListDiff.Operation op : operations) {
-        if (op.type == InsnListDiff.Operation.Type.INSERT || op.type == InsnListDiff.Operation.Type.DELETE) {
-          g++;
-        }
+      int g;
+
+      if (previous == null) {
+        g = 0;
+      } else {
+        g = previous.g() + (operation.type == InsnListDiff.Operation.Type.MATCH ? 0 : 1);
       }
 
+//      for (InsnListDiff.Operation op : operations) {
+//        if (op.type == InsnListDiff.Operation.Type.INSERT || op.type == InsnListDiff.Operation.Type.DELETE) {
+//          g++;
+//        }
+//      }
+
 //      return new State(idxA, idxB, h, labelMap, operations);
-      return new State(idxA, idxB, g, h, labelMap, operations);
+//      return new State(idxA, idxB, g, h, labelMap, operations);
+      return new State(idxA, idxB, g, h, labelMap, previous, operation);
     }
 
     public int g() {
@@ -682,9 +694,9 @@ public class InsnListDiffUtils {
       return g();
     }
 
-    public List<InsnListDiff.Operation> getOperations() {
-      return operations;
-    }
+//    public List<InsnListDiff.Operation> getOperations() {
+//      return operations;
+//    }
 
     @Override
     public int compareTo(State o) {
@@ -868,7 +880,9 @@ public class InsnListDiffUtils {
       tryAdd(pq, visited,
               State.create(
                       nextRealIdxA, nextRealIdxB,
-                      new BiHashMap<>(), new ArrayList<>(),
+                      new BiHashMap<>(),
+                      null,
+                      null,
                       heuristicProvider
               )
       );
@@ -880,7 +894,17 @@ public class InsnListDiffUtils {
       State current = pq.poll();
 
       if (current.idxA >= insnsA.length && current.idxB >= insnsB.length) {
-        return new InsnListDiff(current.operations);
+//        return new InsnListDiff(current.operations);
+        // Backtrack to construct the diff
+
+        List<InsnListDiff.Operation> operations = new ArrayList<>();
+
+        for (State s = current; s.previous != null; s = s.previous) {
+          operations.add(s.operation);
+        }
+
+        Collections.reverse(operations);
+        return new InsnListDiff(operations);
       }
 
       var currentKey = new StateKey(current.idxA, current.idxB, current.labelMap.forwardMap());
@@ -891,10 +915,10 @@ public class InsnListDiffUtils {
       if (j++ % 100000 == 0) {
 //        Logger.getInstance().log(
         System.out.println(
-                String.format("State: idxA=%d, idxB=%d, g=%d, h=%d, f=%d, ops=%d",
+                String.format("State: idxA=%d, idxB=%d, g=%d, h=%d, f=%d",
                         current.idxA, current.idxB,
-                        current.g(), current.h, current.f(),
-                        current.operations.size()
+                        current.g(), current.h, current.f()
+//                        current.operations.size()
                 )
         );
         System.out.println(
@@ -917,10 +941,12 @@ public class InsnListDiffUtils {
         var state = State.create(
                 nextRealIdxA, current.idxB,
                 current.labelMap,
-                concat(
-                        current.operations,
-                        new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, InsnListDiff.Operation.Mode.BETWEEN, insnsA[current.idxA])
-                ),
+//                concat(
+//                        current.operations,
+//                        new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, InsnListDiff.Operation.Mode.BETWEEN, insnsA[current.idxA])
+//                ),
+                current,
+                new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, InsnListDiff.Operation.Mode.BETWEEN, insnsA[current.idxA]),
                 heuristicProvider
         );
         removeDeadLabels(state, lastOccurrenceA, lastOccurrenceB, listA, listB);
@@ -934,11 +960,13 @@ public class InsnListDiffUtils {
         var state = State.create(
                 current.idxA, nextRealIdxB,
                 current.labelMap,
-                concat(
-                        current.operations,
-                        new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, InsnListDiff.Operation.Mode.BETWEEN, insnsB[current.idxB])
-
-                ),
+//                concat(
+//                        current.operations,
+//                        new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, InsnListDiff.Operation.Mode.BETWEEN, insnsB[current.idxB])
+//
+//                ),
+                current,
+                new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, InsnListDiff.Operation.Mode.BETWEEN, insnsB[current.idxB]),
                 heuristicProvider
         );
         removeDeadLabels(state, lastOccurrenceA, lastOccurrenceB, listA, listB);
@@ -979,11 +1007,13 @@ public class InsnListDiffUtils {
           var state = State.create(
                   nextRealIdxA, nextRealIdxB,
                   newAToB,
-                  current.operations,
+//                  current.operations,
 //                  concat(
 //                          current.operations,
 //                          new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, insnA)
 //                  ),
+                  current,
+                  new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, insnA),
                   heuristicProvider
           );
           removeDeadLabels(state, lastOccurrenceA, lastOccurrenceB, listA, listB);
