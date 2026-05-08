@@ -2,14 +2,14 @@ package com.koyomiji.asmweaver;
 
 import java.util.List;
 
-public class KeyedListDiff<Key, Value, Patch> {
-  public List<Operation<Key, Value, Patch>> operations;
+public class KeyedListDiff<Key, Value, Diff> {
+  public List<Operation<Key, Value, Diff>> operations;
 
-  public KeyedListDiff(List<Operation<Key, Value, Patch>> operations) {
+  public KeyedListDiff(List<Operation<Key, Value, Diff>> operations) {
     this.operations = operations;
   }
 
-  public static class Operation<Key, Value, Patch> {
+  public static class Operation<Key, Value, Diff> {
     public enum Type {
       MATCH,
       INSERT,
@@ -31,17 +31,17 @@ public class KeyedListDiff<Key, Value, Patch> {
      */
     public Value operandValue;
     /**
-     * For MATCH, operandPatch is the patch to apply to the value in the original list.
-     * Otherwise, operandPatch is null.
+     * For MATCH, operandDiff is the diff between the values in the original and modified lists.
+     * Otherwise, operandDiff is null.
      */
-    public Patch operandPatch;
+    public Diff operandDiff;
 
-    public Operation(Type type, Mode mode, Key operandKey, Value operandValue, Patch operandPatch) {
+    public Operation(Type type, Mode mode, Key operandKey, Value operandValue, Diff operandDiff) {
       this.type = type;
       this.mode = mode;
       this.operandKey = operandKey;
       this.operandValue = operandValue;
-      this.operandPatch = operandPatch;
+      this.operandDiff = operandDiff;
     }
   }
 }
