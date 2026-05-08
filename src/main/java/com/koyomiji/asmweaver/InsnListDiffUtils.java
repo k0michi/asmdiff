@@ -259,7 +259,9 @@ public class InsnListDiffUtils {
 
         if (opP.type == InsnListDiff.Operation.Type.MATCH) {
           qPrimeOps.add(opQBase);
-          pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opP.mode, opP.operand));
+          if (opQBase.type == InsnListDiff.Operation.Type.MATCH) {
+            pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opP.mode, opP.operand));
+          }
         } else {
           if (opQBase.type == InsnListDiff.Operation.Type.DELETE) {
             throw new ConflictException("p inserts a node that q deletes");
