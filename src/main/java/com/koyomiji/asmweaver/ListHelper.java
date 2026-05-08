@@ -38,4 +38,12 @@ public class ListHelper {
   public static <T> boolean equals(List<T> a, List<T> b) {
     return equals(a, b, Objects::equals);
   }
+
+  public static <T> T getOrNull(List<T> list, int index) {
+    if (index < 0 || index >= list.size()) {
+      return null;
+    }
+
+    return list.get(index);
+  }
 }
