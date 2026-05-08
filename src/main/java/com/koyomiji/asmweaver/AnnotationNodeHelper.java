@@ -1,6 +1,5 @@
 package com.koyomiji.asmweaver;
 
-import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AnnotationNode;
 
 import java.util.List;
@@ -33,21 +32,11 @@ public class AnnotationNodeHelper {
 
   private static boolean equalsValue(Object a, Object b) {
     if (a instanceof AnnotationNode && b instanceof AnnotationNode) {
-      if (!AnnotationNodeHelper.equals((AnnotationNode) a, (AnnotationNode) b)) {
-        return false;
-      }
-    }
-
-    if (a instanceof Type && b instanceof Type) {
-      if (!Objects.equals(a, b)) {
-        return false;
-      }
+      return AnnotationNodeHelper.equals((AnnotationNode) a, (AnnotationNode) b);
     }
 
     if (a instanceof List<?> && b instanceof List<?>) {
-      if (!ListHelper.equals((List<Object>) a, (List<Object>) b, AnnotationNodeHelper::equalsValue)) {
-        return false;
-      }
+      return ListHelper.equals((List<Object>) a, (List<Object>) b, AnnotationNodeHelper::equalsValue);
     }
 
     return Objects.equals(a, b);
