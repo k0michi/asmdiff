@@ -13,6 +13,10 @@ public class ListHelper {
     return element != null ? List.of(element) : List.of();
   }
 
+  public static <T> List<T> ofNullableArray(T[] array) {
+    return array != null ? List.of(array) : List.of();
+  }
+
   public static <T> boolean equals(List<T> a, List<T> b, BiPredicate<T, T> compare) {
     if (a == b) {
       return true;
