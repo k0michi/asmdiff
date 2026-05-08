@@ -42,4 +42,11 @@ class TypePathHelperTest {
   void test_equals_5() {
     Assertions.assertTrue(TypePathHelper.equals(null, null));
   }
+
+  @Test
+  void test_equals_6() {
+    TypePath path1 = TypePath.fromString("*");
+    TypePath path2 = TypePath.fromString(".");
+    Assertions.assertFalse(TypePathHelper.equals(path1, path2));
+  }
 }
