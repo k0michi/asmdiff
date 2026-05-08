@@ -10,6 +10,10 @@ public class ListHelper {
     return list != null ? list : List.of();
   }
 
+  public static<T> List<T> ofNullable(T element) {
+    return element != null ? List.of(element) : List.of();
+  }
+
   public static <T> boolean equals(List<T> a, List<T> b, IEquator<T> equator) {
     if (a == b) {
       return true;
