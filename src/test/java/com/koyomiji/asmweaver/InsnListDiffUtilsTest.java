@@ -396,7 +396,7 @@ class InsnListDiffUtilsTest {
   }
 
   @ParameterizedTest
-  @ValueSource(ints = {1, 10, 100, 1000, 10000, 100000})
+  @ValueSource(ints = {1, 5, 10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000})
   @Timeout(value = 5, unit = TimeUnit.SECONDS)
   void test_diff_3(int numInsns) {
     InsnList list1 = new InsnList();
@@ -404,7 +404,6 @@ class InsnListDiffUtilsTest {
       list1.add(new InsnNode(Opcodes.NOP));
     }
     InsnList list2 = new InsnList();
-//    list2.add(new InsnNode(Opcodes.NOP));
     for (int i = 0; i < numInsns; i++) {
       list2.add(new InsnNode(Opcodes.NOP));
     }
