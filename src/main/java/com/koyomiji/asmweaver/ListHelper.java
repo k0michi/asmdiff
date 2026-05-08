@@ -1,20 +1,19 @@
 package com.koyomiji.asmweaver;
 
-import com.koyomiji.asmpatch.IEquator;
-
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiPredicate;
 
 public class ListHelper {
   public static <T> List<T> orEmpty(List<T> list) {
     return list != null ? list : List.of();
   }
 
-  public static<T> List<T> ofNullable(T element) {
+  public static <T> List<T> ofNullable(T element) {
     return element != null ? List.of(element) : List.of();
   }
 
-  public static <T> boolean equals(List<T> a, List<T> b, IEquator<T> equator) {
+  public static <T> boolean equals(List<T> a, List<T> b, BiPredicate<T, T> compare) {
     if (a == b) {
       return true;
     }
@@ -28,7 +27,7 @@ public class ListHelper {
     }
 
     for (int i = 0; i < a.size(); i++) {
-      if (!equator.equals(a.get(i), b.get(i))) {
+      if (!compare.test(a.get(i), b.get(i))) {
         return false;
       }
     }
