@@ -6,6 +6,11 @@ public class MemberKey {
   public String name;
   public String desc;
 
+  public MemberKey(String name, String desc) {
+    this.name = name;
+    this.desc = desc;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
