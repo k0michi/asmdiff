@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'jacoco'
+    id 'me.champeau.jmh' version '0.7.2'
 }
 
 group = 'com.koyomiji'
@@ -22,6 +23,11 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    maxHeapSize = "16G"
+}
+
+test {
+    useJUnitPlatform()
     finalizedBy jacocoTestReport
 }
 
@@ -32,4 +38,12 @@ jacocoTestReport {
         csv.required = false
         html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
     }
+}
+
+jmh {
+//    forks = 1
+//    warmupIterations = 3
+//    iterations = 5
+//    benchmarkMode = ['avgt']
+//    timeUnit = 'ns'
 }
