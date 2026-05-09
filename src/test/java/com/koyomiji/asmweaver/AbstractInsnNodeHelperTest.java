@@ -70,7 +70,7 @@ class AbstractInsnNodeHelperTest {
 
   @ParameterizedTest(name = "i={0}, j={1}")
   @MethodSource("provideAllPairs")
-  void testEquality(int i, int j, AbstractInsnNode nodeA, AbstractInsnNode nodeB) {
+  void test_equals_provideAllPairs(int i, int j, AbstractInsnNode nodeA, AbstractInsnNode nodeB) {
     if (i == j) {
       Assertions.assertTrue(AbstractInsnNodeHelper.equals(nodeA, nodeB, Objects::equals, Objects::equals));
     } else {
