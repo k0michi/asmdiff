@@ -5,6 +5,7 @@ import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LocalVariableAnnotationNode;
 import org.objectweb.asm.tree.TypeAnnotationNode;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiPredicate;
@@ -87,5 +88,39 @@ public class AnnotationNodeHelper {
     }
 
     return true;
+  }
+
+  public static int hashCode(AnnotationNode node) {
+    if (node.getClass() == AnnotationNode.class) {
+      return Objects.hash(node.desc, ListHelper.hashCode(node.values, AnnotationNodeHelper::annotationValueHashCode));
+    } else if (node.getClass() == TypeAnnotationNode.class) {
+      TypeAnnotationNode typeNode = (TypeAnnotationNode) node;
+      return Objects.hash(node.desc, ListHelper.hashCode(node.values, AnnotationNodeHelper::annotationValueHashCode), typeNode.typeRef, TypePathHelper.hashCode(typeNode.typePath));
+    } else if (node.getClass() == LocalVariableAnnotationNode.class) {
+      LocalVariableAnnotationNode localVarNode = (LocalVariableAnnotationNode) node;
+      return Objects.hash(node.desc, ListHelper.hashCode(node.values, AnnotationNodeHelper::annotationValueHashCode), ListHelper.hashCode(localVarNode.start, Objects::hashCode), ListHelper.hashCode(localVarNode.end, Objects::hashCode), ListHelper.hashCode(localVarNode.index, Objects::hashCode));
+    }
+
+    return Objects.hash(node);
+  }
+
+  private static int annotationValueHashCode(Object value) {
+    // String[]
+    if (value instanceof String[]) {
+      return Arrays.hashCode((String[]) value);
+    }
+
+    // AnnotationNode
+    if (value instanceof AnnotationNode) {
+      return hashCode((AnnotationNode) value);
+    }
+
+    // List
+    if (value instanceof List<?>) {
+      return ListHelper.hashCode((List<Object>) value, AnnotationNodeHelper::annotationValueHashCode);
+    }
+
+    // Byte, Boolean, Character, Short, Integer, Long, Float, Double, String, Type
+    return Objects.hashCode(value);
   }
 }
