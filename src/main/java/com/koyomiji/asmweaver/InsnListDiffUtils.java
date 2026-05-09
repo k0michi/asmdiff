@@ -66,7 +66,7 @@ public class InsnListDiffUtils {
     return true;
   }
 
-  public static boolean compareInsns(AbstractInsnNode insn1, AbstractInsnNode insn2, BiPredicate<LabelNode, LabelNode> compareLabels) {
+  public static boolean compareInsns(AbstractInsnNode insn1, AbstractInsnNode insn2, BiPredicate<LabelNode, LabelNode> compareLabels, BiPredicate<Integer, Integer> compareLocals) {
     if (insn1.getOpcode() != insn2.getOpcode()) {
       return false;
     }
@@ -76,7 +76,8 @@ public class InsnListDiffUtils {
     } else if (insn1 instanceof IntInsnNode && insn2 instanceof IntInsnNode) {
       return ((IntInsnNode) insn1).operand == ((IntInsnNode) insn2).operand;
     } else if (insn1 instanceof VarInsnNode && insn2 instanceof VarInsnNode) {
-      return ((VarInsnNode) insn1).var == ((VarInsnNode) insn2).var;
+//      return ((VarInsnNode) insn1).var == ((VarInsnNode) insn2).var;
+      return compareLocals.test(((VarInsnNode) insn1).var, ((VarInsnNode) insn2).var);
     } else if (insn1 instanceof TypeInsnNode && insn2 instanceof TypeInsnNode) {
       return Objects.equals(((TypeInsnNode) insn1).desc, ((TypeInsnNode) insn2).desc);
     } else if (insn1 instanceof FieldInsnNode && insn2 instanceof FieldInsnNode) {
@@ -111,7 +112,8 @@ public class InsnListDiffUtils {
     } else if (insn1 instanceof IincInsnNode && insn2 instanceof IincInsnNode) {
       IincInsnNode iinc1 = (IincInsnNode) insn1;
       IincInsnNode iinc2 = (IincInsnNode) insn2;
-      return iinc1.var == iinc2.var && iinc1.incr == iinc2.incr;
+//      return iinc1.var == iinc2.var && iinc1.incr == iinc2.incr;
+      return compareLocals.test(iinc1.var, iinc2.var) && iinc1.incr == iinc2.incr;
     } else if (insn1 instanceof TableSwitchInsnNode && insn2 instanceof TableSwitchInsnNode) {
       TableSwitchInsnNode switch1 = (TableSwitchInsnNode) insn1;
       TableSwitchInsnNode switch2 = (TableSwitchInsnNode) insn2;
@@ -152,8 +154,12 @@ public class InsnListDiffUtils {
     return Objects.equals(insn1, insn2);
   }
 
-  public static boolean compareInsnsIgnoreLabels(AbstractInsnNode insn1, AbstractInsnNode insn2) {
-    return compareInsns(insn1, insn2, (label1, label2) -> true);
+  public static boolean compareInsnsIgnoreLabelsIgnoreLocals(AbstractInsnNode insn1, AbstractInsnNode insn2) {
+    return compareInsns(insn1, insn2, (l1, l2) -> true, (v1, v2) -> true);
+  }
+
+  public static boolean compareInsnsIgnoreLabelsExactLocals(AbstractInsnNode insn1, AbstractInsnNode insn2) {
+    return compareInsns(insn1, insn2, (l1, l2) -> true, Integer::equals);
   }
 
   /**
@@ -162,14 +168,16 @@ public class InsnListDiffUtils {
    * @param list1
    * @param list2
    * @param compareLabels
+   * @param compareLocals
    * @return
    */
-  public static boolean compareInsnLists(List<AbstractInsnNode> list1, List<AbstractInsnNode> list2, BiPredicate<LabelNode, LabelNode> compareLabels) {
+  public static boolean compareInsnLists(List<AbstractInsnNode> list1, List<AbstractInsnNode> list2, BiPredicate<LabelNode, LabelNode> compareLabels, BiPredicate<Integer, Integer> compareLocals) {
     Iterator<AbstractInsnNode> iter1 = list1.iterator();
     Iterator<AbstractInsnNode> iter2 = list2.iterator();
 
     while (iter1.hasNext() && iter2.hasNext()) {
-      if (!compareInsns(iter1.next(), iter2.next(), compareLabels)) {
+//      if (!compareInsns(iter1.next(), iter2.next(), compareLabels)) {
+      if (!compareInsns(iter1.next(), iter2.next(), compareLabels, compareLocals)) {
         return false;
       }
     }
@@ -177,22 +185,22 @@ public class InsnListDiffUtils {
     return !iter1.hasNext() && !iter2.hasNext();
   }
 
-  public static boolean compareInsnLists(List<AbstractInsnNode> list1, List<AbstractInsnNode> list2) {
-    List<LabelNode> labels1 = extractLabels(list1);
-    List<LabelNode> labels2 = extractLabels(list2);
-
-    if (labels1.size() != labels2.size()) {
-      return false;
-    }
-
-    Map<LabelNode, LabelNode> labelMap = new HashMap<>();
-
-    for (int i = 0; i < labels1.size(); i++) {
-      labelMap.put(labels1.get(i), labels2.get(i));
-    }
-
-    return compareInsnLists(list1, list2, (label1, label2) -> labelMap.get(label1) == label2);
-  }
+//  public static boolean compareInsnLists(List<AbstractInsnNode> list1, List<AbstractInsnNode> list2) {
+//    List<LabelNode> labels1 = extractLabels(list1);
+//    List<LabelNode> labels2 = extractLabels(list2);
+//
+//    if (labels1.size() != labels2.size()) {
+//      return false;
+//    }
+//
+//    Map<LabelNode, LabelNode> labelMap = new HashMap<>();
+//
+//    for (int i = 0; i < labels1.size(); i++) {
+//      labelMap.put(labels1.get(i), labels2.get(i));
+//    }
+//
+//    return compareInsnLists(list1, list2, (label1, label2) -> labelMap.get(label1) == label2);
+//  }
 
   /**
    * Extracts the base instructions from the diff.
@@ -212,18 +220,18 @@ public class InsnListDiffUtils {
     return baseInstructions;
   }
 
-  /**
-   * Returns true if diff1 and diff2 have the same base instructions.
-   *
-   * @param diff1
-   * @param diff2
-   * @return
-   */
-  public static boolean compareBases(InsnListDiff diff1, InsnListDiff diff2) {
-    List<AbstractInsnNode> base1 = extractBase(diff1);
-    List<AbstractInsnNode> base2 = extractBase(diff2);
-    return compareInsnLists(base1, base2);
-  }
+//  /**
+//   * Returns true if diff1 and diff2 have the same base instructions.
+//   *
+//   * @param diff1
+//   * @param diff2
+//   * @return
+//   */
+//  public static boolean compareBases(InsnListDiff diff1, InsnListDiff diff2) {
+//    List<AbstractInsnNode> base1 = extractBase(diff1);
+//    List<AbstractInsnNode> base2 = extractBase(diff2);
+//    return compareInsnLists(base1, base2);
+//  }
 
   /**
    * Attempts to commute p and q. If successful, returns a pair of diffs (q', p') such that applying q' then p' yields the same result as applying p then q.
@@ -263,7 +271,7 @@ public class InsnListDiffUtils {
 
         // FIXME
 //        if (!compareInsns(opP.operand, opQBase.operand, Function.identity())) {
-        if (!compareInsns(opP.operand, opQBase.operand, (l1, l2) -> true)) {
+        if (!compareInsnsIgnoreLabelsIgnoreLocals(opP.operand, opQBase.operand)) {
           throw new IllegalDiffException("p and q disagree on node identity");
         }
 
@@ -380,7 +388,7 @@ public class InsnListDiffUtils {
         InsnListDiff.Operation opQ = itQ.next();
 
         // FIXME:
-        if (!compareInsns(opP.operand, opQ.operand, (l1, l2) -> true)) {
+        if (!compareInsnsIgnoreLabelsIgnoreLocals(opP.operand, opQ.operand)) {
           throw new IllegalDiffException("Composition Error: Operand mismatch at B.");
         }
 
@@ -394,7 +402,7 @@ public class InsnListDiffUtils {
         for (int i = 0; i < qInsertions.size(); i++) {
           // FIXME:
 //          if (compareInsns(qInsertions.get(i).operand, opP.operand, Function.identity())) {
-          if (compareInsns(qInsertions.get(i).operand, opP.operand, (l1, l2) -> true)) {
+          if (compareInsnsIgnoreLabelsIgnoreLocals(qInsertions.get(i).operand, opP.operand)) {
             matchIndex = i;
             break;
           }
@@ -426,7 +434,8 @@ public class InsnListDiffUtils {
 
         // FIXME:
 //        if (!compareInsns(opP.operand, opQ.operand, Function.identity())) {
-        if (!compareInsns(opP.operand, opQ.operand, (l1, l2) -> true)) {
+//        if (!compareInsns(opP.operand, opQ.operand, (l1, l2) -> true)) {
+        if (!compareInsnsIgnoreLabelsIgnoreLocals(opP.operand, opQ.operand)) {
           throw new IllegalDiffException("Composition Error: Operand mismatch at C.");
         }
 
@@ -469,7 +478,7 @@ public class InsnListDiffUtils {
 
           table[i][j] = 1 + Math.min(table[i + 1][j], table[i][j + 1]);
 
-          if (compareInsnsIgnoreLabels(a, b)) {
+          if (compareInsnsIgnoreLabelsIgnoreLocals(a, b)) {
             table[i][j] = Math.min(table[i][j], table[i + 1][j + 1]);
           }
         }
@@ -579,7 +588,7 @@ public class InsnListDiffUtils {
 
           // スネーク（一致移動）を処理
           // 配列の後ろ（n-1, m-1）から前へ向かって比較する
-          while (u < n && w < m && compareInsnsIgnoreLabels(src.get(n - 1 - u), dst.get(m - 1 - w))) {
+          while (u < n && w < m && compareInsnsIgnoreLabelsIgnoreLocals(src.get(n - 1 - u), dst.get(m - 1 - w))) {
             u++;
             w++;
           }
@@ -614,13 +623,13 @@ public class InsnListDiffUtils {
     // Mapping from labels in A to labels in B
     BiHashMap<LabelNode, LabelNode> labelMap;
 
-//    final List<InsnListDiff.Operation> operations;
+    //    final List<InsnListDiff.Operation> operations;
     final State previous;
     final InsnListDiff.Operation operation;
 
     public State(int idxA, int idxB, int g, int h,
                  BiHashMap<LabelNode, LabelNode> labelMap,
-                  State previous, InsnListDiff.Operation operation) {
+                 State previous, InsnListDiff.Operation operation) {
       this.idxA = idxA;
       this.idxB = idxB;
       this.g = g;
@@ -954,7 +963,7 @@ public class InsnListDiffUtils {
         List<LabelNode> targetsB = getLabelTargets(insnB);
 
         // TODO: local
-        boolean contentMatch = compareInsnsIgnoreLabels(insnA, insnB);
+        boolean contentMatch = compareInsnsIgnoreLabelsIgnoreLocals(insnA, insnB);
 
         // Having different number of target labels implies mismatch
         if (targetsA.size() != targetsB.size()) {
