@@ -1,8 +1,11 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.util.HashCodeBuilder;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiPredicate;
+import java.util.function.ToIntFunction;
 
 public class ListHelper {
   public static <T> List<T> orEmpty(List<T> list) {
@@ -49,5 +52,19 @@ public class ListHelper {
     }
 
     return list.get(index);
+  }
+
+  public static <T> int hashCode(List<T> list, ToIntFunction<T> hashFunction) {
+    if (list == null) {
+      return 0;
+    }
+
+    HashCodeBuilder builder = new HashCodeBuilder();
+
+    for (T element : list) {
+      builder.append(element, hashFunction);
+    }
+
+    return builder.build();
   }
 }
