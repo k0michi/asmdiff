@@ -11,10 +11,10 @@ public class BiFunctionHelper {
   }
 
   public static <K2, V> BiFunction<V, K2, V> first() {
-    return (k1, k2) -> (V) k1;
+    return (k1, k2) -> k1;
   }
 
   public static <K1, V> BiFunction<K1, V, V> second() {
-    return (k1, k2) -> (V) k2;
+    return (k1, k2) -> k2;
   }
 }
