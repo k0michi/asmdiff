@@ -1,12 +1,20 @@
 package com.koyomiji.asmweaver;
 
 import org.objectweb.asm.tree.AnnotationNode;
+import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.LocalVariableAnnotationNode;
+import org.objectweb.asm.tree.TypeAnnotationNode;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiPredicate;
 
 public class AnnotationNodeHelper {
   public static boolean equals(AnnotationNode a, AnnotationNode b) {
+    return equals(a, b, Objects::equals, Objects::equals);
+  }
+
+  public static boolean equals(AnnotationNode a, AnnotationNode b, BiPredicate<LabelNode, LabelNode> labelEquals, BiPredicate<Integer, Integer> localEquals) {
     if (a == b) {
       return true;
     }
@@ -27,7 +35,15 @@ public class AnnotationNodeHelper {
       return false;
     }
 
-    return true;
+    if (a.getClass() == AnnotationNode.class) {
+      return true;
+    } else if (a.getClass() == TypeAnnotationNode.class) {
+      return equals((TypeAnnotationNode) a, (TypeAnnotationNode) b);
+    } else if (a.getClass() == LocalVariableAnnotationNode.class) {
+      return equals((LocalVariableAnnotationNode) a, (LocalVariableAnnotationNode) b, labelEquals, localEquals);
+    }
+
+    return Objects.equals(a, b);
   }
 
   private static boolean equalsValue(Object a, Object b) {
@@ -40,5 +56,36 @@ public class AnnotationNodeHelper {
     }
 
     return Objects.equals(a, b);
+  }
+
+  private static boolean equals(TypeAnnotationNode a, TypeAnnotationNode b) {
+    return Objects.equals(a.typeRef, b.typeRef)
+            && TypePathHelper.equals(a.typePath, b.typePath);
+  }
+
+  private static boolean equals(LocalVariableAnnotationNode a, LocalVariableAnnotationNode b, BiPredicate<LabelNode, LabelNode> labelEquals, BiPredicate<Integer, Integer> localEquals) {
+    if (a.start.size() != b.start.size()) {
+      return false;
+    }
+
+    if (a.end.size() != b.end.size()) {
+      return false;
+    }
+
+    if (a.index.size() != b.index.size()) {
+      return false;
+    }
+
+    int size = Math.max(a.start.size(), Math.max(a.end.size(), a.index.size()));
+
+    for (int i = 0; i < size; i++) {
+      if (!labelEquals.test(ListHelper.getOrNull(a.start, i), ListHelper.getOrNull(b.start, i))
+              || !labelEquals.test(ListHelper.getOrNull(a.end, i), ListHelper.getOrNull(b.end, i))
+              || !localEquals.test(ListHelper.getOrNull(a.index, i), ListHelper.getOrNull(b.index, i))) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }

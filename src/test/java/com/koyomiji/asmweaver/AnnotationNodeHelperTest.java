@@ -2,9 +2,16 @@ package com.koyomiji.asmweaver;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.objectweb.asm.TypePath;
+import org.objectweb.asm.TypeReference;
 import org.objectweb.asm.tree.AnnotationNode;
+import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.LocalVariableAnnotationNode;
 
 import java.util.List;
+
+import static com.koyomiji.asmweaver.LabelNodes.l0;
+import static com.koyomiji.asmweaver.LabelNodes.l1;
 
 class AnnotationNodeHelperTest {
   @Test
@@ -40,6 +47,27 @@ class AnnotationNodeHelperTest {
     AnnotationNode node2 = new AnnotationNode("Lcom/example/Annotation;");
     node2.values = List.of("nested", nodeNested2);
 
+    Assertions.assertTrue(AnnotationNodeHelper.equals(node1, node2));
+  }
+
+  @Test
+  void test_equals_localVariable_0() {
+    LocalVariableAnnotationNode node1 = new LocalVariableAnnotationNode(
+            TypeReference.CLASS_TYPE_PARAMETER,
+            TypePath.fromString("*"),
+            new LabelNode[]{l0},
+            new LabelNode[]{l1},
+            new int[]{0},
+            "Ljava/lang/String;"
+    );
+    LocalVariableAnnotationNode node2 = new LocalVariableAnnotationNode(
+            TypeReference.CLASS_TYPE_PARAMETER,
+            TypePath.fromString("*"),
+            new LabelNode[]{l0},
+            new LabelNode[]{l1},
+            new int[]{0},
+            "Ljava/lang/String;"
+    );
     Assertions.assertTrue(AnnotationNodeHelper.equals(node1, node2));
   }
 }
