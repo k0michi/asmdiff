@@ -851,7 +851,7 @@ public class InsnListDiffUtils {
     return targets;
   }
 
-  public static InsnListDiff diff(List<AbstractInsnNode> listA, Map<AbstractInsnNode, Integer> duChainsA, List<AbstractInsnNode> listB, Map<AbstractInsnNode, Integer> duChainsB) {
+  public static InsnListDiff diff(List<AbstractInsnNode> listA, Function<AbstractInsnNode, Integer> duChainsA, List<AbstractInsnNode> listB, Function<AbstractInsnNode, Integer> duChainsB) {
     AbstractInsnNode[] insnsA = listA.toArray(new AbstractInsnNode[0]);
     AbstractInsnNode[] insnsB = listB.toArray(new AbstractInsnNode[0]);
 
@@ -904,7 +904,7 @@ public class InsnListDiffUtils {
         continue;
       }
 
-      if (j++ % 100000 == 0) {
+      if (j++ % 10000 == 0) {
 //        Logger.getInstance().log(
         System.out.println(
                 String.format("State: idxA=%d, idxB=%d, g=%d, h=%d, f=%d",
@@ -1004,8 +1004,17 @@ public class InsnListDiffUtils {
           if (insnA instanceof VarInsnNode && insnB instanceof VarInsnNode) {
             int varA = ((VarInsnNode) insnA).var;
             int varB = ((VarInsnNode) insnB).var;
-            int duChainA = duChainsA.getOrDefault(insnA, -1);
-            int duChainB = duChainsB.getOrDefault(insnB, -1);
+            Integer duChainA = duChainsA.apply(insnA);
+
+            if (duChainA == null) {
+              duChainA = -1;
+            }
+
+            Integer duChainB = duChainsB.apply(insnB);
+
+            if (duChainB == null) {
+              duChainB = -1;
+            }
 
             if (newDuAToB.containsKey(duChainA) && newDuAToB.get(duChainA) != varB) {
               break match;
