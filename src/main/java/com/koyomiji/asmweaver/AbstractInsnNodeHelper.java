@@ -36,35 +36,35 @@ public class AbstractInsnNodeHelper {
       return false;
     }
 
-    if (node1 instanceof InsnNode && node2 instanceof InsnNode) {
+    if (node1.getClass() == InsnNode.class) {
       return equals((InsnNode) node1, (InsnNode) node2);
-    } else if (node1 instanceof IntInsnNode && node2 instanceof IntInsnNode) {
+    } else if (node1.getClass() == IntInsnNode.class) {
       return equals((IntInsnNode) node1, (IntInsnNode) node2);
-    } else if (node1 instanceof VarInsnNode && node2 instanceof VarInsnNode) {
+    } else if (node1.getClass() == VarInsnNode.class) {
       return equals((VarInsnNode) node1, (VarInsnNode) node2, localEquals);
-    } else if (node1 instanceof TypeInsnNode && node2 instanceof TypeInsnNode) {
+    } else if (node1.getClass() == TypeInsnNode.class) {
       return equals((TypeInsnNode) node1, (TypeInsnNode) node2);
-    } else if (node1 instanceof FieldInsnNode && node2 instanceof FieldInsnNode) {
+    } else if (node1.getClass() == FieldInsnNode.class) {
       return equals((FieldInsnNode) node1, (FieldInsnNode) node2);
-    } else if (node1 instanceof MethodInsnNode && node2 instanceof MethodInsnNode) {
+    } else if (node1.getClass() == MethodInsnNode.class) {
       return equals((MethodInsnNode) node1, (MethodInsnNode) node2);
-    } else if (node1 instanceof InvokeDynamicInsnNode && node2 instanceof InvokeDynamicInsnNode) {
+    } else if (node1.getClass() == InvokeDynamicInsnNode.class) {
       return equals((InvokeDynamicInsnNode) node1, (InvokeDynamicInsnNode) node2);
-    } else if (node1 instanceof JumpInsnNode && node2 instanceof JumpInsnNode) {
+    } else if (node1.getClass() == JumpInsnNode.class) {
       return equals((JumpInsnNode) node1, (JumpInsnNode) node2, labelEquals);
-    } else if (node1 instanceof LdcInsnNode && node2 instanceof LdcInsnNode) {
+    } else if (node1.getClass() == LdcInsnNode.class) {
       return equals((LdcInsnNode) node1, (LdcInsnNode) node2);
-    } else if (node1 instanceof IincInsnNode && node2 instanceof IincInsnNode) {
+    } else if (node1.getClass() == IincInsnNode.class) {
       return equals((IincInsnNode) node1, (IincInsnNode) node2, localEquals);
-    } else if (node1 instanceof TableSwitchInsnNode && node2 instanceof TableSwitchInsnNode) {
+    } else if (node1.getClass() == TableSwitchInsnNode.class) {
       return equals((TableSwitchInsnNode) node1, (TableSwitchInsnNode) node2, labelEquals);
-    } else if (node1 instanceof LookupSwitchInsnNode && node2 instanceof LookupSwitchInsnNode) {
+    } else if (node1.getClass() == LookupSwitchInsnNode.class) {
       return equals((LookupSwitchInsnNode) node1, (LookupSwitchInsnNode) node2, labelEquals);
-    } else if (node1 instanceof MultiANewArrayInsnNode && node2 instanceof MultiANewArrayInsnNode) {
+    } else if (node1.getClass() == MultiANewArrayInsnNode.class) {
       return equals((MultiANewArrayInsnNode) node1, (MultiANewArrayInsnNode) node2);
-    } else if (node1 instanceof FrameNode && node2 instanceof FrameNode) {
+    } else if (node1.getClass() == FrameNode.class) {
       return equals((FrameNode) node1, (FrameNode) node2, labelEquals);
-    } else if (node1 instanceof LineNumberNode && node2 instanceof LineNumberNode) {
+    } else if (node1.getClass() == LineNumberNode.class) {
       return equals((LineNumberNode) node1, (LineNumberNode) node2, labelEquals);
     }
 
