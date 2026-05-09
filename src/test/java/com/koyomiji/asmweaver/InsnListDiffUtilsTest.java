@@ -9,6 +9,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.LabelNode;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -346,5 +347,13 @@ class InsnListDiffUtilsTest {
       Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, diff.operations.get(i).type);
       Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabels(diff.operations.get(i).operand, new InsnNode(Opcodes.NOP)));
     }
+  }
+
+  @Test
+  void test_compareInsnsIgnoreLabels_0() {
+    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabels(
+            new LabelNode(),
+            new LabelNode()
+    ));
   }
 }
