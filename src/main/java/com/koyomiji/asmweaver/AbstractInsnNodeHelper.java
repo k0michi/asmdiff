@@ -28,11 +28,11 @@ public class AbstractInsnNodeHelper {
       return false;
     }
 
-    if (!ListHelper.equals(node1.visibleTypeAnnotations, node2.visibleTypeAnnotations, TypeAnnotationNodeHelper::equals)) {
+    if (!ListHelper.equals(node1.visibleTypeAnnotations, node2.visibleTypeAnnotations, AnnotationNodeHelper::equals)) {
       return false;
     }
 
-    if (!ListHelper.equals(node1.invisibleTypeAnnotations, node2.invisibleTypeAnnotations, TypeAnnotationNodeHelper::equals)) {
+    if (!ListHelper.equals(node1.invisibleTypeAnnotations, node2.invisibleTypeAnnotations, AnnotationNodeHelper::equals)) {
       return false;
     }
 
