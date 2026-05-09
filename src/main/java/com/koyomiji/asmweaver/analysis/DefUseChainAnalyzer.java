@@ -1,10 +1,8 @@
 package com.koyomiji.asmweaver.analysis;
 
 import com.koyomiji.asmweaver.util.UnionFind;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.tree.VarInsnNode;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.*;
 import org.objectweb.asm.tree.analysis.*;
 
 import java.util.HashMap;
@@ -60,26 +58,25 @@ public class DefUseChainAnalyzer {
 //          continue;
 //        }
 
+        AbstractInsnNode insn = instructions.get(i);
+
         if (sv.insns == null || sv.insns.isEmpty()) {
           // 引数の処理（必要に応じて復活させてください）
           // VarNode paramHub = new VarNode(-1, v);
           // uf.addNode(paramHub);
           // uf.union(currentNode, paramHub);
-        } else {
-          if (!(instructions.get(i) instanceof VarInsnNode)) {
-            continue; // ロード/ストア以外の命令は無視
-          }
-
-          // 現在の位置とスロットのノードを作成
+        } else if (insn instanceof VarInsnNode || insn instanceof IincInsnNode) {
           DefUse currentNode = new DefUse(i, methodNode.instructions.get(i), v);
           uf.addNode(currentNode);
 
-          for (AbstractInsnNode defInsn : sv.insns) {
-            Integer defIndex = insnIndices.get(defInsn);
-            if (defIndex != null) {
-              DefUse defNode = new DefUse(defIndex, methodNode.instructions.get(defIndex), v);
-              uf.addNode(defNode);
-              uf.union(currentNode, defNode);
+          if (insn.getOpcode() >= Opcodes.ILOAD && insn.getOpcode() <= Opcodes.ALOAD || insn.getOpcode() == Opcodes.IINC || insn.getOpcode() == Opcodes.RET) {
+            for (AbstractInsnNode defInsn : sv.insns) {
+              Integer defIndex = insnIndices.get(defInsn);
+              if (defIndex != null) {
+                DefUse defNode = new DefUse(defIndex, methodNode.instructions.get(defIndex), v);
+                uf.addNode(defNode);
+                uf.union(currentNode, defNode);
+              }
             }
           }
         }
