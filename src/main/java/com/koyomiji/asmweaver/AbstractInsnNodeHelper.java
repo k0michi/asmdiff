@@ -156,4 +156,165 @@ public class AbstractInsnNodeHelper {
     return node1.line == node2.line
             && labelEquals.test(node1.start, node2.start);
   }
+
+  public static int hashCode(AbstractInsnNode node) {
+    if (node == null) {
+      return 0;
+    }
+
+    if (node.getClass() == InsnNode.class) {
+      return Objects.hash(
+              node.getOpcode(),
+              node.getType(),
+              ListHelper.hashCode(node.visibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              ListHelper.hashCode(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode)
+      );
+    } else if (node.getClass() == IntInsnNode.class) {
+      IntInsnNode intNode = (IntInsnNode) node;
+      return Objects.hash(
+              node.getOpcode(),
+              node.getType(),
+              ListHelper.hashCode(node.visibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              ListHelper.hashCode(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              intNode.operand
+      );
+    } else if (node.getClass() == VarInsnNode.class) {
+      VarInsnNode varNode = (VarInsnNode) node;
+      return Objects.hash(
+              node.getOpcode(),
+              node.getType(),
+              ListHelper.hashCode(node.visibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              ListHelper.hashCode(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              varNode.var
+      );
+    } else if (node.getClass() == TypeInsnNode.class) {
+      TypeInsnNode typeNode = (TypeInsnNode) node;
+      return Objects.hash(
+              node.getOpcode(),
+              node.getType(),
+              ListHelper.hashCode(node.visibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              ListHelper.hashCode(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              typeNode.desc
+      );
+    } else if (node.getClass() == FieldInsnNode.class) {
+      FieldInsnNode fieldNode = (FieldInsnNode) node;
+      return Objects.hash(
+              node.getOpcode(),
+              node.getType(),
+              ListHelper.hashCode(node.visibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              ListHelper.hashCode(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              fieldNode.owner,
+              fieldNode.name,
+              fieldNode.desc
+      );
+    } else if (node.getClass() == MethodInsnNode.class) {
+      MethodInsnNode methodNode = (MethodInsnNode) node;
+      return Objects.hash(
+              node.getOpcode(),
+              node.getType(),
+              ListHelper.hashCode(node.visibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              ListHelper.hashCode(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              methodNode.owner,
+              methodNode.name,
+              methodNode.desc,
+              methodNode.itf
+      );
+    } else if (node.getClass() == InvokeDynamicInsnNode.class) {
+      InvokeDynamicInsnNode indyNode = (InvokeDynamicInsnNode) node;
+      return Objects.hash(
+              node.getOpcode(),
+              node.getType(),
+              ListHelper.hashCode(node.visibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              ListHelper.hashCode(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              indyNode.name,
+              indyNode.desc,
+              indyNode.bsm,
+              Arrays.hashCode(indyNode.bsmArgs)
+      );
+    } else if (node.getClass() == JumpInsnNode.class) {
+      JumpInsnNode jumpNode = (JumpInsnNode) node;
+      return Objects.hash(
+              node.getOpcode(),
+              node.getType(),
+              ListHelper.hashCode(node.visibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              ListHelper.hashCode(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              jumpNode.label
+      );
+    } else if (node.getClass() == LdcInsnNode.class) {
+      LdcInsnNode ldcNode = (LdcInsnNode) node;
+      return Objects.hash(
+              node.getOpcode(),
+              node.getType(),
+              ListHelper.hashCode(node.visibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              ListHelper.hashCode(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              ldcNode.cst
+      );
+    } else if (node.getClass() == IincInsnNode.class) {
+      IincInsnNode iincNode = (IincInsnNode) node;
+      return Objects.hash(
+              node.getOpcode(),
+              node.getType(),
+              ListHelper.hashCode(node.visibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              ListHelper.hashCode(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              iincNode.var,
+              iincNode.incr
+      );
+    } else if (node.getClass() == TableSwitchInsnNode.class) {
+      TableSwitchInsnNode tableSwitchNode = (TableSwitchInsnNode) node;
+      return Objects.hash(
+              node.getOpcode(),
+              node.getType(),
+              ListHelper.hashCode(node.visibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              ListHelper.hashCode(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              tableSwitchNode.min,
+              tableSwitchNode.max,
+              tableSwitchNode.dflt,
+              ListHelper.hashCode(tableSwitchNode.labels, Objects::hashCode)
+      );
+    } else if (node.getClass() == LookupSwitchInsnNode.class) {
+      LookupSwitchInsnNode lookupSwitchNode = (LookupSwitchInsnNode) node;
+      return Objects.hash(
+              node.getOpcode(),
+              node.getType(),
+              ListHelper.hashCode(node.visibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              ListHelper.hashCode(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              lookupSwitchNode.dflt,
+              ListHelper.hashCode(lookupSwitchNode.labels, Objects::hashCode),
+              ListHelper.hashCode(lookupSwitchNode.keys, Objects::hashCode)
+      );
+    } else if (node.getClass() == MultiANewArrayInsnNode.class) {
+      MultiANewArrayInsnNode multiANewArrayNode = (MultiANewArrayInsnNode) node;
+      return Objects.hash(
+              node.getOpcode(),
+              node.getType(),
+              ListHelper.hashCode(node.visibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              ListHelper.hashCode(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              multiANewArrayNode.desc,
+              multiANewArrayNode.dims
+      );
+    } else if (node.getClass() == FrameNode.class) {
+      FrameNode frameNode = (FrameNode) node;
+      return Objects.hash(
+              node.getOpcode(),
+              node.getType(),
+              ListHelper.hashCode(node.visibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              ListHelper.hashCode(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              frameNode.type,
+              ListHelper.hashCode(frameNode.local, Objects::hashCode),
+              ListHelper.hashCode(frameNode.stack, Objects::hashCode)
+      );
+    } else if (node.getClass() == LineNumberNode.class) {
+      LineNumberNode lineNumberNode = (LineNumberNode) node;
+      return Objects.hash(
+              node.getOpcode(),
+              node.getType(),
+              ListHelper.hashCode(node.visibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              ListHelper.hashCode(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              lineNumberNode.line,
+              lineNumberNode.start
+      );
+    }
+
+    return Objects.hash(node);
+  }
 }
