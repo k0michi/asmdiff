@@ -91,6 +91,10 @@ public class AnnotationNodeHelper {
   }
 
   public static int hashCode(AnnotationNode node) {
+    if (node == null) {
+      return 0;
+    }
+
     if (node.getClass() == AnnotationNode.class) {
       return Objects.hash(node.desc, ListHelper.hashCode(node.values, AnnotationNodeHelper::annotationValueHashCode));
     } else if (node.getClass() == TypeAnnotationNode.class) {
