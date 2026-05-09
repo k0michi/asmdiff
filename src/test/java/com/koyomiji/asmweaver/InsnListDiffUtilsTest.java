@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.analysis.DefUseChainAnalyzer;
 import com.koyomiji.asmweaver.util.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -7,10 +8,10 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.InsnNode;
-import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.analysis.AnalyzerException;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -284,7 +285,9 @@ class InsnListDiffUtilsTest {
     list2.add(new InsnNode(Opcodes.NOP));
     InsnListDiff diff = InsnListDiffUtils.diff(
             new InsnListListAdapter(list1),
-            new InsnListListAdapter(list2)
+            new HashMap<>(),
+            new InsnListListAdapter(list2),
+            new HashMap<>()
     );
     Assertions.assertEquals(1, diff.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, diff.operations.get(0).type);
@@ -299,7 +302,9 @@ class InsnListDiffUtilsTest {
     list2.add(new InsnNode(Opcodes.ACONST_NULL));
     InsnListDiff diff = InsnListDiffUtils.diff(
             new InsnListListAdapter(list1),
-            new InsnListListAdapter(list2)
+            new HashMap<>(),
+            new InsnListListAdapter(list2),
+            new HashMap<>()
     );
     Assertions.assertEquals(2, diff.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.DELETE, diff.operations.get(0).type);
@@ -317,7 +322,9 @@ class InsnListDiffUtilsTest {
     list2.add(new InsnNode(Opcodes.NOP));
     InsnListDiff diff = InsnListDiffUtils.diff(
             new InsnListListAdapter(list1),
-            new InsnListListAdapter(list2)
+            new HashMap<>(),
+            new InsnListListAdapter(list2),
+            new HashMap<>()
     );
     Assertions.assertEquals(2, diff.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.DELETE, diff.operations.get(0).type);
@@ -340,7 +347,9 @@ class InsnListDiffUtilsTest {
     }
     InsnListDiff diff = InsnListDiffUtils.diff(
             new InsnListListAdapter(list1),
-            new InsnListListAdapter(list2)
+            new HashMap<>(),
+            new InsnListListAdapter(list2),
+            new HashMap<>()
     );
     Assertions.assertEquals(numInsns, diff.operations.size());
     for (int i = 0; i < numInsns; i++) {
@@ -355,5 +364,65 @@ class InsnListDiffUtilsTest {
             new LabelNode(),
             new LabelNode()
     ));
+  }
+
+  private int distance(InsnListDiff diff) {
+    int distance = 0;
+    for (var op : diff.operations) {
+      if (op.type == InsnListDiff.Operation.Type.INSERT || op.type == InsnListDiff.Operation.Type.DELETE) {
+        distance++;
+      }
+    }
+    return distance;
+  }
+
+  @Test
+  void test_diff_local_0() throws AnalyzerException {
+    DefUseChainAnalyzer analyzer = new DefUseChainAnalyzer();
+    MethodNode methodNode = new MethodNode(Opcodes.ACC_PUBLIC, "method", "()V", null, null);
+    methodNode.maxLocals = 1;
+    methodNode.maxStack = 1;
+    methodNode.instructions.add(new IntInsnNode(Opcodes.BIPUSH, 42));
+    methodNode.instructions.add(new VarInsnNode(Opcodes.ISTORE, 0));
+    methodNode.instructions.add(new VarInsnNode(Opcodes.ILOAD, 0));
+    methodNode.instructions.add(new InsnNode(Opcodes.POP));
+    methodNode.instructions.add(new InsnNode(Opcodes.RETURN));
+    var result = analyzer.analyze("Test", methodNode);
+
+    HashMap<AbstractInsnNode, Integer> map1 = new HashMap<>();
+
+    for (int i = 0; i < result.getGroups().size(); i++) {
+      for (var defUse : result.getGroups().get(i)) {
+        map1.put(methodNode.instructions.get(defUse.insnIndex), i);
+      }
+    }
+
+    DefUseChainAnalyzer analyzer2 = new DefUseChainAnalyzer();
+    MethodNode methodNode2 = new MethodNode(Opcodes.ACC_PUBLIC, "method", "()V", null, null);
+    methodNode2.maxLocals = 1;
+    methodNode2.maxStack = 1;
+    methodNode2.instructions.add(new IntInsnNode(Opcodes.BIPUSH, 42));
+    methodNode2.instructions.add(new VarInsnNode(Opcodes.ISTORE, 0));
+    methodNode2.instructions.add(new VarInsnNode(Opcodes.ILOAD, 0));
+    methodNode2.instructions.add(new InsnNode(Opcodes.POP));
+    methodNode2.instructions.add(new InsnNode(Opcodes.RETURN));
+    var result2 = analyzer2.analyze("Test", methodNode2);
+
+    HashMap<AbstractInsnNode, Integer> map2 = new HashMap<>();
+
+    for (int i = 0; i < result2.getGroups().size(); i++) {
+      for (var defUse : result2.getGroups().get(i)) {
+        map2.put(methodNode2.instructions.get(defUse.insnIndex), i);
+      }
+    }
+
+    var diff = InsnListDiffUtils.diff(
+            new InsnListListAdapter(methodNode.instructions),
+            map1,
+            new InsnListListAdapter(methodNode2.instructions),
+            map2
+    );
+
+    Assertions.assertEquals(0, distance(diff));
   }
 }

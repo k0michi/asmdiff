@@ -622,6 +622,8 @@ public class InsnListDiffUtils {
 
     // Mapping from labels in A to labels in B
     BiHashMap<LabelNode, LabelNode> labelMap;
+    HashMap<Integer, Integer> duAToB;
+    HashMap<Integer, Integer> duBToA;
 
     //    final List<InsnListDiff.Operation> operations;
     final State previous;
@@ -629,17 +631,22 @@ public class InsnListDiffUtils {
 
     public State(int idxA, int idxB, int g, int h,
                  BiHashMap<LabelNode, LabelNode> labelMap,
+                 HashMap<Integer, Integer> duAToB, HashMap<Integer, Integer> duBToA,
                  State previous, InsnListDiff.Operation operation) {
       this.idxA = idxA;
       this.idxB = idxB;
       this.g = g;
       this.h = h;
       this.labelMap = labelMap;
+      this.duAToB = duAToB;
+      this.duBToA = duBToA;
       this.previous = previous;
       this.operation = operation;
     }
 
-    public static State create(int idxA, int idxB, BiHashMap<LabelNode, LabelNode> labelMap, State previous, InsnListDiff.Operation operation, Heuristic heuristicProvider) {
+    public static State create(int idxA, int idxB, BiHashMap<LabelNode, LabelNode> labelMap,
+                               HashMap<Integer, Integer> duAToB, HashMap<Integer, Integer> duBToA,
+                               State previous, InsnListDiff.Operation operation, Heuristic heuristicProvider) {
       int h = heuristicProvider.calculate(idxA, idxB, labelMap);
 //      int g = previous.g() + (operation.type == InsnListDiff.Operation.Type.MATCH ? 0 : 1);
 
@@ -659,7 +666,7 @@ public class InsnListDiffUtils {
 
 //      return new State(idxA, idxB, h, labelMap, operations);
 //      return new State(idxA, idxB, g, h, labelMap, operations);
-      return new State(idxA, idxB, g, h, labelMap, previous, operation);
+      return new State(idxA, idxB, g, h, labelMap, duAToB, duBToA, previous, operation);
     }
 
     public int g() {
@@ -688,11 +695,15 @@ public class InsnListDiffUtils {
     public final int idxA;
     public final int idxB;
     public final Map<LabelNode, LabelNode> aToB;
+    public final Map<Integer, Integer> duAToB;
+    public final Map<Integer, Integer> duBToA;
 
-    public StateKey(int idxA, int idxB, Map<LabelNode, LabelNode> aToB) {
+    public StateKey(int idxA, int idxB, Map<LabelNode, LabelNode> aToB, Map<Integer, Integer> duAToB, Map<Integer, Integer> duBToA) {
       this.idxA = idxA;
       this.idxB = idxB;
       this.aToB = aToB;
+      this.duAToB = duAToB;
+      this.duBToA = duBToA;
     }
 
     @Override
@@ -700,12 +711,12 @@ public class InsnListDiffUtils {
       if (this == o) return true;
       if (o == null || getClass() != o.getClass()) return false;
       StateKey stateKey = (StateKey) o;
-      return idxA == stateKey.idxA && idxB == stateKey.idxB && Objects.equals(aToB, stateKey.aToB);
+      return idxA == stateKey.idxA && idxB == stateKey.idxB && Objects.equals(aToB, stateKey.aToB) && Objects.equals(duAToB, stateKey.duAToB) && Objects.equals(duBToA, stateKey.duBToA);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(idxA, idxB, aToB);
+      return Objects.hash(idxA, idxB, aToB, duAToB, duBToA);
     }
   }
 
@@ -840,7 +851,7 @@ public class InsnListDiffUtils {
     return targets;
   }
 
-  public static InsnListDiff diff(List<AbstractInsnNode> listA, List<AbstractInsnNode> listB) {
+  public static InsnListDiff diff(List<AbstractInsnNode> listA, Map<AbstractInsnNode, Integer> duChainsA, List<AbstractInsnNode> listB, Map<AbstractInsnNode, Integer> duChainsB) {
     AbstractInsnNode[] insnsA = listA.toArray(new AbstractInsnNode[0]);
     AbstractInsnNode[] insnsB = listB.toArray(new AbstractInsnNode[0]);
 
@@ -861,6 +872,7 @@ public class InsnListDiffUtils {
               State.create(
                       nextRealIdxA, nextRealIdxB,
                       new BiHashMap<>(),
+                      new HashMap<>(), new HashMap<>(),
                       null,
                       null,
                       heuristicProvider
@@ -887,7 +899,7 @@ public class InsnListDiffUtils {
         return new InsnListDiff(operations);
       }
 
-      var currentKey = new StateKey(current.idxA, current.idxB, current.labelMap.forwardMap());
+      var currentKey = new StateKey(current.idxA, current.idxB, current.labelMap.forwardMap(), current.duAToB, current.duBToA);
       if (visited.containsKey(currentKey) && visited.get(currentKey) < current.g()) {
         continue;
       }
@@ -921,6 +933,7 @@ public class InsnListDiffUtils {
         var state = State.create(
                 nextRealIdxA, current.idxB,
                 current.labelMap,
+                current.duAToB, current.duBToA,
 //                concat(
 //                        current.operations,
 //                        new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, InsnListDiff.Operation.Mode.BETWEEN, insnsA[current.idxA])
@@ -940,6 +953,7 @@ public class InsnListDiffUtils {
         var state = State.create(
                 current.idxA, nextRealIdxB,
                 current.labelMap,
+                current.duAToB, current.duBToA,
 //                concat(
 //                        current.operations,
 //                        new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, InsnListDiff.Operation.Mode.BETWEEN, insnsB[current.idxB])
@@ -984,9 +998,31 @@ public class InsnListDiffUtils {
             newAToB.put(targetsA.get(i), targetsB.get(i));
           }
 
+          HashMap<Integer, Integer> newDuAToB = new HashMap<>(current.duAToB);
+          HashMap<Integer, Integer> newDuBToA = new HashMap<>(current.duBToA);
+
+          if (insnA instanceof VarInsnNode && insnB instanceof VarInsnNode) {
+            int varA = ((VarInsnNode) insnA).var;
+            int varB = ((VarInsnNode) insnB).var;
+            int duChainA = duChainsA.getOrDefault(insnA, -1);
+            int duChainB = duChainsB.getOrDefault(insnB, -1);
+
+            if (newDuAToB.containsKey(duChainA) && newDuAToB.get(duChainA) != varB) {
+              break match;
+            }
+
+            if (newDuBToA.containsKey(duChainB) && newDuBToA.get(duChainB) != varA) {
+              break match;
+            }
+
+            newDuAToB.put(duChainA, varB);
+            newDuBToA.put(duChainB, varA);
+          }
+
           var state = State.create(
                   nextRealIdxA, nextRealIdxB,
                   newAToB,
+                  newDuAToB, newDuBToA,
 //                  current.operations,
 //                  concat(
 //                          current.operations,
@@ -1005,7 +1041,7 @@ public class InsnListDiffUtils {
   }
 
   private static void tryAdd(PriorityQueue<State> pq, Map<StateKey, Integer> visited, State newState) {
-    var newStateKey = new StateKey(newState.idxA, newState.idxB, newState.labelMap.forwardMap());
+    var newStateKey = new StateKey(newState.idxA, newState.idxB, newState.labelMap.forwardMap(), newState.duAToB, newState.duBToA);
 
     if (visited.containsKey(newStateKey)) {
       int prevG = visited.get(newStateKey);
