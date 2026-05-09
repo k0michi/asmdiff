@@ -46,4 +46,5 @@ jmh {
 //    iterations = 5
 //    benchmarkMode = ['avgt']
 //    timeUnit = 'ns'
+    profilers = ['gc']
 }
