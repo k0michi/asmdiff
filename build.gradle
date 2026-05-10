@@ -23,11 +23,6 @@ dependencies {
 
 test {
     useJUnitPlatform()
-    maxHeapSize = "16G"
-}
-
-test {
-    useJUnitPlatform()
     finalizedBy jacocoTestReport
 }
 
