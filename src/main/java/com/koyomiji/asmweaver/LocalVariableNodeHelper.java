@@ -1,17 +1,14 @@
 package com.koyomiji.asmweaver;
 
-import com.koyomiji.asmweaver.util.BiFunctionHelper;
-import com.koyomiji.asmweaver.util.tuple.Pair;
+import com.koyomiji.asmweaver.util.tuple.Triplet;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LocalVariableNode;
 
 import java.util.Objects;
-import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
-import java.util.function.Function;
 
 public class LocalVariableNodeHelper {
-  public static boolean equals(LocalVariableNode a, LocalVariableNode b, BiPredicate<LabelNode, LabelNode> labelEquals, BiPredicate<Pair<LabelNode, Integer>, Pair<LabelNode, Integer>> localEquals) {
+  public static boolean equals(LocalVariableNode a, LocalVariableNode b, BiPredicate<LabelNode, LabelNode> labelEquals, BiPredicate<Triplet<LabelNode, LabelNode, Integer>, Triplet<LabelNode, LabelNode, Integer>> localEquals) {
     if (a == b) {
       return true;
     }
@@ -29,7 +26,7 @@ public class LocalVariableNodeHelper {
             && Objects.equals(a.signature, b.signature)
             && labelEquals.test(a.start, b.start)
             && labelEquals.test(a.end, b.end)
-            && localEquals.test(Pair.of(a.start, a.index), Pair.of(b.start, b.index));
+            && localEquals.test(Triplet.of(a.start, a.end, a.index), Triplet.of(b.start, b.end, b.index));
   }
 
   public static boolean equals(LocalVariableNode a, LocalVariableNode b) {
