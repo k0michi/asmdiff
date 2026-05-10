@@ -1,6 +1,5 @@
 package com.koyomiji.asmweaver;
 
-import com.koyomiji.asmweaver.util.BiFunctionHelper;
 import com.koyomiji.asmweaver.util.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -8,6 +7,7 @@ import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LocalVariableNode;
 
 import java.util.Map;
+import java.util.Objects;
 
 import static com.koyomiji.asmweaver.LabelNodes.l0;
 import static com.koyomiji.asmweaver.LabelNodes.l1;
@@ -84,7 +84,8 @@ class LocalVariableNodeHelperTest {
     LocalVariableNode node1 = new LocalVariableNode("name", "desc", "signature", l0, l0, 0);
     LocalVariableNode node2 = new LocalVariableNode("name", "desc", "signature", l1, l1, 0);
     Map<LabelNode, LabelNode> labelMap = Map.of(l0, l1);
-    Assertions.assertTrue(LocalVariableNodeHelper.equals(node1, node2, labelMap::get, BiFunctionHelper.second()));
+    Map<Pair<LabelNode, Integer>, Pair<LabelNode, Integer>> localMap = Map.of(Pair.of(l0, 0), Pair.of(l1, 0));
+    Assertions.assertTrue(LocalVariableNodeHelper.equals(node1, node2, (a, b) -> Objects.equals(labelMap.get(a), b), (a, b) -> Objects.equals(localMap.get(a), b)));
   }
 
   @Test
@@ -92,7 +93,7 @@ class LocalVariableNodeHelperTest {
     LocalVariableNode node1 = new LocalVariableNode("name", "desc", "signature", l0, l0, 0);
     LocalVariableNode node2 = new LocalVariableNode("name", "desc", "signature", l1, l1, 1);
     Map<LabelNode, LabelNode> labelMap = Map.of(l0, l1);
-    Map<Pair<LabelNode, Integer>, Integer> localMap = Map.of(new Pair<>(l0, 0), 1);
-    Assertions.assertTrue(LocalVariableNodeHelper.equals(node1, node2, labelMap::get, BiFunctionHelper.fromMap(localMap)));
+    Map<Pair<LabelNode, Integer>, Pair<LabelNode, Integer>> localMap = Map.of(Pair.of(l0, 0), Pair.of(l1, 1));
+    Assertions.assertTrue(LocalVariableNodeHelper.equals(node1, node2, (a, b) -> Objects.equals(labelMap.get(a), b), (a, b) -> Objects.equals(localMap.get(a), b)));
   }
 }
