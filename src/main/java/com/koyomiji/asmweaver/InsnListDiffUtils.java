@@ -625,8 +625,8 @@ public class InsnListDiffUtils {
     // Mapping from labels in A to labels in B
 //    BiHashMap<LabelNode, LabelNode> labelMap;
     BiPersistentHashMap<LabelNode, LabelNode> labelMap;
-    HashMap<Integer, Integer> duAToB;
-    HashMap<Integer, Integer> duBToA;
+    PersistentHashMap<Integer, Integer> duAToB;
+    PersistentHashMap<Integer, Integer> duBToA;
 
     //    final List<InsnListDiff.Operation> operations;
     final State previous;
@@ -634,7 +634,7 @@ public class InsnListDiffUtils {
 
     public State(int idxA, int idxB, int g, int h,
                  BiPersistentHashMap<LabelNode, LabelNode> labelMap,
-                 HashMap<Integer, Integer> duAToB, HashMap<Integer, Integer> duBToA,
+                 PersistentHashMap<Integer, Integer> duAToB, PersistentHashMap<Integer, Integer> duBToA,
                  State previous, InsnListDiff.Operation operation) {
       this.idxA = idxA;
       this.idxB = idxB;
@@ -648,7 +648,7 @@ public class InsnListDiffUtils {
     }
 
     public static State create(int idxA, int idxB, BiPersistentHashMap<LabelNode, LabelNode> labelMap,
-                               HashMap<Integer, Integer> duAToB, HashMap<Integer, Integer> duBToA,
+                               PersistentHashMap<Integer, Integer> duAToB, PersistentHashMap<Integer, Integer> duBToA,
                                State previous, InsnListDiff.Operation operation, Heuristic heuristicProvider) {
       int h = heuristicProvider.calculate(idxA, idxB, labelMap);
 //      int g = previous.g() + (operation.type == InsnListDiff.Operation.Type.MATCH ? 0 : 1);
@@ -698,10 +698,10 @@ public class InsnListDiffUtils {
     public final int idxA;
     public final int idxB;
     public final PersistentHashMap<LabelNode, LabelNode> aToB;
-    public final Map<Integer, Integer> duAToB;
-    public final Map<Integer, Integer> duBToA;
+    public final PersistentHashMap<Integer, Integer> duAToB;
+    public final PersistentHashMap<Integer, Integer> duBToA;
 
-    public StateKey(int idxA, int idxB, PersistentHashMap<LabelNode, LabelNode> aToB, Map<Integer, Integer> duAToB, Map<Integer, Integer> duBToA) {
+    public StateKey(int idxA, int idxB, PersistentHashMap<LabelNode, LabelNode> aToB, PersistentHashMap<Integer, Integer> duAToB, PersistentHashMap<Integer, Integer> duBToA) {
       this.idxA = idxA;
       this.idxB = idxB;
       this.aToB = aToB;
@@ -874,7 +874,7 @@ public class InsnListDiffUtils {
               State.create(
                       nextRealIdxA, nextRealIdxB,
                       new BiPersistentHashMap<>(),
-                      new HashMap<>(), new HashMap<>(),
+                      new PersistentHashMap<>(), new PersistentHashMap<>(),
                       null,
                       null,
                       heuristicProvider
@@ -1002,8 +1002,10 @@ public class InsnListDiffUtils {
             newAToB = newAToB.put(targetsA.get(i), targetsB.get(i));
           }
 
-          HashMap<Integer, Integer> newDuAToB = new HashMap<>(current.duAToB);
-          HashMap<Integer, Integer> newDuBToA = new HashMap<>(current.duBToA);
+//          HashMap<Integer, Integer> newDuAToB = new HashMap<>(current.duAToB);
+//          HashMap<Integer, Integer> newDuBToA = new HashMap<>(current.duBToA);
+          PersistentHashMap<Integer, Integer> newDuAToB = current.duAToB;
+          PersistentHashMap<Integer, Integer> newDuBToA = current.duBToA;
 
           if (insnA instanceof VarInsnNode && insnB instanceof VarInsnNode) {
             int varA = ((VarInsnNode) insnA).var;
@@ -1028,8 +1030,10 @@ public class InsnListDiffUtils {
               break match;
             }
 
-            newDuAToB.put(duChainA, varB);
-            newDuBToA.put(duChainB, varA);
+//            newDuAToB.put(duChainA, varB);
+//            newDuBToA.put(duChainB, varA);
+            newDuAToB = newDuAToB.put(duChainA, varB);
+            newDuBToA = newDuBToA.put(duChainB, varA);
           }
 
           var state = State.create(
