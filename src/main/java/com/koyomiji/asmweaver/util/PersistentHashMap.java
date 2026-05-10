@@ -80,6 +80,12 @@ public class PersistentHashMap<K, V> {
     return new PersistentHashMap<>(newRoot, size - 1, cachedHash - oldEntryHash);
   }
 
+  public boolean containsKey(K key) {
+    if (root == null) return false;
+    int h = Objects.hashCode(key);
+    return root.containsKey(0, h, key);
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -106,6 +112,7 @@ public class PersistentHashMap<K, V> {
     Node<K, V> put(int shift, int hash, K key, V value);
     Node<K, V> remove(int shift, int hash, K key);
     boolean isAdded(); // 直前のputで要素が増えたか（内部状態保持用）
+    boolean containsKey(int shift, int hash, K key);
   }
 
   // --- IndexedNode (中間ノード) ---
@@ -190,6 +197,13 @@ public class PersistentHashMap<K, V> {
     @Override public boolean isAdded() { return added; }
 
     @Override
+    public boolean containsKey(int shift, int hash, K key) {
+      int bit = bitpos(hash, shift);
+      if ((bitmap & bit) == 0) return false;
+      return nodes[index(bitmap, bit)].containsKey(shift + 5, hash, key);
+    }
+
+    @Override
     public boolean equals(Object o) {
       if (this == o) return true;
       if (!(o instanceof IndexedNode)) return false;
@@ -249,6 +263,11 @@ public class PersistentHashMap<K, V> {
     }
 
     @Override public boolean isAdded() { return added; }
+
+    @Override
+    public boolean containsKey(int shift, int hash, K key) {
+      return Objects.equals(this.key, key);
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -320,6 +339,14 @@ public class PersistentHashMap<K, V> {
     }
 
     @Override public boolean isAdded() { return added; }
+
+    @Override
+    public boolean containsKey(int shift, int hash, K key) {
+      for (Node<K, V> node : entries) {
+        if (node.containsKey(shift, hash, key)) return true;
+      }
+      return false;
+    }
 
     @Override
     public boolean equals(Object o) {
