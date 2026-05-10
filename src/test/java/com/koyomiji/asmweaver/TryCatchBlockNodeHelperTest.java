@@ -5,6 +5,9 @@ import org.junit.jupiter.api.Test;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.TryCatchBlockNode;
 
+import java.util.Map;
+import java.util.Objects;
+
 class TryCatchBlockNodeHelperTest {
   LabelNode l0 = new LabelNode();
   LabelNode l1 = new LabelNode();
@@ -67,11 +70,7 @@ class TryCatchBlockNodeHelperTest {
   void test_equals_8() {
     TryCatchBlockNode node1 = new TryCatchBlockNode(l0, l0, l0, null);
     TryCatchBlockNode node2 = new TryCatchBlockNode(l1, l1, l1, null);
-    Assertions.assertTrue(TryCatchBlockNodeHelper.equals(node1, node2, (l) -> {
-      if (l == l0) {
-        return l1;
-      }
-      throw new IllegalArgumentException("Unexpected label: " + l);
-    }));
+    Map<LabelNode, LabelNode> labelMap = Map.of(l0, l1);
+    Assertions.assertTrue(TryCatchBlockNodeHelper.equals(node1, node2, (lA, lB) -> Objects.equals(labelMap.get(lA), lB)));
   }
 }
