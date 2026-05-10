@@ -723,53 +723,33 @@ public class InsnListDiffUtils {
     }
   }
 
-  private static ArrayList<InsnListDiff.Operation> concat(
-          List<InsnListDiff.Operation> ops,
-          InsnListDiff.Operation op
-  ) {
-    var newOps = new ArrayList<>(ops);
-    newOps.add(op);
-    return newOps;
-  }
+  private static Map<LabelNode, Integer> lastLabelOccurrenceMap(AbstractInsnNode[] arr) {
+    Map<LabelNode, Integer> map = new HashMap<>();
 
-  private static AbstractInsnNode getOrNull(AbstractInsnNode[] arr, int idx) {
-    if (idx < 0 || idx >= arr.length) return null;
-    return arr[idx];
-  }
+//    for (AbstractInsnNode insn : arr) {
+//      var labels = getLabelTargets(insn);
+//
+//      for (var label : labels) {
+//        map.put(label, insn);
+//      }
+//    }
 
-  private static AbstractInsnNode getOrNull(InsnList insns, int idx) {
-    if (idx < 0 || idx >= insns.size()) return null;
-    return insns.get(idx);
-  }
-
-  private static AbstractInsnNode getOrNull(List<AbstractInsnNode> insns, int idx) {
-    if (idx < 0 || idx >= insns.size()) return null;
-    return insns.get(idx);
-  }
-
-  private static Map<LabelNode, AbstractInsnNode> lastLabelOccurrenceMap(AbstractInsnNode[] arr) {
-    Map<LabelNode, AbstractInsnNode> map = new HashMap<>();
-
-    for (AbstractInsnNode insn : arr) {
+    for (int i = 0; i < arr.length; i++) {
+      var insn = arr[i];
       var labels = getLabelTargets(insn);
 
       for (var label : labels) {
-        map.put(label, insn);
+        map.put(label, i);
       }
     }
 
     return map;
   }
 
-  private static AbstractInsnNode getPrevious(InsnList insns, AbstractInsnNode insn) {
-    if (insn == null) return insns.getLast();
-    return insn.getPrevious();
-  }
-
   private static void removeDeadLabels(
           State state,
-          Map<LabelNode, AbstractInsnNode> lastOccurrenceMapA,
-          Map<LabelNode, AbstractInsnNode> lastOccurrenceMapB,
+          Map<LabelNode, Integer> lastOccurrenceMapA,
+          Map<LabelNode, Integer> lastOccurrenceMapB,
           List<AbstractInsnNode> insnsA,
           List<AbstractInsnNode> insnsB
   ) {
@@ -778,21 +758,44 @@ public class InsnListDiffUtils {
     var currentLabelMap = state.labelMap;
 
     // --- Process A ---
-    var prevA = getOrNull(insnsA, state.idxA - 1);
-    if (prevA != null) {
+//    var prevA = getOrNull(insnsA, state.idxA - 1);
+//    if (prevA != null) {
+//      var labels = getLabelTargets(prevA);
+//      for (var label : labels) {
+//        if (lastOccurrenceMapA.get(label) == prevA) {
+//          var mappedB = currentLabelMap.get(label);
+//          if (mappedB != null) {
+//            var lastOccInsnB = lastOccurrenceMapB.get(mappedB);
+//            if (insnsB.indexOf(lastOccInsnB) < state.idxB) {
+//              // 初回変更時のみコピーを作成
+////              if (!isCopied) {
+////                currentLabelMap = new BiHashMap<>(currentLabelMap);
+////                isCopied = true;
+////              }
+////              currentLabelMap.remove(label);
+//              currentLabelMap = currentLabelMap.remove(label);
+//            }
+//          }
+//        }
+//      }
+//    }
+
+    int prevIdxA = state.idxA - 1;
+
+    if (prevIdxA >= 0) {
+      var prevA = insnsA.get(prevIdxA);
       var labels = getLabelTargets(prevA);
       for (var label : labels) {
-        if (lastOccurrenceMapA.get(label) == prevA) {
+        if (lastOccurrenceMapA.get(label) == prevIdxA) {
           var mappedB = currentLabelMap.get(label);
           if (mappedB != null) {
-            var lastOccInsnB = lastOccurrenceMapB.get(mappedB);
-            if (insnsB.indexOf(lastOccInsnB) < state.idxB) {
-              // 初回変更時のみコピーを作成
-//              if (!isCopied) {
-//                currentLabelMap = new BiHashMap<>(currentLabelMap);
-//                isCopied = true;
-//              }
-//              currentLabelMap.remove(label);
+//            var lastOccInsnB = getOrNull(insnsB, lastOccurrenceMapB.get(mappedB));
+//            if (lastOccInsnB != null && insnsB.indexOf(lastOccInsnB) < state.idxB) {
+//              currentLabelMap = currentLabelMap.remove(label);
+//            }
+
+            int lastOccIdxB = lastOccurrenceMapB.get(mappedB);
+            if (lastOccIdxB < state.idxB) {
               currentLabelMap = currentLabelMap.remove(label);
             }
           }
@@ -801,21 +804,38 @@ public class InsnListDiffUtils {
     }
 
     // --- Process B ---
-    var prevB = getOrNull(insnsB, state.idxB - 1);
-    if (prevB != null) {
+//    var prevB = getOrNull(insnsB, state.idxB - 1);
+//    if (prevB != null) {
+//      var labels = getLabelTargets(prevB);
+//      for (var label : labels) {
+//        if (lastOccurrenceMapB.get(label) == prevB) {
+//          var mappedA = currentLabelMap.getKey(label);
+//          if (mappedA != null) {
+//            var lastOccInsnA = lastOccurrenceMapA.get(mappedA);
+//            if (insnsA.indexOf(lastOccInsnA) < state.idxA) {
+//              // 初回変更時のみコピーを作成
+////              if (!isCopied) {
+////                currentLabelMap = new BiHashMap<>(currentLabelMap);
+////                isCopied = true;
+////              }
+////              currentLabelMap.remove(mappedA);
+//              currentLabelMap = currentLabelMap.remove(mappedA);
+//            }
+//          }
+//        }
+//      }
+//    }
+
+    int prevIdxB = state.idxB - 1;
+    if (prevIdxB >= 0) {
+      var prevB = insnsB.get(prevIdxB);
       var labels = getLabelTargets(prevB);
       for (var label : labels) {
-        if (lastOccurrenceMapB.get(label) == prevB) {
+        if (lastOccurrenceMapB.get(label) == prevIdxB) {
           var mappedA = currentLabelMap.getKey(label);
           if (mappedA != null) {
-            var lastOccInsnA = lastOccurrenceMapA.get(mappedA);
-            if (insnsA.indexOf(lastOccInsnA) < state.idxA) {
-              // 初回変更時のみコピーを作成
-//              if (!isCopied) {
-//                currentLabelMap = new BiHashMap<>(currentLabelMap);
-//                isCopied = true;
-//              }
-//              currentLabelMap.remove(mappedA);
+            int lastOccIdxA = lastOccurrenceMapA.get(mappedA);
+            if (lastOccIdxA < state.idxA) {
               currentLabelMap = currentLabelMap.remove(mappedA);
             }
           }
