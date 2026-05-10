@@ -1,7 +1,9 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.util.BiHashMap;
+import com.koyomiji.asmweaver.util.BiPersistentHashMap;
 import com.koyomiji.asmweaver.util.PeekableIterator;
+import com.koyomiji.asmweaver.util.PersistentHashMap;
 import com.koyomiji.asmweaver.util.tuple.Pair;
 import org.objectweb.asm.tree.*;
 
@@ -454,7 +456,7 @@ public class InsnListDiffUtils {
   }
 
   private static abstract class Heuristic {
-    public abstract int calculate(int indexA, int indexB, BiHashMap<LabelNode, LabelNode> labelMap);
+    public abstract int calculate(int indexA, int indexB, BiPersistentHashMap<LabelNode, LabelNode> labelMap);
   }
 
   private static class FuzzyDistanceHeuristic extends Heuristic {
@@ -486,7 +488,7 @@ public class InsnListDiffUtils {
     }
 
     @Override
-    public int calculate(int indexA, int indexB, BiHashMap<LabelNode, LabelNode> labelMap) {
+    public int calculate(int indexA, int indexB, BiPersistentHashMap<LabelNode, LabelNode> labelMap) {
       return table[indexA][indexB];
     }
   }
@@ -551,7 +553,7 @@ public class InsnListDiffUtils {
     }
 
     @Override
-    public int calculate(int targetX, int targetY, BiHashMap<LabelNode, LabelNode> labelMap) {
+    public int calculate(int targetX, int targetY, BiPersistentHashMap<LabelNode, LabelNode> labelMap) {
       if (targetX < 0 || targetY < 0 || targetX > n || targetY > m) {
         throw new IndexOutOfBoundsException();
       }
@@ -621,7 +623,8 @@ public class InsnListDiffUtils {
     final int h; // Heuristic
 
     // Mapping from labels in A to labels in B
-    BiHashMap<LabelNode, LabelNode> labelMap;
+//    BiHashMap<LabelNode, LabelNode> labelMap;
+    BiPersistentHashMap<LabelNode, LabelNode> labelMap;
     HashMap<Integer, Integer> duAToB;
     HashMap<Integer, Integer> duBToA;
 
@@ -630,7 +633,7 @@ public class InsnListDiffUtils {
     final InsnListDiff.Operation operation;
 
     public State(int idxA, int idxB, int g, int h,
-                 BiHashMap<LabelNode, LabelNode> labelMap,
+                 BiPersistentHashMap<LabelNode, LabelNode> labelMap,
                  HashMap<Integer, Integer> duAToB, HashMap<Integer, Integer> duBToA,
                  State previous, InsnListDiff.Operation operation) {
       this.idxA = idxA;
@@ -644,7 +647,7 @@ public class InsnListDiffUtils {
       this.operation = operation;
     }
 
-    public static State create(int idxA, int idxB, BiHashMap<LabelNode, LabelNode> labelMap,
+    public static State create(int idxA, int idxB, BiPersistentHashMap<LabelNode, LabelNode> labelMap,
                                HashMap<Integer, Integer> duAToB, HashMap<Integer, Integer> duBToA,
                                State previous, InsnListDiff.Operation operation, Heuristic heuristicProvider) {
       int h = heuristicProvider.calculate(idxA, idxB, labelMap);
@@ -694,11 +697,11 @@ public class InsnListDiffUtils {
   public static class StateKey {
     public final int idxA;
     public final int idxB;
-    public final Map<LabelNode, LabelNode> aToB;
+    public final PersistentHashMap<LabelNode, LabelNode> aToB;
     public final Map<Integer, Integer> duAToB;
     public final Map<Integer, Integer> duBToA;
 
-    public StateKey(int idxA, int idxB, Map<LabelNode, LabelNode> aToB, Map<Integer, Integer> duAToB, Map<Integer, Integer> duBToA) {
+    public StateKey(int idxA, int idxB, PersistentHashMap<LabelNode, LabelNode> aToB, Map<Integer, Integer> duAToB, Map<Integer, Integer> duBToA) {
       this.idxA = idxA;
       this.idxB = idxB;
       this.aToB = aToB;
@@ -770,11 +773,8 @@ public class InsnListDiffUtils {
           List<AbstractInsnNode> insnsA,
           List<AbstractInsnNode> insnsB
   ) {
-    var insnA = getOrNull(insnsA, state.idxA);
-    var insnB = getOrNull(insnsB, state.idxB);
-
     // 実際に変更があったかどうかを追跡
-    boolean isCopied = false;
+//    boolean isCopied = false;
     var currentLabelMap = state.labelMap;
 
     // --- Process A ---
@@ -788,11 +788,12 @@ public class InsnListDiffUtils {
             var lastOccInsnB = lastOccurrenceMapB.get(mappedB);
             if (insnsB.indexOf(lastOccInsnB) < state.idxB) {
               // 初回変更時のみコピーを作成
-              if (!isCopied) {
-                currentLabelMap = new BiHashMap<>(currentLabelMap);
-                isCopied = true;
-              }
-              currentLabelMap.remove(label);
+//              if (!isCopied) {
+//                currentLabelMap = new BiHashMap<>(currentLabelMap);
+//                isCopied = true;
+//              }
+//              currentLabelMap.remove(label);
+              currentLabelMap = currentLabelMap.remove(label);
             }
           }
         }
@@ -810,11 +811,12 @@ public class InsnListDiffUtils {
             var lastOccInsnA = lastOccurrenceMapA.get(mappedA);
             if (insnsA.indexOf(lastOccInsnA) < state.idxA) {
               // 初回変更時のみコピーを作成
-              if (!isCopied) {
-                currentLabelMap = new BiHashMap<>(currentLabelMap);
-                isCopied = true;
-              }
-              currentLabelMap.remove(mappedA);
+//              if (!isCopied) {
+//                currentLabelMap = new BiHashMap<>(currentLabelMap);
+//                isCopied = true;
+//              }
+//              currentLabelMap.remove(mappedA);
+              currentLabelMap = currentLabelMap.remove(mappedA);
             }
           }
         }
@@ -822,9 +824,9 @@ public class InsnListDiffUtils {
     }
 
     // 変更があった場合のみ、元のStateに反映
-    if (isCopied) {
+//    if (isCopied) {
       state.labelMap = currentLabelMap;
-    }
+//    }
   }
 
   public static List<LabelNode> getLabelTargets(AbstractInsnNode insn) {
@@ -871,7 +873,7 @@ public class InsnListDiffUtils {
       tryAdd(pq, visited,
               State.create(
                       nextRealIdxA, nextRealIdxB,
-                      new BiHashMap<>(),
+                      new BiPersistentHashMap<>(),
                       new HashMap<>(), new HashMap<>(),
                       null,
                       null,
@@ -988,14 +990,16 @@ public class InsnListDiffUtils {
         var nextRealIdxB = current.idxB + 1;
 
         if (contentMatch) {
-          BiHashMap<LabelNode, LabelNode> newAToB = new BiHashMap<>(current.labelMap);
+//          BiHashMap<LabelNode, LabelNode> newAToB = targetsA.size() > 0 ? new BiHashMap<>(current.labelMap) : current.labelMap;
+          BiPersistentHashMap<LabelNode, LabelNode> newAToB = current.labelMap;
 
           for (int i = 0; i < targetsA.size(); i++) {
             if (!newAToB.canPut(targetsA.get(i), targetsB.get(i))) {
               break match;
             }
 
-            newAToB.put(targetsA.get(i), targetsB.get(i));
+//            newAToB.put(targetsA.get(i), targetsB.get(i));
+            newAToB = newAToB.put(targetsA.get(i), targetsB.get(i));
           }
 
           HashMap<Integer, Integer> newDuAToB = new HashMap<>(current.duAToB);
