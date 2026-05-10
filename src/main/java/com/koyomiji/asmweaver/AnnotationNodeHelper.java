@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.util.tuple.Pair;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LocalVariableAnnotationNode;
@@ -15,7 +16,7 @@ public class AnnotationNodeHelper {
     return equals(a, b, Objects::equals, Objects::equals);
   }
 
-  public static boolean equals(AnnotationNode a, AnnotationNode b, BiPredicate<LabelNode, LabelNode> labelEquals, BiPredicate<Integer, Integer> localEquals) {
+  public static boolean equals(AnnotationNode a, AnnotationNode b, BiPredicate<LabelNode, LabelNode> labelEquals, BiPredicate<Pair<LabelNode, Integer>, Pair<LabelNode, Integer>> localEquals) {
     if (a == b) {
       return true;
     }
@@ -64,7 +65,7 @@ public class AnnotationNodeHelper {
             && TypePathHelper.equals(a.typePath, b.typePath);
   }
 
-  private static boolean equals(LocalVariableAnnotationNode a, LocalVariableAnnotationNode b, BiPredicate<LabelNode, LabelNode> labelEquals, BiPredicate<Integer, Integer> localEquals) {
+  private static boolean equals(LocalVariableAnnotationNode a, LocalVariableAnnotationNode b, BiPredicate<LabelNode, LabelNode> labelEquals, BiPredicate<Pair<LabelNode, Integer>, Pair<LabelNode, Integer>> localEquals) {
     if (a.start.size() != b.start.size()) {
       return false;
     }
@@ -80,9 +81,14 @@ public class AnnotationNodeHelper {
     int size = Math.max(a.start.size(), Math.max(a.end.size(), a.index.size()));
 
     for (int i = 0; i < size; i++) {
-      if (!labelEquals.test(ListHelper.getOrNull(a.start, i), ListHelper.getOrNull(b.start, i))
-              || !labelEquals.test(ListHelper.getOrNull(a.end, i), ListHelper.getOrNull(b.end, i))
-              || !localEquals.test(ListHelper.getOrNull(a.index, i), ListHelper.getOrNull(b.index, i))) {
+      if (
+              !labelEquals.test(ListHelper.getOrNull(a.start, i), ListHelper.getOrNull(b.start, i))
+                      || !labelEquals.test(ListHelper.getOrNull(a.end, i), ListHelper.getOrNull(b.end, i))
+                      || !localEquals.test(
+                      Pair.of(ListHelper.getOrNull(a.start, i), ListHelper.getOrNull(a.index, i))
+                      , Pair.of(ListHelper.getOrNull(b.start, i), ListHelper.getOrNull(b.index, i))
+              )
+      ) {
         return false;
       }
     }
