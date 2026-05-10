@@ -13,6 +13,10 @@ public class Triplet<A, B, C> {
     this.third = third;
   }
 
+  public static <A, B, C> Triplet<A, B, C> of(A first, B second, C third) {
+    return new Triplet<>(first, second, third);
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
