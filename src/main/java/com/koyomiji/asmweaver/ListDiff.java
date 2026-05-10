@@ -2,11 +2,22 @@ package com.koyomiji.asmweaver;
 
 import java.util.List;
 
-public class ListDiff<T> {
+public class ListDiff<T> implements IDiff {
   public List<Operation<T>> operations;
 
   public ListDiff(List<Operation<T>> operations) {
     this.operations = operations;
+  }
+
+  @Override
+  public boolean isEmpty() {
+    for (Operation<T> op : operations) {
+      if (op.type != Operation.Type.MATCH) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   public static class Operation<T> {

@@ -4,11 +4,22 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 
 import java.util.List;
 
-public class InsnListDiff {
+public class InsnListDiff implements IDiff {
   public List<Operation> operations;
 
   public InsnListDiff(List<Operation> operations) {
     this.operations = operations;
+  }
+
+  @Override
+  public boolean isEmpty() {
+    for (Operation op : operations) {
+      if (op.type != Operation.Type.MATCH) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   public static class Operation {

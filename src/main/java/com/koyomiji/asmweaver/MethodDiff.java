@@ -4,7 +4,7 @@ import org.objectweb.asm.tree.*;
 
 import java.util.List;
 
-public class MethodDiff {
+public class MethodDiff implements IDiff {
   public ListDiff<Integer> access;
   public ListDiff<String> name;
   public ListDiff<String> desc;
@@ -26,4 +26,28 @@ public class MethodDiff {
   public ListDiff<LocalVariableNode> localVariables;
   public ListDiff<LocalVariableAnnotationNode> visibleLocalVariableAnnotations;
   public ListDiff<LocalVariableAnnotationNode> invisibleLocalVariableAnnotations;
+
+  @Override
+  public boolean isEmpty() {
+    return access.isEmpty()
+            && name.isEmpty()
+            && desc.isEmpty()
+            && signature.isEmpty()
+            && exceptions.isEmpty()
+            && parameters.isEmpty()
+            && visibleAnnotations.isEmpty()
+            && invisibleAnnotations.isEmpty()
+            && visibleTypeAnnotations.isEmpty()
+            && invisibleTypeAnnotations.isEmpty()
+            && annotationDefault.isEmpty()
+            && visibleAnnotableParameterCount.isEmpty()
+            && visibleParameterAnnotations.isEmpty()
+            && invisibleAnnotableParameterCount.isEmpty()
+            && invisibleParameterAnnotations.isEmpty()
+            && instructions.operations.isEmpty()
+            && tryCatchBlocks.isEmpty()
+            && localVariables.isEmpty()
+            && visibleLocalVariableAnnotations.isEmpty()
+            && invisibleLocalVariableAnnotations.isEmpty();
+  }
 }

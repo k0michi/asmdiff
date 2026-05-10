@@ -2,11 +2,22 @@ package com.koyomiji.asmweaver;
 
 import java.util.List;
 
-public class KeyedListDiff<Key, Value, Diff> {
+public class KeyedListDiff<Key, Value, Diff> implements IDiff {
   public List<Operation<Key, Value, Diff>> operations;
 
   public KeyedListDiff(List<Operation<Key, Value, Diff>> operations) {
     this.operations = operations;
+  }
+
+  @Override
+  public boolean isEmpty() {
+    for (Operation<Key, Value, Diff> op : operations) {
+      if (op.type != Operation.Type.MATCH) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   public static class Operation<Key, Value, Diff> {
