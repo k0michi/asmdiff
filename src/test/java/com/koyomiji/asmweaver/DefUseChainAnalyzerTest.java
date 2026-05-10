@@ -14,7 +14,7 @@ class DefUseChainAnalyzerTest {
   @Test
   void test_analyze_0() throws AnalyzerException {
     DefUseChainAnalyzer analyzer = new DefUseChainAnalyzer();
-    MethodNode methodNode = new MethodNode(Opcodes.ACC_PUBLIC, "method", "()V", null, null);
+    MethodNode methodNode = new MethodNode(Opcodes.ACC_STATIC, "method", "()V", null, null);
     methodNode.maxLocals = 1;
     methodNode.maxStack = 1;
     methodNode.instructions.add(new IntInsnNode(Opcodes.BIPUSH, 42));
@@ -33,7 +33,7 @@ class DefUseChainAnalyzerTest {
   @Test
   void test_analyze_1() throws AnalyzerException {
     DefUseChainAnalyzer analyzer = new DefUseChainAnalyzer();
-    MethodNode methodNode = new MethodNode(Opcodes.ACC_PUBLIC, "method", "()V", null, null);
+    MethodNode methodNode = new MethodNode(Opcodes.ACC_STATIC, "method", "()V", null, null);
     methodNode.maxLocals = 1;
     methodNode.maxStack = 1;
     methodNode.instructions.add(new IntInsnNode(Opcodes.BIPUSH, 42));
@@ -51,5 +51,45 @@ class DefUseChainAnalyzerTest {
     Assertions.assertEquals(2, groups.get(0).size());
     Assertions.assertTrue(groups.get(0).stream().anyMatch(defUse -> defUse.index == 0 && defUse.insnIndex == 1));
     Assertions.assertTrue(groups.get(0).stream().anyMatch(defUse -> defUse.index == 0 && defUse.insnIndex == 2));
+  }
+
+  @Test
+  void test_analyze_parameter_0() throws AnalyzerException {
+    DefUseChainAnalyzer analyzer = new DefUseChainAnalyzer();
+    MethodNode methodNode = new MethodNode(Opcodes.ACC_STATIC, "method", "(I)V", null, null);
+    methodNode.maxLocals = 1;
+    methodNode.maxStack = 1;
+    methodNode.instructions.add(new VarInsnNode(Opcodes.ILOAD, 0));
+    methodNode.instructions.add(new InsnNode(Opcodes.POP));
+    methodNode.instructions.add(new InsnNode(Opcodes.RETURN));
+    var result = analyzer.analyze("Test", methodNode);
+    var groups = result.getGroups();
+    Assertions.assertEquals(1, groups.size());
+    Assertions.assertEquals(4, groups.get(0).size());
+    Assertions.assertTrue(groups.get(0).stream().anyMatch(defUse -> defUse.index == 0 && defUse.insnIndex == -1));
+    Assertions.assertTrue(groups.get(0).stream().anyMatch(defUse -> defUse.index == 0 && defUse.insnIndex == 0));
+    Assertions.assertTrue(groups.get(0).stream().anyMatch(defUse -> defUse.index == 0 && defUse.insnIndex == 1));
+    Assertions.assertTrue(groups.get(0).stream().anyMatch(defUse -> defUse.index == 0 && defUse.insnIndex == 2));
+  }
+
+  @Test
+  void test_analyze_propagation_0() throws AnalyzerException {
+    DefUseChainAnalyzer analyzer = new DefUseChainAnalyzer();
+    MethodNode methodNode = new MethodNode(Opcodes.ACC_STATIC, "method", "()V", null, null);
+    methodNode.maxLocals = 2;
+    methodNode.maxStack = 2;
+    methodNode.instructions.add(new IntInsnNode(Opcodes.BIPUSH, 42));
+    methodNode.instructions.add(new VarInsnNode(Opcodes.ISTORE, 0));
+    methodNode.instructions.add(new InsnNode(Opcodes.NOP));
+    methodNode.instructions.add(new VarInsnNode(Opcodes.ILOAD, 0));
+    methodNode.instructions.add(new InsnNode(Opcodes.POP));
+    methodNode.instructions.add(new InsnNode(Opcodes.RETURN));
+    var result = analyzer.analyze("Test", methodNode);
+    var groups = result.getGroups();
+    Assertions.assertEquals(1, groups.size());
+    Assertions.assertEquals(3, groups.get(0).size());
+    Assertions.assertTrue(groups.get(0).stream().anyMatch(defUse -> defUse.index == 0 && defUse.insnIndex == 1));
+    Assertions.assertTrue(groups.get(0).stream().anyMatch(defUse -> defUse.index == 0 && defUse.insnIndex == 2));
+    Assertions.assertTrue(groups.get(0).stream().anyMatch(defUse -> defUse.index == 0 && defUse.insnIndex == 3));
   }
 }
