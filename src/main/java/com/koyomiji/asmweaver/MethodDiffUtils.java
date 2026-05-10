@@ -20,11 +20,27 @@ public class MethodDiffUtils {
     diff.desc = ListDiffUtils.diff(ListHelper.ofNullable(node1.desc), ListHelper.ofNullable(node2.desc), String::equals);
     diff.signature = ListDiffUtils.diff(ListHelper.ofNullable(node1.signature), ListHelper.ofNullable(node2.signature), String::equals);
     diff.exceptions = ListDiffUtils.diff(node1.exceptions, node2.exceptions, String::equals);
-    diff.parameters = ListDiffUtils.diff(node1.parameters, node2.parameters, ParameterNodeHelper::equals);
-    diff.visibleAnnotations = ListDiffUtils.diff(node1.visibleAnnotations, node2.visibleAnnotations, AnnotationNodeHelper::equals);
-    diff.invisibleAnnotations = ListDiffUtils.diff(node1.invisibleAnnotations, node2.invisibleAnnotations, AnnotationNodeHelper::equals);
-    diff.visibleTypeAnnotations = ListDiffUtils.diff(node1.visibleTypeAnnotations, node2.visibleTypeAnnotations, AnnotationNodeHelper::equals);
-    diff.invisibleTypeAnnotations = ListDiffUtils.diff(node1.invisibleTypeAnnotations, node2.invisibleTypeAnnotations, AnnotationNodeHelper::equals);
+    diff.parameters = ListDiffUtils.diff(ListHelper.orEmpty(node1.parameters), ListHelper.orEmpty(node2.parameters), ParameterNodeHelper::equals);
+    diff.visibleAnnotations = ListDiffUtils.diff(
+            ListHelper.orEmpty(node1.visibleAnnotations),
+            ListHelper.orEmpty(node2.visibleAnnotations),
+            AnnotationNodeHelper::equals
+    );
+    diff.invisibleAnnotations = ListDiffUtils.diff(
+            ListHelper.orEmpty(node1.invisibleAnnotations),
+            ListHelper.orEmpty(node2.invisibleAnnotations),
+            AnnotationNodeHelper::equals
+    );
+    diff.visibleTypeAnnotations = ListDiffUtils.diff(
+            ListHelper.orEmpty(node1.visibleTypeAnnotations),
+            ListHelper.orEmpty(node2.visibleTypeAnnotations),
+            AnnotationNodeHelper::equals
+    );
+    diff.invisibleTypeAnnotations = ListDiffUtils.diff(
+            ListHelper.orEmpty(node1.invisibleTypeAnnotations),
+            ListHelper.orEmpty(node2.invisibleTypeAnnotations),
+            AnnotationNodeHelper::equals
+    );
     // attrs
     diff.annotationDefault = ListDiffUtils.diff(ListHelper.ofNullable(node1.annotationDefault), ListHelper.ofNullable(node2.annotationDefault), Object::equals);
     diff.visibleAnnotableParameterCount = ListDiffUtils.diff(ListHelper.ofNullable(node1.visibleAnnotableParameterCount), ListHelper.ofNullable(node2.visibleAnnotableParameterCount), Integer::equals);
