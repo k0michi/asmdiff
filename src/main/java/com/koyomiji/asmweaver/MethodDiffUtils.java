@@ -3,14 +3,11 @@ package com.koyomiji.asmweaver;
 import com.koyomiji.asmweaver.analysis.DefUse;
 import com.koyomiji.asmweaver.analysis.DefUseChainAnalyzer;
 import com.koyomiji.asmweaver.util.UnionFind;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.AnnotationNode;
-import org.objectweb.asm.tree.MethodNode;
+import com.koyomiji.asmweaver.util.tuple.Pair;
+import org.objectweb.asm.tree.*;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class MethodDiffUtils {
   public static MethodDiff diff(MethodNode node1, MethodNode node2) {
@@ -124,7 +121,94 @@ public class MethodDiffUtils {
             duChains2::get
     );
 
-    // TODO
+    Map<LabelNode, Integer> labelIndices1 = new HashMap<>();
+
+    for (int i = 0; i < node1.instructions.size(); i++) {
+      AbstractInsnNode insn = node1.instructions.get(i);
+      if (insn instanceof LabelNode) {
+        labelIndices1.put((LabelNode) insn, i);
+      }
+    }
+
+    Map<LabelNode, Integer> labelIndices2 = new HashMap<>();
+
+    for (int i = 0; i < node2.instructions.size(); i++) {
+      AbstractInsnNode insn = node2.instructions.get(i);
+      if (insn instanceof LabelNode) {
+        labelIndices2.put((LabelNode) insn, i);
+      }
+    }
+
+    Map<LabelNode, LabelNode> labelMap = extractLabelMap(node1.instructions, node2.instructions, diff.instructions);
+    List<Pair<Integer, Integer>> locals1 = new ArrayList<>();
+    List<Pair<Integer, Integer>> locals2 = new ArrayList<>();
+
+    diff.tryCatchBlocks = ListDiffUtils.diff(
+            node1.tryCatchBlocks,
+            node2.tryCatchBlocks,
+            (a, b) -> TryCatchBlockNodeHelper.equals(a, b, (lA, lB) -> labelMap.get(lA) == lB)
+    );
+
+    diff.localVariables = ListDiffUtils.diff(
+            node1.localVariables,
+            node2.localVariables,
+            (a, b) ->
+                    LocalVariableNodeHelper.equals(a, b,
+                            (lA, lB) -> labelMap.get(lA) == lB,
+                            // FIXME:
+                            (tA, tB) -> labelMap.get(tA.first) == tB.first && labelMap.get(tA.second) == tB.second && Objects.equals(tA.third, tB.third)
+                    )
+    );
+
+    diff.visibleLocalVariableAnnotations = ListDiffUtils.diff(
+            ListHelper.orEmpty(node1.visibleLocalVariableAnnotations),
+            ListHelper.orEmpty(node2.visibleLocalVariableAnnotations),
+            (a, b) ->
+                    AnnotationNodeHelper.equals(a, b,
+                            (lA, lB) -> labelMap.get(lA) == lB,
+                            // FIXME:
+                            (tA, tB) -> labelMap.get(tA.first) == tB.first && labelMap.get(tA.second) == tB.second && Objects.equals(tA.third, tB.third)
+                    )
+    );
+
+    diff.invisibleLocalVariableAnnotations = ListDiffUtils.diff(
+            ListHelper.orEmpty(node1.invisibleLocalVariableAnnotations),
+            ListHelper.orEmpty(node2.invisibleLocalVariableAnnotations),
+            (a, b) ->
+                    AnnotationNodeHelper.equals(a, b,
+                            (lA, lB) -> labelMap.get(lA) == lB,
+                            // FIXME:
+                            (tA, tB) -> labelMap.get(tA.first) == tB.first && labelMap.get(tA.second) == tB.second && Objects.equals(tA.third, tB.third)
+                    )
+    );
+
     return diff;
+  }
+
+  private static Map<LabelNode, LabelNode> extractLabelMap(InsnList list1, InsnList list2, InsnListDiff diff) {
+    int i = 0, j = 0;
+    Map<LabelNode, LabelNode> labelMap = new HashMap<>();
+
+    for (InsnListDiff.Operation op : diff.operations) {
+      switch (op.type) {
+        case MATCH:
+          List<LabelNode> labels1 = InsnListDiffUtils.getLabelTargets(list1.get(i));
+          List<LabelNode> labels2 = InsnListDiffUtils.getLabelTargets(list2.get(j));
+          for (int k = 0; k < Math.min(labels1.size(), labels2.size()); k++) {
+            labelMap.put(labels1.get(k), labels2.get(k));
+          }
+          i++;
+          j++;
+          break;
+        case DELETE:
+          i++;
+          break;
+        case INSERT:
+          j++;
+          break;
+      }
+    }
+
+    return labelMap;
   }
 }

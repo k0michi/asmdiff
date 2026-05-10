@@ -16,7 +16,7 @@ public class AnnotationNodeHelper {
     return equals(a, b, Objects::equals, Objects::equals);
   }
 
-  public static boolean equals(AnnotationNode a, AnnotationNode b, BiPredicate<LabelNode, LabelNode> labelEquals, BiPredicate<Pair<LabelNode, Integer>, Pair<LabelNode, Integer>> localEquals) {
+  public static boolean equals(AnnotationNode a, AnnotationNode b, BiPredicate<LabelNode, LabelNode> labelEquals, BiPredicate<Triplet<LabelNode, LabelNode, Integer>, Triplet<LabelNode, LabelNode, Integer>> localEquals) {
     if (a == b) {
       return true;
     }
