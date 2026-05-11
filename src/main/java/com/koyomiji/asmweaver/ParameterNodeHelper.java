@@ -14,7 +14,24 @@ public class ParameterNodeHelper {
       return false;
     }
 
-    return Objects.equals(node1.name, node2.name)
-            && Objects.equals(node1.access, node2.access);
+    if (node1.getClass() != node2.getClass()) {
+      return false;
+    }
+
+    if (node1.getClass() == ParameterNode.class) {
+      return Objects.equals(node1.name, node2.name)
+              && node1.access == node2.access;
+    }
+
+    // Non-standard
+    return Objects.equals(node1, node2);
+  }
+
+  public static int hashCode(ParameterNode node) {
+    if (node == null) {
+      return 0;
+    }
+
+    return Objects.hash(node.name, node.access);
   }
 }
