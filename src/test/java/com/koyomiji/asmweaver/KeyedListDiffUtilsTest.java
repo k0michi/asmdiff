@@ -52,7 +52,7 @@ class KeyedListDiffUtilsTest {
   }
 
   private KeyedObject patchKeyedObject(KeyedObject o, KeyedObjectDiff diff) {
-    return new KeyedObject(o.key, ListDiffUtils.getPatched(diff.value).get(0));
+    return new KeyedObject(o.key, ListDiffUtils.patchSingle(o.value, diff.value));
   }
 
   @Test

@@ -161,15 +161,21 @@ public class ListDiffUtils {
     return new ListDiff<>(reversedOperations);
   }
 
-  public static <T> List<T> getPatched(ListDiff<T> diff) {
+  public static <T> List<T> patch(List<T> list, ListDiff<T> diff) {
     List<T> result = new ArrayList<>();
+    int i = 0;
 
     for (ListDiff.Operation<T> op : diff.operations) {
       switch (op.type) {
-        case MATCH, INSERT:
+        case MATCH:
+          result.add(list.get(i));
+          i++;
+          break;
+        case INSERT:
           result.add(op.operand);
           break;
         case DELETE:
+          i++;
           break;
         default:
           throw new IllegalStateException("Unexpected operation type: " + op.type);
@@ -177,5 +183,15 @@ public class ListDiffUtils {
     }
 
     return result;
+  }
+
+  public static <T> T patchSingle(T element, ListDiff<T> diff) throws IllegalDiffException {
+    List<T> patched = patch(List.of(element), diff);
+
+    if (patched.size() != 1) {
+      throw new IllegalDiffException("Expected exactly one element after patching, but got " + patched.size());
+    }
+
+    return patched.get(0);
   }
 }

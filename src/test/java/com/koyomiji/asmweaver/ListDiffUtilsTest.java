@@ -146,12 +146,12 @@ class ListDiffUtilsTest {
 
   @ParameterizedTest
   @MethodSource("lists")
-  void test_getPatched(List<Integer> list) {
+  void test_patch(List<Integer> list) {
     var list1 = List.of(1, 2, 3);
 
     var diff12 = ListDiffUtils.diff(list1, list, Integer::equals);
 
-    var patched = ListDiffUtils.getPatched(diff12);
+    var patched = ListDiffUtils.patch(list1, diff12);
     Assertions.assertEquals(list, patched);
   }
 
