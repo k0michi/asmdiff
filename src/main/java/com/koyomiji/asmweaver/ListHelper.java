@@ -16,6 +16,15 @@ public class ListHelper {
     return element != null ? List.of(element) : List.of();
   }
 
+  public static <T> List<T> ofNonNullable(T element) {
+    if (element == null) {
+      throw new IllegalArgumentException("Element cannot be null");
+    }
+
+    return List.of(element);
+  }
+
+  // TODO: rename
   public static <T> List<T> ofNullableArray(T[] array) {
     return array != null ? List.of(array) : List.of();
   }
@@ -46,6 +55,14 @@ public class ListHelper {
     return equals(a, b, Objects::equals);
   }
 
+  public static <T> boolean equalsNullToEmpty(List<T> a, List<T> b, BiPredicate<T, T> compare) {
+    return equals(orEmpty(a), orEmpty(b), compare);
+  }
+
+  public static <T> boolean equalsNullToEmpty(List<T> a, List<T> b) {
+    return equalsNullToEmpty(a, b, Objects::equals);
+  }
+
   public static <T> T getOrNull(List<T> list, int index) {
     if (index < 0 || index >= list.size()) {
       return null;
@@ -66,5 +83,17 @@ public class ListHelper {
     }
 
     return builder.build();
+  }
+
+  public static <T> int hashCode(List<T> list) {
+    return hashCode(list, Objects::hashCode);
+  }
+
+  public  static <T> int hashCodeNullToEmpty(List<T> list, ToIntFunction<T> hashFunction) {
+    return hashCode(orEmpty(list), hashFunction);
+  }
+
+  public static <T> int hashCodeNullToEmpty(List<T> list) {
+    return hashCodeNullToEmpty(list, Objects::hashCode);
   }
 }

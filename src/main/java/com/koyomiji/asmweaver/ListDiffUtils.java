@@ -185,11 +185,21 @@ public class ListDiffUtils {
     return result;
   }
 
-  public static <T> T patchSingle(T element, ListDiff<T> diff) throws IllegalDiffException {
-    List<T> patched = patch(List.of(element), diff);
+  public static <T> T patchNullable(T element, ListDiff<T> diff) throws IllegalDiffException {
+    List<T> patched = patch(ListHelper.ofNullable(element), diff);
+
+    if (patched.size() > 1) {
+      throw new IllegalDiffException("Diff results in multiple elements, expected at most one");
+    }
+
+    return patched.isEmpty() ? null : patched.get(0);
+  }
+
+  public static <T> T patchNonNullable(T element, ListDiff<T> diff) throws IllegalDiffException {
+    List<T> patched = patch(ListHelper.ofNonNullable(element), diff);
 
     if (patched.size() != 1) {
-      throw new IllegalDiffException("Expected exactly one element after patching, but got " + patched.size());
+      throw new IllegalDiffException("Diff results in zero or multiple elements, expected exactly one");
     }
 
     return patched.get(0);
