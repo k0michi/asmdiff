@@ -5,7 +5,7 @@ import org.objectweb.asm.tree.RecordComponentNode;
 
 import java.util.Objects;
 
-public class RecordComponentHelper {
+public class RecordComponentNodeHelper {
   public static boolean equals(RecordComponentNode node1, RecordComponentNode node2) {
     if (node1 == node2) {
       return true;
