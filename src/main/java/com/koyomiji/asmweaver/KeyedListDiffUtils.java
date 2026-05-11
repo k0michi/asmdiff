@@ -64,4 +64,26 @@ public class KeyedListDiffUtils {
 
     return new KeyedListDiff<>(reversedOperations);
   }
+
+  public static <Key, Value, Diff extends IDiff> List<Value> patch(List<Value> original, KeyedListDiff<Key, Value, Diff> diff, BiFunction<Value, Diff, Value> elementPatch) {
+    List<Value> result = new ArrayList<>();
+    int i = 0;
+
+    for (KeyedListDiff.Operation<Key, Value, Diff> op : diff.operations) {
+      switch (op.type) {
+        case MATCH:
+          result.add(elementPatch.apply(original.get(i), op.operandDiff));
+          i++;
+          break;
+        case INSERT:
+          result.add(op.operandValue);
+          break;
+        case DELETE:
+          i++;
+          break;
+      }
+    }
+
+    return result;
+  }
 }
