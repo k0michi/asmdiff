@@ -19,14 +19,14 @@ public class RecordComponentNodeHelper {
       return false;
     }
 
-    if (node1.getClass() == org.objectweb.asm.tree.RecordComponentNode.class) {
+    if (node1.getClass() == RecordComponentNode.class) {
       return Objects.equals(node1.name, node2.name)
               && Objects.equals(node1.descriptor, node2.descriptor)
               && Objects.equals(node1.signature, node2.signature)
-              && ListHelper.equals(node1.visibleAnnotations, node2.visibleAnnotations, AnnotationNodeHelper::equals)
-              && ListHelper.equals(node1.invisibleAnnotations, node2.invisibleAnnotations, AnnotationNodeHelper::equals)
-              && ListHelper.equals(node1.visibleTypeAnnotations, node2.visibleTypeAnnotations, AnnotationNodeHelper::equals)
-              && ListHelper.equals(node1.invisibleTypeAnnotations, node2.invisibleTypeAnnotations, AnnotationNodeHelper::equals);
+              && ListHelper.equalsNullToEmpty(node1.visibleAnnotations, node2.visibleAnnotations, AnnotationNodeHelper::equals)
+              && ListHelper.equalsNullToEmpty(node1.invisibleAnnotations, node2.invisibleAnnotations, AnnotationNodeHelper::equals)
+              && ListHelper.equalsNullToEmpty(node1.visibleTypeAnnotations, node2.visibleTypeAnnotations, AnnotationNodeHelper::equals)
+              && ListHelper.equalsNullToEmpty(node1.invisibleTypeAnnotations, node2.invisibleTypeAnnotations, AnnotationNodeHelper::equals);
     }
 
     // Non-standard
@@ -43,16 +43,16 @@ public class RecordComponentNodeHelper {
             .append(node.descriptor)
             .append(node.signature)
             .append(node.visibleAnnotations,
-                    (l) -> ListHelper.hashCode(l, AnnotationNodeHelper::hashCode)
+                    (l) -> ListHelper.hashCodeNullToEmpty(l, AnnotationNodeHelper::hashCode)
             )
             .append(node.invisibleAnnotations,
-                    (l) -> ListHelper.hashCode(l, AnnotationNodeHelper::hashCode)
+                    (l) -> ListHelper.hashCodeNullToEmpty(l, AnnotationNodeHelper::hashCode)
             )
             .append(node.visibleTypeAnnotations,
-                    (l) -> ListHelper.hashCode(l, AnnotationNodeHelper::hashCode)
+                    (l) -> ListHelper.hashCodeNullToEmpty(l, AnnotationNodeHelper::hashCode)
             )
             .append(node.invisibleTypeAnnotations,
-                    (l) -> ListHelper.hashCode(l, AnnotationNodeHelper::hashCode)
+                    (l) -> ListHelper.hashCodeNullToEmpty(l, AnnotationNodeHelper::hashCode)
             ).build();
   }
 }
