@@ -161,6 +161,14 @@ public class ListDiffUtils {
     return new ListDiff<>(reversedOperations);
   }
 
+  public static <T> ListDiff<T> diffNullableValue(T element1, T element2, BiPredicate<T, T> compare) {
+    return diff(ListHelper.ofNullable(element1), ListHelper.ofNullable(element2), compare);
+  }
+
+  public static <T> ListDiff<T> diffNonNullableValue(T element1, T element2, BiPredicate<T, T> compare) {
+    return diff(ListHelper.ofNonNullable(element1), ListHelper.ofNonNullable(element2), compare);
+  }
+
   public static <T> List<T> patch(List<T> list, ListDiff<T> diff) {
     List<T> result = new ArrayList<>();
     int i = 0;
