@@ -19,4 +19,12 @@ public class InnerClassNodeHelper {
             && Objects.equals(node1.innerName, node2.innerName)
             && node1.access == node2.access;
   }
+
+  public static int hashCode(InnerClassNode node) {
+    if (node == null) {
+      return 0;
+    }
+
+    return Objects.hash(node.name, node.outerName, node.innerName, node.access);
+  }
 }
