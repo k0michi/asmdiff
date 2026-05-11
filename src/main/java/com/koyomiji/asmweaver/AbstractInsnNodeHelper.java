@@ -7,6 +7,10 @@ import java.util.Objects;
 import java.util.function.BiPredicate;
 
 public class AbstractInsnNodeHelper {
+  public static boolean equals(AbstractInsnNode node1, AbstractInsnNode node2) {
+    return equals(node1, node2, Objects::equals, Objects::equals);
+  }
+
   public static boolean equals(AbstractInsnNode node1, AbstractInsnNode node2, BiPredicate<LabelNode, LabelNode> labelEquals, BiPredicate<Integer, Integer> localEquals) {
     if (node1 == node2) {
       return true;
