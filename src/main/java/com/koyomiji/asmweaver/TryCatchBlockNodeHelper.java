@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.TryCatchBlockNode;
 
@@ -26,5 +27,20 @@ public class TryCatchBlockNodeHelper {
 
   public static boolean equals(TryCatchBlockNode node1, TryCatchBlockNode node2) {
     return equals(node1, node2, Objects::equals);
+  }
+
+  public static int hashCode(TryCatchBlockNode node) {
+    if (node == null) {
+      return 0;
+    }
+
+    return new HashCodeBuilder()
+            .append(node.start)
+            .append(node.end)
+            .append(node.handler)
+            .append(node.type)
+            .append(ListHelper.hashCodeNullToEmpty(node.visibleTypeAnnotations, AnnotationNodeHelper::hashCode))
+            .append(ListHelper.hashCodeNullToEmpty(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode))
+            .build();
   }
 }
