@@ -5,14 +5,55 @@ import org.objectweb.asm.tree.RecordComponentNode;
 public class RecordComponentDiffUtils {
   public static RecordComponentDiff diff(RecordComponentNode node1, RecordComponentNode node2) {
     RecordComponentDiff diff = new RecordComponentDiff();
-    diff.name = ListDiffUtils.diff(ListHelper.ofNullable(node1.name), ListHelper.ofNullable(node2.name), String::equals);
-    diff.descriptor = ListDiffUtils.diff(ListHelper.ofNullable(node1.descriptor), ListHelper.ofNullable(node2.descriptor), String::equals);
-    diff.signature = ListDiffUtils.diff(ListHelper.ofNullable(node1.signature), ListHelper.ofNullable(node2.signature), String::equals);
-    diff.visibleAnnotations = ListDiffUtils.diff(node1.visibleAnnotations, node2.visibleAnnotations, AnnotationNodeHelper::equals);
-    diff.invisibleAnnotations = ListDiffUtils.diff(node1.invisibleAnnotations, node2.invisibleAnnotations, AnnotationNodeHelper::equals);
-    diff.visibleTypeAnnotations = ListDiffUtils.diff(node1.visibleTypeAnnotations, node2.visibleTypeAnnotations, AnnotationNodeHelper::equals);
-    diff.invisibleTypeAnnotations = ListDiffUtils.diff(node1.invisibleTypeAnnotations, node2.invisibleTypeAnnotations, AnnotationNodeHelper::equals);
+    diff.name = ListDiffUtils.diffNonNullableValue(node1.name, node2.name, String::equals);
+    diff.descriptor = ListDiffUtils.diffNonNullableValue(node1.descriptor, node2.descriptor, String::equals);
+    diff.signature = ListDiffUtils.diffNullableValue(node1.signature, node2.signature, String::equals);
+    diff.visibleAnnotations = ListDiffUtils.diff(
+            ListHelper.nullToEmpty(node1.visibleAnnotations),
+            ListHelper.nullToEmpty(node2.visibleAnnotations),
+            AnnotationNodeHelper::equals
+    );
+    diff.invisibleAnnotations = ListDiffUtils.diff(
+            ListHelper.nullToEmpty(node1.invisibleAnnotations),
+            ListHelper.nullToEmpty(node2.invisibleAnnotations),
+            AnnotationNodeHelper::equals
+    );
+    diff.visibleTypeAnnotations = ListDiffUtils.diff(
+            ListHelper.nullToEmpty(node1.visibleTypeAnnotations),
+            ListHelper.nullToEmpty(node2.visibleTypeAnnotations),
+            AnnotationNodeHelper::equals
+    );
+    diff.invisibleTypeAnnotations = ListDiffUtils.diff(
+            ListHelper.nullToEmpty(node1.invisibleTypeAnnotations),
+            ListHelper.nullToEmpty(node2.invisibleTypeAnnotations),
+            AnnotationNodeHelper::equals
+    );
     // attrs
     return diff;
+  }
+
+  public static RecordComponentNode patch(RecordComponentNode node, RecordComponentDiff diff) {
+    String name = ListDiffUtils.patchNonNullableValue(node.name, diff.name);
+    String descriptor = ListDiffUtils.patchNonNullableValue(node.descriptor, diff.descriptor);
+    String signature = ListDiffUtils.patchNullableValue(node.signature, diff.signature);
+    RecordComponentNode patchedNode = new RecordComponentNode(name, descriptor, signature);
+    patchedNode.visibleAnnotations = ListDiffUtils.patch(
+            ListHelper.nullToEmpty(node.visibleAnnotations),
+            diff.visibleAnnotations
+    );
+    patchedNode.invisibleAnnotations = ListDiffUtils.patch(
+            ListHelper.nullToEmpty(node.invisibleAnnotations),
+            diff.invisibleAnnotations
+    );
+    patchedNode.visibleTypeAnnotations = ListDiffUtils.patch(
+            ListHelper.nullToEmpty(node.visibleTypeAnnotations),
+            diff.visibleTypeAnnotations
+    );
+    patchedNode.invisibleTypeAnnotations = ListDiffUtils.patch(
+            ListHelper.nullToEmpty(node.invisibleTypeAnnotations),
+            diff.invisibleTypeAnnotations
+    );
+    // attrs
+    return patchedNode;
   }
 }
