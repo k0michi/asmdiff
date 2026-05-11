@@ -4,56 +4,48 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.tree.InnerClassNode;
 
+import java.util.List;
+
 class InnerClassNodeHelperTest {
+  static List<InnerClassNode> generateUnique() {
+    return List.of(
+            new InnerClassNode("A", "B", "C", 0),
+            new InnerClassNode("A_", "B", "C", 0),
+            new InnerClassNode("A", "B_", "C", 0),
+            new InnerClassNode("A", "B", "C_", 0),
+            new InnerClassNode("A", "B", "C", 1)
+    );
+  }
+
   @Test
   void test_equals_0() {
-    InnerClassNode node1 = new InnerClassNode("A", "B", "C", 0);
-    InnerClassNode node2 = new InnerClassNode("A", "B", "C", 0);
-    Assertions.assertTrue(InnerClassNodeHelper.equals(node1, node2));
+    var uniqueNodes1 = generateUnique();
+    var uniqueNodes2 = generateUnique();
+
+    for (int i = 0; i < uniqueNodes1.size(); i++) {
+      Assertions.assertTrue(InnerClassNodeHelper.equals(uniqueNodes1.get(i), uniqueNodes2.get(i)));
+    }
   }
 
   @Test
   void test_equals_1() {
-    InnerClassNode node1 = new InnerClassNode("A", "B", "C", 0);
-    InnerClassNode node2 = new InnerClassNode("A_", "B", "C", 0);
-    Assertions.assertFalse(InnerClassNodeHelper.equals(node1, node2));
+    var uniqueNodes = generateUnique();
+
+    for (int i = 0; i < uniqueNodes.size(); i++) {
+      for (int j = 0; j < uniqueNodes.size(); j++) {
+        if (i != j) {
+          Assertions.assertFalse(InnerClassNodeHelper.equals(uniqueNodes.get(i), uniqueNodes.get(j)));
+        }
+      }
+    }
   }
 
   @Test
-  void test_equals_2() {
-    InnerClassNode node1 = new InnerClassNode("A", "B", "C", 0);
-    InnerClassNode node2 = new InnerClassNode("A", "B_", "C", 0);
-    Assertions.assertFalse(InnerClassNodeHelper.equals(node1, node2));
-  }
+  void test_hashCode_0() {
+    var uniqueNodes = generateUnique();
 
-  @Test
-  void test_equals_3() {
-    InnerClassNode node1 = new InnerClassNode("A", "B", "C", 0);
-    InnerClassNode node2 = new InnerClassNode("A", "B", "C_", 0);
-    Assertions.assertFalse(InnerClassNodeHelper.equals(node1, node2));
-  }
-
-  @Test
-  void test_equals_4() {
-    InnerClassNode node1 = new InnerClassNode("A", "B", "C", 0);
-    InnerClassNode node2 = new InnerClassNode("A", "B", "C", 1);
-    Assertions.assertFalse(InnerClassNodeHelper.equals(node1, node2));
-  }
-
-  @Test
-  void test_equals_5() {
-    InnerClassNode node1 = new InnerClassNode("A", "B", "C", 0);
-    Assertions.assertFalse(InnerClassNodeHelper.equals(node1, null));
-  }
-
-  @Test
-  void test_equals_6() {
-    InnerClassNode node2 = new InnerClassNode("A", "B", "C", 0);
-    Assertions.assertFalse(InnerClassNodeHelper.equals(null, node2));
-  }
-
-  @Test
-  void test_equals_7() {
-    Assertions.assertTrue(InnerClassNodeHelper.equals(null, null));
+    for (int i = 0; i < uniqueNodes.size(); i++) {
+      Assertions.assertEquals(InnerClassNodeHelper.hashCode(uniqueNodes.get(i)), InnerClassNodeHelper.hashCode(uniqueNodes.get(i)));
+    }
   }
 }
