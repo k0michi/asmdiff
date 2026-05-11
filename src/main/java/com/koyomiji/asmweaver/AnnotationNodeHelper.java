@@ -1,6 +1,6 @@
 package com.koyomiji.asmweaver;
 
-import com.koyomiji.asmweaver.util.tuple.Pair;
+import com.koyomiji.asmweaver.util.tuple.Triplet;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LocalVariableAnnotationNode;
@@ -65,7 +65,7 @@ public class AnnotationNodeHelper {
             && TypePathHelper.equals(a.typePath, b.typePath);
   }
 
-  private static boolean equals(LocalVariableAnnotationNode a, LocalVariableAnnotationNode b, BiPredicate<LabelNode, LabelNode> labelEquals, BiPredicate<Pair<LabelNode, Integer>, Pair<LabelNode, Integer>> localEquals) {
+  private static boolean equals(LocalVariableAnnotationNode a, LocalVariableAnnotationNode b, BiPredicate<LabelNode, LabelNode> labelEquals, BiPredicate<Triplet<LabelNode, LabelNode, Integer>, Triplet<LabelNode, LabelNode, Integer>> localEquals) {
     if (a.start.size() != b.start.size()) {
       return false;
     }
@@ -85,8 +85,8 @@ public class AnnotationNodeHelper {
               !labelEquals.test(ListHelper.getOrNull(a.start, i), ListHelper.getOrNull(b.start, i))
                       || !labelEquals.test(ListHelper.getOrNull(a.end, i), ListHelper.getOrNull(b.end, i))
                       || !localEquals.test(
-                      Pair.of(ListHelper.getOrNull(a.start, i), ListHelper.getOrNull(a.index, i))
-                      , Pair.of(ListHelper.getOrNull(b.start, i), ListHelper.getOrNull(b.index, i))
+                      Triplet.of(ListHelper.getOrNull(a.start, i), ListHelper.getOrNull(a.end, i), ListHelper.getOrNull(a.index, i))
+                      , Triplet.of(ListHelper.getOrNull(b.start, i), ListHelper.getOrNull(b.end, i), ListHelper.getOrNull(b.index, i))
               )
       ) {
         return false;
