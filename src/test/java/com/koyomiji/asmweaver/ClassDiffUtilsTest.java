@@ -1,8 +1,5 @@
 package com.koyomiji.asmweaver;
 
-import com.koyomiji.asmpatch.ClassDiffer;
-import com.koyomiji.asmpatch.ClassPatch;
-import com.koyomiji.asmpatch.TestUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.Opcodes;
@@ -94,8 +91,8 @@ class ClassDiffUtilsTest {
   }
 
   private ClassDiff diff(String oldClassPath, String newClassPath) {
-    var oldClassNode = TestUtil.readClassNode(oldClassPath);
-    var newClassNode = TestUtil.readClassNode(newClassPath);
+    var oldClassNode = TestUtils.readClassNode(oldClassPath);
+    var newClassNode = TestUtils.readClassNode(newClassPath);
     return ClassDiffUtils.diff(oldClassNode, newClassNode);
   }
 
