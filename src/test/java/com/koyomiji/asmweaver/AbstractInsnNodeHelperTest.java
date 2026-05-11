@@ -77,4 +77,15 @@ class AbstractInsnNodeHelperTest {
       Assertions.assertFalse(AbstractInsnNodeHelper.equals(nodeA, nodeB, Objects::equals, Objects::equals));
     }
   }
+
+  @ParameterizedTest(name = "i={0}, j={1}")
+  @MethodSource("provideAllPairs")
+  void test_hashCode(int i, int j, AbstractInsnNode nodeA, AbstractInsnNode nodeB) {
+    if (i == j) {
+      Assertions.assertEquals(
+              AbstractInsnNodeHelper.hashCode(nodeA),
+              AbstractInsnNodeHelper.hashCode(nodeB)
+      );
+    }
+  }
 }
