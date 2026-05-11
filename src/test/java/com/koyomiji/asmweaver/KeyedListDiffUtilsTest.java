@@ -57,6 +57,28 @@ class KeyedListDiffUtilsTest {
 
   @Test
   void test_diff_0() {
+    var list = List.of(
+            new KeyedObject(1, "a"),
+            new KeyedObject(2, "b"),
+            new KeyedObject(3, "c")
+    );
+    var diff = KeyedListDiffUtils.diff(list, list,
+            KeyedObject::getKey,
+            this::diffKeyedObject
+    );
+
+    Assertions.assertTrue(diff.isEmpty());
+    Assertions.assertEquals(3, diff.operations.size());
+    Assertions.assertEquals(KeyedListDiff.Operation.Type.MATCH, diff.operations.get(0).type);
+    Assertions.assertTrue(diff.operations.get(0).operandDiff.isEmpty());
+    Assertions.assertEquals(KeyedListDiff.Operation.Type.MATCH, diff.operations.get(1).type);
+    Assertions.assertTrue(diff.operations.get(1).operandDiff.isEmpty());
+    Assertions.assertEquals(KeyedListDiff.Operation.Type.MATCH, diff.operations.get(2).type);
+    Assertions.assertTrue(diff.operations.get(2).operandDiff.isEmpty());
+  }
+
+  @Test
+  void test_diff_1() {
     var oldList = List.of(
             new KeyedObject(1, "a"),
             new KeyedObject(2, "b"),
