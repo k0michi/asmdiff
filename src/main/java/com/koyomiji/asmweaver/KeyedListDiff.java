@@ -2,7 +2,7 @@ package com.koyomiji.asmweaver;
 
 import java.util.List;
 
-public class KeyedListDiff<Key, Value, Diff> implements IDiff {
+public class KeyedListDiff<Key, Value, Diff extends IDiff> implements IDiff {
   public List<Operation<Key, Value, Diff>> operations;
 
   public KeyedListDiff(List<Operation<Key, Value, Diff>> operations) {
@@ -15,12 +15,16 @@ public class KeyedListDiff<Key, Value, Diff> implements IDiff {
       if (op.type != Operation.Type.MATCH) {
         return false;
       }
+
+      if (!op.operandDiff.isEmpty()) {
+        return false;
+      }
     }
 
     return true;
   }
 
-  public static class Operation<Key, Value, Diff> {
+  public static class Operation<Key, Value, Diff extends IDiff> {
     public enum Type {
       MATCH,
       INSERT,
