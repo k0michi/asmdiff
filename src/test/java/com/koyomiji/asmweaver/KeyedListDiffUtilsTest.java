@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Objects;
 
 class KeyedListDiffUtilsTest {
   class KeyedObject {
@@ -17,6 +18,19 @@ class KeyedListDiffUtilsTest {
 
     public int getKey() {
       return key;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      KeyedObject that = (KeyedObject) o;
+      return key == that.key && Objects.equals(value, that.value);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(key, value);
     }
   }
 
@@ -35,6 +49,10 @@ class KeyedListDiffUtilsTest {
 
   private KeyedObjectDiff diffKeyedObject(KeyedObject o1, KeyedObject o2) {
     return new KeyedObjectDiff(ListDiffUtils.diff(List.of(o1.value), List.of(o2.value), String::equals));
+  }
+
+  private KeyedObject patchKeyedObject(KeyedObject o, KeyedObjectDiff diff) {
+    return new KeyedObject(o.key, ListDiffUtils.getPatched(diff.value).get(0));
   }
 
   @Test
@@ -56,8 +74,34 @@ class KeyedListDiffUtilsTest {
 
     Assertions.assertEquals(4, diff.operations.size());
     Assertions.assertEquals(KeyedListDiff.Operation.Type.MATCH, diff.operations.get(0).type);
+    Assertions.assertTrue(diff.operations.get(0).operandDiff.isEmpty());
     Assertions.assertEquals(KeyedListDiff.Operation.Type.MATCH, diff.operations.get(1).type);
+    Assertions.assertFalse(diff.operations.get(1).operandDiff.isEmpty());
     Assertions.assertEquals(KeyedListDiff.Operation.Type.DELETE, diff.operations.get(2).type);
     Assertions.assertEquals(KeyedListDiff.Operation.Type.INSERT, diff.operations.get(3).type);
+  }
+
+  @Test
+  void test_patch_0() {
+    var oldList = List.of(
+            new KeyedObject(1, "a"),
+            new KeyedObject(2, "b"),
+            new KeyedObject(3, "c")
+    );
+    var newList = List.of(
+            new KeyedObject(1, "a"),
+            new KeyedObject(2, "x"),
+            new KeyedObject(4, "d")
+    );
+    var diff = KeyedListDiffUtils.diff(oldList, newList,
+            KeyedObject::getKey,
+            this::diffKeyedObject
+    );
+
+    var patched = KeyedListDiffUtils.patch(oldList, diff,
+            this::patchKeyedObject
+    );
+
+    Assertions.assertEquals(newList, patched);
   }
 }
