@@ -32,4 +32,12 @@ public class LocalVariableNodeHelper {
   public static boolean equals(LocalVariableNode a, LocalVariableNode b) {
     return equals(a, b, Objects::equals, Objects::equals);
   }
+
+  public static int hashCode(LocalVariableNode node) {
+    if (node == null) {
+      return 0;
+    }
+
+    return Objects.hash(node.name, node.desc, node.signature, node.start, node.end, node.index);
+  }
 }
