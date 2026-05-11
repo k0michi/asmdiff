@@ -1,6 +1,5 @@
 package com.koyomiji.asmweaver;
 
-import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.FieldNode;
 
 public class FieldDiffUtils {
@@ -37,23 +36,23 @@ public class FieldDiffUtils {
             Object::equals
     );
     diff.visibleAnnotations = ListDiffUtils.diff(
-            ListHelper.orEmpty(node1.visibleAnnotations),
-            ListHelper.orEmpty(node2.visibleAnnotations),
+            ListHelper.nullToEmpty(node1.visibleAnnotations),
+            ListHelper.nullToEmpty(node2.visibleAnnotations),
             AnnotationNodeHelper::equals
     );
     diff.invisibleAnnotations = ListDiffUtils.diff(
-            ListHelper.orEmpty(node1.invisibleAnnotations),
-            ListHelper.orEmpty(node2.invisibleAnnotations),
+            ListHelper.nullToEmpty(node1.invisibleAnnotations),
+            ListHelper.nullToEmpty(node2.invisibleAnnotations),
             AnnotationNodeHelper::equals
     );
     diff.visibleTypeAnnotations = ListDiffUtils.diff(
-            ListHelper.orEmpty(node1.visibleTypeAnnotations),
-            ListHelper.orEmpty(node2.visibleTypeAnnotations),
+            ListHelper.nullToEmpty(node1.visibleTypeAnnotations),
+            ListHelper.nullToEmpty(node2.visibleTypeAnnotations),
             AnnotationNodeHelper::equals
     );
     diff.invisibleTypeAnnotations = ListDiffUtils.diff(
-            ListHelper.orEmpty(node1.invisibleTypeAnnotations),
-            ListHelper.orEmpty(node2.invisibleTypeAnnotations),
+            ListHelper.nullToEmpty(node1.invisibleTypeAnnotations),
+            ListHelper.nullToEmpty(node2.invisibleTypeAnnotations),
             AnnotationNodeHelper::equals
     );
     // attributes

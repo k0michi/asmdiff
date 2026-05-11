@@ -17,25 +17,25 @@ public class MethodDiffUtils {
     diff.desc = ListDiffUtils.diff(ListHelper.ofNullable(node1.desc), ListHelper.ofNullable(node2.desc), String::equals);
     diff.signature = ListDiffUtils.diff(ListHelper.ofNullable(node1.signature), ListHelper.ofNullable(node2.signature), String::equals);
     diff.exceptions = ListDiffUtils.diff(node1.exceptions, node2.exceptions, String::equals);
-    diff.parameters = ListDiffUtils.diff(ListHelper.orEmpty(node1.parameters), ListHelper.orEmpty(node2.parameters), ParameterNodeHelper::equals);
+    diff.parameters = ListDiffUtils.diff(ListHelper.nullToEmpty(node1.parameters), ListHelper.nullToEmpty(node2.parameters), ParameterNodeHelper::equals);
     diff.visibleAnnotations = ListDiffUtils.diff(
-            ListHelper.orEmpty(node1.visibleAnnotations),
-            ListHelper.orEmpty(node2.visibleAnnotations),
+            ListHelper.nullToEmpty(node1.visibleAnnotations),
+            ListHelper.nullToEmpty(node2.visibleAnnotations),
             AnnotationNodeHelper::equals
     );
     diff.invisibleAnnotations = ListDiffUtils.diff(
-            ListHelper.orEmpty(node1.invisibleAnnotations),
-            ListHelper.orEmpty(node2.invisibleAnnotations),
+            ListHelper.nullToEmpty(node1.invisibleAnnotations),
+            ListHelper.nullToEmpty(node2.invisibleAnnotations),
             AnnotationNodeHelper::equals
     );
     diff.visibleTypeAnnotations = ListDiffUtils.diff(
-            ListHelper.orEmpty(node1.visibleTypeAnnotations),
-            ListHelper.orEmpty(node2.visibleTypeAnnotations),
+            ListHelper.nullToEmpty(node1.visibleTypeAnnotations),
+            ListHelper.nullToEmpty(node2.visibleTypeAnnotations),
             AnnotationNodeHelper::equals
     );
     diff.invisibleTypeAnnotations = ListDiffUtils.diff(
-            ListHelper.orEmpty(node1.invisibleTypeAnnotations),
-            ListHelper.orEmpty(node2.invisibleTypeAnnotations),
+            ListHelper.nullToEmpty(node1.invisibleTypeAnnotations),
+            ListHelper.nullToEmpty(node2.invisibleTypeAnnotations),
             AnnotationNodeHelper::equals
     );
     // attrs
@@ -161,8 +161,8 @@ public class MethodDiffUtils {
     );
 
     diff.visibleLocalVariableAnnotations = ListDiffUtils.diff(
-            ListHelper.orEmpty(node1.visibleLocalVariableAnnotations),
-            ListHelper.orEmpty(node2.visibleLocalVariableAnnotations),
+            ListHelper.nullToEmpty(node1.visibleLocalVariableAnnotations),
+            ListHelper.nullToEmpty(node2.visibleLocalVariableAnnotations),
             (a, b) ->
                     AnnotationNodeHelper.equals(a, b,
                             (lA, lB) -> labelMap.get(lA) == lB,
@@ -172,8 +172,8 @@ public class MethodDiffUtils {
     );
 
     diff.invisibleLocalVariableAnnotations = ListDiffUtils.diff(
-            ListHelper.orEmpty(node1.invisibleLocalVariableAnnotations),
-            ListHelper.orEmpty(node2.invisibleLocalVariableAnnotations),
+            ListHelper.nullToEmpty(node1.invisibleLocalVariableAnnotations),
+            ListHelper.nullToEmpty(node2.invisibleLocalVariableAnnotations),
             (a, b) ->
                     AnnotationNodeHelper.equals(a, b,
                             (lA, lB) -> labelMap.get(lA) == lB,

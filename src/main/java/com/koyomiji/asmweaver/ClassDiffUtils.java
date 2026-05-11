@@ -17,16 +17,16 @@ public class ClassDiffUtils {
     diff.outerClass = ListDiffUtils.diff(ListHelper.ofNullable(class1.outerClass), ListHelper.ofNullable(class2.outerClass), String::equals);
     diff.outerMethod = ListDiffUtils.diff(ListHelper.ofNullable(class1.outerMethod), ListHelper.ofNullable(class2.outerMethod), String::equals);
     diff.outerMethodDesc = ListDiffUtils.diff(ListHelper.ofNullable(class1.outerMethodDesc), ListHelper.ofNullable(class2.outerMethodDesc), String::equals);
-    diff.visibleAnnotations = ListDiffUtils.diff(ListHelper.orEmpty(class1.visibleAnnotations), ListHelper.orEmpty(class2.visibleAnnotations), AnnotationNodeHelper::equals);
-    diff.invisibleAnnotations = ListDiffUtils.diff(ListHelper.orEmpty(class1.invisibleAnnotations), ListHelper.orEmpty(class2.invisibleAnnotations), AnnotationNodeHelper::equals);
-    diff.visibleTypeAnnotations = ListDiffUtils.diff(ListHelper.orEmpty(class1.visibleTypeAnnotations), ListHelper.orEmpty(class2.visibleTypeAnnotations), AnnotationNodeHelper::equals);
-    diff.invisibleTypeAnnotations = ListDiffUtils.diff(ListHelper.orEmpty(class1.invisibleTypeAnnotations), ListHelper.orEmpty(class2.invisibleTypeAnnotations), AnnotationNodeHelper::equals);
+    diff.visibleAnnotations = ListDiffUtils.diff(ListHelper.nullToEmpty(class1.visibleAnnotations), ListHelper.nullToEmpty(class2.visibleAnnotations), AnnotationNodeHelper::equals);
+    diff.invisibleAnnotations = ListDiffUtils.diff(ListHelper.nullToEmpty(class1.invisibleAnnotations), ListHelper.nullToEmpty(class2.invisibleAnnotations), AnnotationNodeHelper::equals);
+    diff.visibleTypeAnnotations = ListDiffUtils.diff(ListHelper.nullToEmpty(class1.visibleTypeAnnotations), ListHelper.nullToEmpty(class2.visibleTypeAnnotations), AnnotationNodeHelper::equals);
+    diff.invisibleTypeAnnotations = ListDiffUtils.diff(ListHelper.nullToEmpty(class1.invisibleTypeAnnotations), ListHelper.nullToEmpty(class2.invisibleTypeAnnotations), AnnotationNodeHelper::equals);
     // attributes
     diff.innerClasses = ListDiffUtils.diff(class1.innerClasses, class2.innerClasses, InnerClassNodeHelper::equals);
     diff.nestHostClass = ListDiffUtils.diff(ListHelper.ofNullable(class1.nestHostClass), ListHelper.ofNullable(class2.nestHostClass), String::equals);
-    diff.nestMembers = ListDiffUtils.diff(ListHelper.orEmpty(class1.nestMembers), ListHelper.orEmpty(class2.nestMembers), String::equals);
-    diff.permittedSubclasses = ListDiffUtils.diff(ListHelper.orEmpty(class1.permittedSubclasses), ListHelper.orEmpty(class2.permittedSubclasses), String::equals);
-    diff.recordComponents = KeyedListDiffUtils.diff(ListHelper.orEmpty(class1.recordComponents), ListHelper.orEmpty(class2.recordComponents), (rc) -> new MemberKey(rc.name, rc.descriptor), RecordComponentDiffUtils::diff);
+    diff.nestMembers = ListDiffUtils.diff(ListHelper.nullToEmpty(class1.nestMembers), ListHelper.nullToEmpty(class2.nestMembers), String::equals);
+    diff.permittedSubclasses = ListDiffUtils.diff(ListHelper.nullToEmpty(class1.permittedSubclasses), ListHelper.nullToEmpty(class2.permittedSubclasses), String::equals);
+    diff.recordComponents = KeyedListDiffUtils.diff(ListHelper.nullToEmpty(class1.recordComponents), ListHelper.nullToEmpty(class2.recordComponents), (rc) -> new MemberKey(rc.name, rc.descriptor), RecordComponentDiffUtils::diff);
     diff.fields = KeyedListDiffUtils.diff(class1.fields, class2.fields, (f) -> new MemberKey(f.name, f.desc), FieldDiffUtils::diff);
     diff.methods = KeyedListDiffUtils.diff(class1.methods, class2.methods, (m) -> new MemberKey(m.name, m.desc), MethodDiffUtils::diff);
     return diff;

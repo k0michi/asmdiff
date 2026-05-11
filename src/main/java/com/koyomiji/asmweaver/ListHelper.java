@@ -8,7 +8,7 @@ import java.util.function.BiPredicate;
 import java.util.function.ToIntFunction;
 
 public class ListHelper {
-  public static <T> List<T> orEmpty(List<T> list) {
+  public static <T> List<T> nullToEmpty(List<T> list) {
     return list != null ? list : List.of();
   }
 
@@ -56,7 +56,7 @@ public class ListHelper {
   }
 
   public static <T> boolean equalsNullToEmpty(List<T> a, List<T> b, BiPredicate<T, T> compare) {
-    return equals(orEmpty(a), orEmpty(b), compare);
+    return equals(nullToEmpty(a), nullToEmpty(b), compare);
   }
 
   public static <T> boolean equalsNullToEmpty(List<T> a, List<T> b) {
@@ -90,7 +90,7 @@ public class ListHelper {
   }
 
   public  static <T> int hashCodeNullToEmpty(List<T> list, ToIntFunction<T> hashFunction) {
-    return hashCode(orEmpty(list), hashFunction);
+    return hashCode(nullToEmpty(list), hashFunction);
   }
 
   public static <T> int hashCodeNullToEmpty(List<T> list) {
