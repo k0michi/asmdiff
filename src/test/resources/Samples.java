@@ -1,4 +1,6 @@
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Repeatable;
+import java.lang.annotation.Target;
 
 class C1 {
 }
@@ -83,6 +85,10 @@ class C8 {
   A3[] value();
 }
 
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD, ElementType.LOCAL_VARIABLE, ElementType.ANNOTATION_TYPE, ElementType.PACKAGE, ElementType.TYPE_PARAMETER, ElementType.TYPE_USE, ElementType.MODULE, ElementType.RECORD_COMPONENT})
+@interface A9 {
+}
+
 record R1() {
 }
 
@@ -93,4 +99,37 @@ record R3(int x, int y) {
 }
 
 record R4(int y) {
+}
+
+class C9 {
+  int f1;
+
+  @A9 void m1() {
+    @A9 int a;
+
+    if (f1 > 0) {
+      @A9 int b = 1;
+      a=2;
+      System.out.println(b);
+      String f = "Hello";
+      System.out.println(f);
+    } else {
+      a = 2;
+      System.out.println("Non-positive");
+    }
+
+    System.out.println(a);
+  }
+}
+
+class C10 {
+  void m1() {
+    System.out.println("Hello");
+  }
+}
+
+class C11 {
+  void m1() {
+    System.out.println("World");
+  }
 }
