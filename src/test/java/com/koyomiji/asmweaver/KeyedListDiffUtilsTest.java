@@ -103,6 +103,67 @@ class KeyedListDiffUtilsTest {
     Assertions.assertEquals(KeyedListDiff.Operation.Type.INSERT, diff.operations.get(3).type);
   }
 
+  // Insertion only
+  @Test
+  void test_diff_2() {
+    List<KeyedObject> list1 = List.of(
+    );
+
+    var list2 = List.of(
+            new KeyedObject(1, "a"),
+            new KeyedObject(2, "b"),
+            new KeyedObject(3, "c")
+    );
+
+    var diff = KeyedListDiffUtils.diff(list1, list2,
+            KeyedObject::getKey,
+            this::diffKeyedObject
+    );
+
+    Assertions.assertEquals(3, diff.operations.size());
+    Assertions.assertEquals(KeyedListDiff.Operation.Type.INSERT, diff.operations.get(0).type);
+    Assertions.assertEquals(KeyedListDiff.Operation.Type.INSERT, diff.operations.get(1).type);
+    Assertions.assertEquals(KeyedListDiff.Operation.Type.INSERT, diff.operations.get(2).type);
+  }
+
+  // Deletion only
+  @Test
+  void test_diff_3() {
+    var list1 = List.of(
+            new KeyedObject(1, "a"),
+            new KeyedObject(2, "b"),
+            new KeyedObject(3, "c")
+    );
+
+    List<KeyedObject> list2 = List.of(
+    );
+
+    var diff = KeyedListDiffUtils.diff(list1, list2,
+            KeyedObject::getKey,
+            this::diffKeyedObject
+    );
+
+    Assertions.assertEquals(3, diff.operations.size());
+    Assertions.assertEquals(KeyedListDiff.Operation.Type.DELETE, diff.operations.get(0).type);
+    Assertions.assertEquals(KeyedListDiff.Operation.Type.DELETE, diff.operations.get(1).type);
+    Assertions.assertEquals(KeyedListDiff.Operation.Type.DELETE, diff.operations.get(2).type);
+  }
+
+  // Empty
+  @Test
+  void test_diff_4() {
+    var list1 = List.<KeyedObject>of(
+    );
+
+    var diff = KeyedListDiffUtils.diff(list1, list1,
+            KeyedObject::getKey,
+            this::diffKeyedObject
+    );
+
+    Assertions.assertTrue(diff.isEmpty());
+    Assertions.assertEquals(0, diff.operations.size());
+  }
+
   @Test
   void test_patch_0() {
     var oldList = List.of(
