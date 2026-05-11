@@ -60,11 +60,11 @@ public class FieldDiffUtils {
   }
 
   public static FieldNode patch(FieldNode node, FieldDiff diff) {
-    int access = ListDiffUtils.patchNonNullable(node.access, diff.access);
-    String name = ListDiffUtils.patchNonNullable(node.name, diff.name);
-    String desc = ListDiffUtils.patchNonNullable(node.desc, diff.desc);
-    String signature = ListDiffUtils.patchNullable(node.signature, diff.signature);
-    Object value = ListDiffUtils.patchNullable(node.value, diff.value);
+    int access = ListDiffUtils.patchNonNullableValue(node.access, diff.access);
+    String name = ListDiffUtils.patchNonNullableValue(node.name, diff.name);
+    String desc = ListDiffUtils.patchNonNullableValue(node.desc, diff.desc);
+    String signature = ListDiffUtils.patchNullableValue(node.signature, diff.signature);
+    Object value = ListDiffUtils.patchNullableValue(node.value, diff.value);
     FieldNode patchedNode = new FieldNode(access, name, desc, signature, value);
     patchedNode.visibleAnnotations = ListDiffUtils.patch(node.visibleAnnotations, diff.visibleAnnotations);
     patchedNode.invisibleAnnotations = ListDiffUtils.patch(node.invisibleAnnotations, diff.invisibleAnnotations);
