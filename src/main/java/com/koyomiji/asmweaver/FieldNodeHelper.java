@@ -36,17 +36,26 @@ public class FieldNodeHelper {
       return 0;
     }
 
-    HashCodeBuilder builder = new HashCodeBuilder();
-    builder.append(node.access);
-    builder.append(node.name);
-    builder.append(node.desc);
-    builder.append(node.signature);
-    builder.append(node.value);
-    builder.append(ListHelper.hashCode(node.visibleAnnotations, AnnotationNodeHelper::hashCode));
-    builder.append(ListHelper.hashCode(node.invisibleAnnotations, AnnotationNodeHelper::hashCode));
-    builder.append(ListHelper.hashCode(node.visibleTypeAnnotations, AnnotationNodeHelper::hashCode));
-    builder.append(ListHelper.hashCode(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode));
-    builder.append(ListHelper.hashCode(node.attrs, Objects::hashCode));
-    return builder.build();
+    return new HashCodeBuilder()
+            .append(node.access)
+            .append(node.name)
+            .append(node.desc)
+            .append(node.signature)
+            .append(node.value)
+            .append(node.visibleAnnotations,
+                    (l) -> ListHelper.hashCode(l, AnnotationNodeHelper::hashCode)
+            )
+            .append(node.invisibleAnnotations,
+                    (l) -> ListHelper.hashCode(l, AnnotationNodeHelper::hashCode)
+            )
+            .append(node.visibleTypeAnnotations,
+                    (l) -> ListHelper.hashCode(l, AnnotationNodeHelper::hashCode)
+            )
+            .append(node.invisibleTypeAnnotations,
+                    (l) -> ListHelper.hashCode(l, AnnotationNodeHelper::hashCode)
+            )
+            .append(node.attrs,
+                    (l) -> ListHelper.hashCode(l, Objects::hashCode)
+            ).build();
   }
 }
