@@ -2,8 +2,11 @@ package com.koyomiji.asmweaver;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 class ListDiffUtilsTest {
   @Test
@@ -129,5 +132,44 @@ class ListDiffUtilsTest {
     Assertions.assertEquals(2, commuted2.operations.get(1).operand);
     Assertions.assertEquals(ListDiff.Operation.Type.MATCH, commuted2.operations.get(2).type);
     Assertions.assertEquals(3, commuted2.operations.get(2).operand);
+  }
+
+  private static List<List<Integer>> lists = List.of(
+          List.of(1, 2, 3),
+          List.of(1, 3, 3),
+          List.of(4, 5, 6)
+  );
+
+  private static Stream<List<Integer>> lists() {
+    return lists.stream();
+  }
+
+  @ParameterizedTest
+  @MethodSource("lists")
+  void test_getPatched(List<Integer> list) {
+    var list1 = List.of(1, 2, 3);
+
+    var diff12 = ListDiffUtils.diff(list1, list, Integer::equals);
+
+    var patched = ListDiffUtils.getPatched(diff12);
+    Assertions.assertEquals(list, patched);
+  }
+
+  @Test
+  void test_isEmpty_0() {
+    var list1 = List.of(1, 2, 3);
+    var list2 = List.of(1, 2, 3);
+
+    var diff = ListDiffUtils.diff(list1, list2, Integer::equals);
+    Assertions.assertTrue(diff.isEmpty());
+  }
+
+  @Test
+  void test_isEmpty_1() {
+    var list1 = List.of(1, 2, 3);
+    var list2 = List.of(1, 4, 3);
+
+    var diff = ListDiffUtils.diff(list1, list2, Integer::equals);
+    Assertions.assertFalse(diff.isEmpty());
   }
 }

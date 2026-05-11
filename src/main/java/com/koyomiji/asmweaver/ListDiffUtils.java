@@ -160,4 +160,22 @@ public class ListDiffUtils {
 
     return new ListDiff<>(reversedOperations);
   }
+
+  public static <T> List<T> getPatched(ListDiff<T> diff) {
+    List<T> result = new ArrayList<>();
+
+    for (ListDiff.Operation<T> op : diff.operations) {
+      switch (op.type) {
+        case MATCH, INSERT:
+          result.add(op.operand);
+          break;
+        case DELETE:
+          break;
+        default:
+          throw new IllegalStateException("Unexpected operation type: " + op.type);
+      }
+    }
+
+    return result;
+  }
 }
