@@ -1,5 +1,8 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmpatch.ClassDiffer;
+import com.koyomiji.asmpatch.ClassPatch;
+import com.koyomiji.asmpatch.TestUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.Opcodes;
@@ -88,5 +91,25 @@ class ClassDiffUtilsTest {
     ClassDiff diff = ClassDiffUtils.diff(node1, node2);
     Assertions.assertFalse(diff.isEmpty());
     Assertions.assertFalse(diff.interfaces.isEmpty());
+  }
+
+  private ClassDiff diff(String oldClassPath, String newClassPath) {
+    var oldClassNode = TestUtil.readClassNode(oldClassPath);
+    var newClassNode = TestUtil.readClassNode(newClassPath);
+    return ClassDiffUtils.diff(oldClassNode, newClassNode);
+  }
+
+  @Test
+  void test_diff_sample_0() {
+    ClassDiff diff = diff("/C1.class", "/C2.class");
+    Assertions.assertFalse(diff.isEmpty());
+    Assertions.assertFalse(diff.name.isEmpty());
+  }
+
+  @Test
+  void test_diff_sample_1() {
+    ClassDiff diff = diff("/C10.class", "/C11.class");
+    Assertions.assertFalse(diff.isEmpty());
+    Assertions.assertFalse(diff.methods.isEmpty());
   }
 }
