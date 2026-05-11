@@ -23,12 +23,12 @@ public class ModuleNodeHelper {
             && node1.access == node2.access
             && Objects.equals(node1.version, node2.version)
             && Objects.equals(node1.mainClass, node2.mainClass)
-            && Objects.equals(node1.packages, node2.packages)
-            && ListHelper.equals(node1.requires, node2.requires, ModuleRequireNodeHelper::equals)
-            && ListHelper.equals(node1.exports, node2.exports, ModuleExportNodeHelper::equals)
-            && ListHelper.equals(node1.opens, node2.opens, ModuleOpenNodeHelper::equals)
-            && ListHelper.equals(node1.uses, node2.uses)
-            && ListHelper.equals(node1.provides, node2.provides, ModuleProvideNodeHelper::equals);
+            && ListHelper.equalsNullToEmpty(node1.packages, node2.packages, String::equals)
+            && ListHelper.equalsNullToEmpty(node1.requires, node2.requires, ModuleRequireNodeHelper::equals)
+            && ListHelper.equalsNullToEmpty(node1.exports, node2.exports, ModuleExportNodeHelper::equals)
+            && ListHelper.equalsNullToEmpty(node1.opens, node2.opens, ModuleOpenNodeHelper::equals)
+            && ListHelper.equalsNullToEmpty(node1.uses, node2.uses, String::equals)
+            && ListHelper.equalsNullToEmpty(node1.provides, node2.provides, ModuleProvideNodeHelper::equals);
   }
 
   public static int hashCode(ModuleNode node) {
@@ -41,19 +41,23 @@ public class ModuleNodeHelper {
             .append(node.access)
             .append(node.version)
             .append(node.mainClass)
-            .append(node.packages)
+            .append(node.packages,
+                    l -> ListHelper.hashCodeNullToEmpty(l, String::hashCode)
+            )
             .append(node.requires,
-                    l->ListHelper.hashCode(l, ModuleRequireNodeHelper::hashCode)
+                    l -> ListHelper.hashCodeNullToEmpty(l, ModuleRequireNodeHelper::hashCode)
             )
             .append(node.exports,
-                    l->ListHelper.hashCode(l, ModuleExportNodeHelper::hashCode)
+                    l -> ListHelper.hashCodeNullToEmpty(l, ModuleExportNodeHelper::hashCode)
             )
             .append(node.opens,
-                    l->ListHelper.hashCode(l, ModuleOpenNodeHelper::hashCode)
+                    l -> ListHelper.hashCodeNullToEmpty(l, ModuleOpenNodeHelper::hashCode)
             )
-            .append(node.uses)
+            .append(node.uses,
+                    l -> ListHelper.hashCodeNullToEmpty(l, String::hashCode)
+            )
             .append(node.provides,
-                    l->ListHelper.hashCode(l, ModuleProvideNodeHelper::hashCode)
+                    l -> ListHelper.hashCodeNullToEmpty(l, ModuleProvideNodeHelper::hashCode)
             )
             .build();
   }

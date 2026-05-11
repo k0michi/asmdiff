@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.tree.ModuleProvideNode;
 
 import java.util.Objects;
@@ -19,7 +20,7 @@ public class ModuleProvideNodeHelper {
     }
 
     return Objects.equals(node1.service, node2.service)
-            && Objects.equals(node1.providers, node2.providers);
+            && ListHelper.equalsNullToEmpty(node1.providers, node2.providers);
   }
 
   public static int hashCode(ModuleProvideNode node) {
@@ -27,6 +28,10 @@ public class ModuleProvideNodeHelper {
       return 0;
     }
 
-    return Objects.hash(node.service, node.providers);
+    return new HashCodeBuilder()
+            .append(node.service)
+            .append(node.providers,
+                    (l) -> ListHelper.hashCodeNullToEmpty(l, String::hashCode)
+            ).build();
   }
 }

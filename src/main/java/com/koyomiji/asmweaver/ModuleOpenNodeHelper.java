@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.tree.ModuleOpenNode;
 
 import java.util.Objects;
@@ -20,7 +21,7 @@ public class ModuleOpenNodeHelper {
 
     return Objects.equals(node1.packaze, node2.packaze)
             && node1.access == node2.access
-            && Objects.equals(node1.modules, node2.modules);
+            && ListHelper.equalsNullToEmpty(node1.modules, node2.modules);
   }
 
   public static int hashCode(ModuleOpenNode node) {
@@ -28,6 +29,11 @@ public class ModuleOpenNodeHelper {
       return 0;
     }
 
-    return Objects.hash(node.packaze, node.access, node.modules);
+    return new HashCodeBuilder()
+            .append(node.packaze)
+            .append(node.access)
+            .append(node.modules,
+                    (l) -> ListHelper.hashCodeNullToEmpty(l, String::hashCode)
+            ).build();
   }
 }
