@@ -13,7 +13,7 @@ public class ClassDiffUtils {
     diff.interfaces = ListDiffUtils.diff(class1.interfaces, class2.interfaces, String::equals);
     diff.sourceFile = ListDiffUtils.diff(ListHelper.ofNullable(class1.sourceFile), ListHelper.ofNullable(class2.sourceFile), String::equals);
     diff.sourceDebug = ListDiffUtils.diff(ListHelper.ofNullable(class1.sourceDebug), ListHelper.ofNullable(class2.sourceDebug), String::equals);
-    // module
+    diff.module = KeyedListDiffUtils.diff(ListHelper.ofNullable(class1.module), ListHelper.ofNullable(class2.module), (m) -> 0, ModuleDiffUtils::diff);
     diff.outerClass = ListDiffUtils.diff(ListHelper.ofNullable(class1.outerClass), ListHelper.ofNullable(class2.outerClass), String::equals);
     diff.outerMethod = ListDiffUtils.diff(ListHelper.ofNullable(class1.outerMethod), ListHelper.ofNullable(class2.outerMethod), String::equals);
     diff.outerMethodDesc = ListDiffUtils.diff(ListHelper.ofNullable(class1.outerMethodDesc), ListHelper.ofNullable(class2.outerMethodDesc), String::equals);

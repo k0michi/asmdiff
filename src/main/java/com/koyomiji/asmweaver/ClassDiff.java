@@ -11,7 +11,7 @@ public class ClassDiff implements IDiff {
   public ListDiff<String> interfaces;
   public ListDiff<String> sourceFile;
   public ListDiff<String> sourceDebug;
-  // module
+  public KeyedListDiff<Integer, ModuleNode, ModuleDiff> module;
   public ListDiff<String> outerClass;
   public ListDiff<String> outerMethod;
   public ListDiff<String> outerMethodDesc;
