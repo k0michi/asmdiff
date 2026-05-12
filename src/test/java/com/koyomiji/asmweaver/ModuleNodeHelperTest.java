@@ -10,7 +10,7 @@ import org.objectweb.asm.tree.ModuleRequireNode;
 import java.util.List;
 
 class ModuleNodeHelperTest {
-  List<ModuleNode> generateUnique() {
+  static List<ModuleNode> generateUnique() {
     ModuleNode node1 = new ModuleNode("module", 0, null);
     ModuleNode node2 = new ModuleNode("module_", 0, null);
     ModuleNode node3 = new ModuleNode("module", 1, null);
