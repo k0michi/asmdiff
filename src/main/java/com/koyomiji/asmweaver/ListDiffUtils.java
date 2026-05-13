@@ -290,6 +290,16 @@ public class ListDiffUtils {
     return compose(p, q, compare, compare);
   }
 
+  /**
+   *
+   * @param p
+   * @param q
+   * @param compare13 Compare element in list1 and element in list 3.
+   * @param compare2 Compare element in list2 and element in list2.
+   * @return
+   * @param <T>
+   * @throws ConflictException
+   */
   public static <T> ListDiff<T> compose(ListDiff<T> p, ListDiff<T> q, BiPredicate<T, T> compare13, BiPredicate<T, T> compare2) throws ConflictException {
     List<ListDiff.Operation<T>> result = new ArrayList<>();
 
