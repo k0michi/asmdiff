@@ -139,24 +139,24 @@ public class ListDiffUtils {
 //      }
       } else if (dp[i][j] == dp[i][j - 1] + 1) {
 //        operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.INSERT, null, list2.get(j - 1)));
-        operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.INSERT, null, null, list2.get(j - 1)));
+        operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.INSERT, ListDiff.Operation.Mode.BETWEEN, null, list2.get(j - 1)));
         j--;
       } else {
 //        operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, null, list1.get(i - 1)));
-        operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, null, list1.get(i - 1), null));
+        operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, ListDiff.Operation.Mode.BETWEEN, list1.get(i - 1), null));
         i--;
       }
     }
 
     while (i > 0) {
 //      operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, null, list1.get(i - 1)));
-      operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, null, list1.get(i - 1), null));
+      operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, ListDiff.Operation.Mode.BETWEEN, list1.get(i - 1), null));
       i--;
     }
 
     while (j > 0) {
 //      operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.INSERT, null, list2.get(j - 1)));
-      operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.INSERT, null, null, list2.get(j - 1)));
+      operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.INSERT, ListDiff.Operation.Mode.BETWEEN, null, list2.get(j - 1)));
       j--;
     }
 
@@ -219,5 +219,162 @@ public class ListDiffUtils {
     }
 
     return patched.get(0);
+  }
+
+  private static <T> boolean isInsert(ListDiff.Operation<T> op) {
+    return op.type == ListDiff.Operation.Type.INSERT;
+  }
+
+  private static <T> List<ListDiff.Operation<T>> mergeInsertionSlot(List<ListDiff.Operation<T>> ins1, List<ListDiff.Operation<T>> ins2) throws ConflictException {
+    List<ListDiff.Operation<T>> result = new ArrayList<>();
+
+//    boolean hasBetween1 = ins1.stream().anyMatch(o -> o.type == ListDiff.Operation.Type.INSERT && o.mode == ListDiff.Operation.Mode.BETWEEN);
+//    boolean hasBetween2 = ins2.stream().anyMatch(o -> o.type == ListDiff.Operation.Type.INSERT && o.mode == ListDiff.Operation.Mode.BETWEEN);
+//
+//    if (hasBetween1 && hasBetween2) {
+//      throw new ConflictException("Both diffs have BETWEEN insertions at the same position");
+//    }
+
+
+    for (ListDiff.Operation<T> o : ins2) {
+//      if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.AFTER) result.add(o);
+      if (o.type == ListDiff.Operation.Type.INSERT && o.mode == ListDiff.Operation.Mode.AFTER) result.add(o);
+    }
+//    for (InsnListDiff.Operation o : ins1) {
+//      if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.AFTER) result.add(o);
+//    }
+    for (ListDiff.Operation<T> o : ins1) {
+      if (o.type == ListDiff.Operation.Type.INSERT && o.mode == ListDiff.Operation.Mode.AFTER) result.add(o);
+    }
+
+//    for (InsnListDiff.Operation o : ins1) {
+//      if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BETWEEN) result.add(o);
+//    }
+//    for (InsnListDiff.Operation o : ins2) {
+//      if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BETWEEN) result.add(o);
+//    }
+    for (ListDiff.Operation<T> o : ins1) {
+      if (o.type == ListDiff.Operation.Type.INSERT && o.mode == ListDiff.Operation.Mode.BETWEEN) result.add(o);
+    }
+    for (ListDiff.Operation<T> o : ins2) {
+      if (o.type == ListDiff.Operation.Type.INSERT && o.mode == ListDiff.Operation.Mode.BETWEEN) result.add(o);
+    }
+
+//    for (InsnListDiff.Operation o : ins1) {
+//      if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BEFORE) result.add(o);
+//    }
+//    for (InsnListDiff.Operation o : ins2) {
+//      if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BEFORE) result.add(o);
+//    }
+    for (ListDiff.Operation<T> o : ins1) {
+      if (o.type == ListDiff.Operation.Type.INSERT && o.mode == ListDiff.Operation.Mode.BEFORE) result.add(o);
+    }
+    for (ListDiff.Operation<T> o : ins2) {
+      if (o.type == ListDiff.Operation.Type.INSERT && o.mode == ListDiff.Operation.Mode.BEFORE) result.add(o);
+    }
+
+    return result;
+  }
+
+  private static <T> List<ListDiff.Operation<T>> collectInsertions(PeekableIterator<ListDiff.Operation<T>> it) {
+    List<ListDiff.Operation<T>> insertions = new ArrayList<>();
+
+    while (it.hasNext() && it.peek().type == ListDiff.Operation.Type.INSERT) {
+      insertions.add(it.next());
+    }
+
+    return insertions;
+  }
+
+  public static <T> ListDiff<T> compose(ListDiff<T> p, ListDiff<T> q, BiPredicate<T, T> compare) throws ConflictException {
+    List<ListDiff.Operation<T>> result = new ArrayList<>();
+
+    PeekableIterator<ListDiff.Operation<T>> itP = new PeekableIterator<>(p.operations.iterator());
+    PeekableIterator<ListDiff.Operation<T>> itQ = new PeekableIterator<>(q.operations.iterator());
+
+    List<ListDiff.Operation<T>> ins1 = new ArrayList<>();
+    List<ListDiff.Operation<T>> ins2 = new ArrayList<>();
+
+    while (itP.hasNext()) {
+//      InsnListDiff.Operation opP = itP.next();
+      ListDiff.Operation<T> opP = itP.next();
+
+//      if (opP.type == InsnListDiff.Operation.Type.INSERT) {
+      if (opP.type == ListDiff.Operation.Type.INSERT) {
+        ins2.addAll(collectInsertions(itQ));
+
+//        InsnListDiff.Operation opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
+        ListDiff.Operation<T> opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
+
+        if (!compare.test(opP.operand2, opQ.operand1)) {
+          throw new IllegalDiffException("Composition Error: Operand mismatch at B.");
+        }
+
+//        if (opQ.type == InsnListDiff.Operation.Type.MATCH) {
+        if (opQ.type == ListDiff.Operation.Type.MATCH) {
+          ins1.add(opP);
+        }
+//      } else if (opP.type == InsnListDiff.Operation.Type.DELETE) {
+      } else if (opP.type == ListDiff.Operation.Type.DELETE) {
+//        List<InsnListDiff.Operation> qInsertions = collectInsertions(itQ);
+        List<ListDiff.Operation<T>> qInsertions = collectInsertions(itQ);
+
+        int matchIndex = -1;
+        for (int i = 0; i < qInsertions.size(); i++) {
+          if (compare.test(opP.operand1, qInsertions.get(i).operand2)) {
+            matchIndex = i;
+            break;
+          }
+        }
+
+        if (matchIndex != -1) {
+          // Cancelling out
+
+//          InsnListDiff.Operation matchingInsert = qInsertions.remove(matchIndex);
+          ListDiff.Operation<T> matchingInsert = qInsertions.remove(matchIndex);
+          ins2.addAll(qInsertions);
+
+          result.addAll(mergeInsertionSlot(ins1, ins2));
+          ins1.clear();
+          ins2.clear();
+
+//          result.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, matchingInsert.mode, opP.operand));
+          result.add(new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, matchingInsert.mode, opP.operand1, matchingInsert.operand2));
+        } else {
+          ins2.addAll(qInsertions);
+          result.addAll(mergeInsertionSlot(ins1, ins2));
+          ins1.clear();
+          ins2.clear();
+          result.add(opP);
+        }
+      } else { // MATCH
+        ins2.addAll(collectInsertions(itQ));
+
+//        InsnListDiff.Operation opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
+        ListDiff.Operation<T> opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
+
+        // FIXME: should not ignore
+//        if (!compareInsnsIgnoreLabelsIgnoreLocals(opP.operand, opQ.operand)) {
+//          throw new IllegalDiffException("Composition Error: Operand mismatch at C.");
+//        }
+        if (!compare.test(opP.operand2, opQ.operand1)) {
+          throw new IllegalDiffException("Composition Error: Operand mismatch at C.");
+        }
+
+        result.addAll(mergeInsertionSlot(ins1, ins2));
+        ins1.clear();
+        ins2.clear();
+
+//        result.add(new InsnListDiff.Operation(opQ.type, opQ.mode, opP.operand));
+        result.add(new ListDiff.Operation<>(opQ.type, opQ.mode, opP.operand1, opQ.operand2));
+      }
+    }
+
+    ins2.addAll(collectInsertions(itQ));
+    result.addAll(mergeInsertionSlot(ins1, ins2));
+
+    IteratorHelper.throwIfNext(itQ, () -> new IllegalDiffException("Composition Error: q has remaining operations after p is exhausted."));
+
+    return new ListDiff<>(result);
   }
 }
