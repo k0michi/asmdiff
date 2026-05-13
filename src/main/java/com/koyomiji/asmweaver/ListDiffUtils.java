@@ -292,10 +292,10 @@ public class ListDiffUtils {
 
   /**
    *
-   * @param p
-   * @param q
-   * @param compare13 Compare element in list1 and element in list 3.
-   * @param compare2 Compare element in list2 and element in list2.
+   * @param p Diff from list 1 to list 2.
+   * @param q Diff from list 2 to list 3.
+   * @param compare13 Compare element in list 1 and element in list 3.
+   * @param compare2 Compare element in list 2 and element in list 2.
    * @return
    * @param <T>
    * @throws ConflictException
