@@ -287,6 +287,10 @@ public class ListDiffUtils {
   }
 
   public static <T> ListDiff<T> compose(ListDiff<T> p, ListDiff<T> q, BiPredicate<T, T> compare) throws ConflictException {
+    return compose(p, q, compare, compare);
+  }
+
+  public static <T> ListDiff<T> compose(ListDiff<T> p, ListDiff<T> q, BiPredicate<T, T> compare13, BiPredicate<T, T> compare2) throws ConflictException {
     List<ListDiff.Operation<T>> result = new ArrayList<>();
 
     PeekableIterator<ListDiff.Operation<T>> itP = new PeekableIterator<>(p.operations.iterator());
@@ -306,7 +310,8 @@ public class ListDiffUtils {
 //        InsnListDiff.Operation opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
         ListDiff.Operation<T> opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
 
-        if (!compare.test(opP.operand2, opQ.operand1)) {
+//        if (!compare.test(opP.operand2, opQ.operand1)) {
+        if (!compare2.test(opP.operand2, opQ.operand1)) {
           throw new IllegalDiffException("Composition Error: Operand mismatch at B.");
         }
 
@@ -321,7 +326,7 @@ public class ListDiffUtils {
 
         int matchIndex = -1;
         for (int i = 0; i < qInsertions.size(); i++) {
-          if (compare.test(opP.operand1, qInsertions.get(i).operand2)) {
+          if (compare13.test(opP.operand1, qInsertions.get(i).operand2)) {
             matchIndex = i;
             break;
           }
@@ -357,7 +362,7 @@ public class ListDiffUtils {
 //        if (!compareInsnsIgnoreLabelsIgnoreLocals(opP.operand, opQ.operand)) {
 //          throw new IllegalDiffException("Composition Error: Operand mismatch at C.");
 //        }
-        if (!compare.test(opP.operand2, opQ.operand1)) {
+        if (!compare2.test(opP.operand2, opQ.operand1)) {
           throw new IllegalDiffException("Composition Error: Operand mismatch at C.");
         }
 
