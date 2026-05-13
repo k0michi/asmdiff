@@ -12,7 +12,6 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -279,6 +278,42 @@ class InsnListDiffUtilsTest {
   }
 
   @Test
+  void test_compose_mismatch_0() {
+    InsnListDiff diff1 = new InsnListDiff(
+            List.of(
+            )
+    );
+
+    InsnListDiff diff2 = new InsnListDiff(
+            List.of(
+                    new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, new InsnNode(Opcodes.NOP))
+            )
+    );
+
+    Assertions.assertThrows(IllegalDiffException.class, () -> {
+      InsnListDiffUtils.compose(diff1, diff2);
+    });
+  }
+
+  @Test
+  void test_compose_mismatch_1() {
+    InsnListDiff diff1 = new InsnListDiff(
+            List.of(
+                    new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, new InsnNode(Opcodes.NOP))
+            )
+    );
+
+    InsnListDiff diff2 = new InsnListDiff(
+            List.of(
+            )
+    );
+
+    Assertions.assertThrows(IllegalDiffException.class, () -> {
+      InsnListDiffUtils.compose(diff1, diff2);
+    });
+  }
+
+  @Test
   void test_diff_0() {
     InsnList list1 = new InsnList();
     list1.add(new InsnNode(Opcodes.NOP));
@@ -454,7 +489,7 @@ class InsnListDiffUtilsTest {
     var diff = InsnListDiffUtils.diff(
             new InsnListListAdapter(methodNode.instructions),
 //            map1::get,
-            (insn) ->{
+            (insn) -> {
               // FIXME
               VarInsnNode varInsn = (VarInsnNode) insn;
               return result.find(new DefUse(methodNode.instructions.indexOf(insn), insn, varInsn.var)).hashCode();

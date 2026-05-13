@@ -442,6 +442,8 @@ public class InsnListDiffUtils {
     ins2.addAll(collectInsertions(itQ));
     result.addAll(mergeInsertionSlot(ins1, ins2));
 
+    IteratorHelper.throwIfNext(itQ, () -> new IllegalDiffException("Composition Error: q has remaining operations after p is exhausted."));
+
     return new InsnListDiff(result);
   }
 
