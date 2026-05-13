@@ -331,37 +331,11 @@ public class ListDiffUtils {
         }
 //      } else if (opP.type == InsnListDiff.Operation.Type.DELETE) {
       } else if (opP.type == ListDiff.Operation.Type.DELETE) {
-//        List<InsnListDiff.Operation> qInsertions = collectInsertions(itQ);
-        List<ListDiff.Operation<T>> qInsertions = collectInsertions(itQ);
+        result.addAll(mergeInsertionSlot(ins1, ins2));
+        ins1.clear();
+        ins2.clear();
 
-        int matchIndex = -1;
-        for (int i = 0; i < qInsertions.size(); i++) {
-          if (compare13.test(opP.operand1, qInsertions.get(i).operand2)) {
-            matchIndex = i;
-            break;
-          }
-        }
-
-        if (matchIndex != -1) {
-          // Cancelling out
-
-//          InsnListDiff.Operation matchingInsert = qInsertions.remove(matchIndex);
-          ListDiff.Operation<T> matchingInsert = qInsertions.remove(matchIndex);
-          ins2.addAll(qInsertions);
-
-          result.addAll(mergeInsertionSlot(ins1, ins2));
-          ins1.clear();
-          ins2.clear();
-
-//          result.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, matchingInsert.mode, opP.operand));
-          result.add(new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, matchingInsert.mode, opP.operand1, matchingInsert.operand2));
-        } else {
-          ins2.addAll(qInsertions);
-          result.addAll(mergeInsertionSlot(ins1, ins2));
-          ins1.clear();
-          ins2.clear();
-          result.add(opP);
-        }
+        result.add(opP);
       } else { // MATCH
         ins2.addAll(collectInsertions(itQ));
 
