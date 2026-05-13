@@ -383,10 +383,7 @@ public class InsnListDiffUtils {
       if (opP.type == InsnListDiff.Operation.Type.INSERT) {
         ins2.addAll(collectInsertions(itQ));
 
-        if (!itQ.hasNext()) {
-          throw new IllegalDiffException("Composition Error: q is shorter than intermediate B.");
-        }
-        InsnListDiff.Operation opQ = itQ.next();
+        InsnListDiff.Operation opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
 
         // FIXME: should ignore
         if (!compareInsnsIgnoreLabelsIgnoreLocals(opP.operand, opQ.operand)) {
@@ -427,10 +424,7 @@ public class InsnListDiffUtils {
       } else { // MATCH
         ins2.addAll(collectInsertions(itQ));
 
-        if (!itQ.hasNext()) {
-          throw new IllegalDiffException("Composition Error: q is shorter than intermediate B.");
-        }
-        InsnListDiff.Operation opQ = itQ.next();
+        InsnListDiff.Operation opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
 
         // FIXME: should not ignore
         if (!compareInsnsIgnoreLabelsIgnoreLocals(opP.operand, opQ.operand)) {
