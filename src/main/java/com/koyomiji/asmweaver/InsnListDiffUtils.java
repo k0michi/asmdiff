@@ -385,7 +385,7 @@ public class InsnListDiffUtils {
 
         InsnListDiff.Operation opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
 
-        // FIXME: should ignore
+        // FIXME: should not ignore
         if (!compareInsnsIgnoreLabelsIgnoreLocals(opP.operand, opQ.operand)) {
           throw new IllegalDiffException("Composition Error: Operand mismatch at B.");
         }
