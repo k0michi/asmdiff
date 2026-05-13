@@ -17,13 +17,13 @@ public class ListDiffUtils {
 
       switch (op.type) {
         case MATCH:
-          invertedOp = new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, op.mode, op.operand1, op.operand2);
+          invertedOp = new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, op.mode, op.operand2, op.operand1);
           break;
         case INSERT:
-          invertedOp = new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, op.mode, op.operand1, op.operand2);
+          invertedOp = new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, op.mode, op.operand2, op.operand1);
           break;
         case DELETE:
-          invertedOp = new ListDiff.Operation<>(ListDiff.Operation.Type.INSERT, op.mode, op.operand1, op.operand2);
+          invertedOp = new ListDiff.Operation<>(ListDiff.Operation.Type.INSERT, op.mode, op.operand2, op.operand1);
           break;
         default:
           throw new IllegalStateException("Unexpected operation type: " + op.type);
