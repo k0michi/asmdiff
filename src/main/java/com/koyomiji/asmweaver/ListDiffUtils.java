@@ -60,10 +60,7 @@ public class ListDiffUtils {
           pPrimeOps.add(new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, opQIns.mode, opQIns.operand2, opQIns.operand2));
         }
 
-        if (!itQ.hasNext()) {
-          throw new IllegalDiffException("p has remaining operations after q is exhausted");
-        }
-        ListDiff.Operation<T> opQBase = itQ.next();
+        ListDiff.Operation<T> opQBase = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("p has remaining operations after q is exhausted"));
         T valQBase = opQBase.operand1; // MATCHかDELETEなのでoperand1を使用
 
         if (!compare.test(valP, valQBase)) {
