@@ -113,6 +113,7 @@ class ListDiffUtilsTest {
     var diff12 = ListDiffUtils.diff(list1, list2, Integer::equals);
     var diff23 = ListDiffUtils.diff(list2, list3, Integer::equals);
 
+    // Cannot commute, because diff23 deletes 2 inserted by diff12
     Assertions.assertThrows(ConflictException.class, () -> {
       ListDiffUtils.commute(diff12, diff23, Integer::equals);
     });
@@ -153,6 +154,46 @@ class ListDiffUtilsTest {
     Assertions.assertEquals(ListDiff.Operation.Type.MATCH, commuted2.operations.get(1).type);
     Assertions.assertEquals(2, commuted2.operations.get(1).operand1);
     Assertions.assertEquals(ListDiff.Operation.Type.MATCH, commuted2.operations.get(2).type);
+
+    Assertions.assertEquals(ListDiff.Operation.Type.MATCH, commuted2.operations.get(2).type);
+    Assertions.assertEquals(3, commuted2.operations.get(2).operand1);
+    Assertions.assertEquals(3, commuted2.operations.get(2).operand2);
+  }
+
+  @Test
+  void test_commute_3() throws ConflictException {
+var list1 = List.of(1);
+    var list2 = List.of(1,2);
+    var list3 = List.of(1,2,3);
+
+    var diff12 = ListDiffUtils.diff(list1, list2, Integer::equals);
+    var diff23 = ListDiffUtils.diff(list2, list3, Integer::equals);
+
+    var commuted = ListDiffUtils.commute(diff12, diff23, Integer::equals);
+    var commuted1 = commuted.first;
+    var commuted2 = commuted.second;
+
+    // 1 -> 1 3
+    Assertions.assertEquals(2, commuted1.operations.size());
+
+    Assertions.assertEquals(ListDiff.Operation.Type.MATCH, commuted1.operations.get(0).type);
+    Assertions.assertEquals(1, commuted1.operations.get(0).operand1);
+    Assertions.assertEquals(1, commuted1.operations.get(0).operand2);
+
+    Assertions.assertEquals(ListDiff.Operation.Type.INSERT, commuted1.operations.get(1).type);
+    Assertions.assertEquals(null, commuted1.operations.get(1).operand1);
+    Assertions.assertEquals(3, commuted1.operations.get(1).operand2);
+
+    // 1 3 -> 1 2 3
+    Assertions.assertEquals(3, commuted2.operations.size());
+
+    Assertions.assertEquals(ListDiff.Operation.Type.MATCH, commuted2.operations.get(0).type);
+    Assertions.assertEquals(1, commuted2.operations.get(0).operand1);
+    Assertions.assertEquals(1, commuted2.operations.get(0).operand2);
+
+    Assertions.assertEquals(ListDiff.Operation.Type.INSERT, commuted2.operations.get(1).type);
+    Assertions.assertEquals(null, commuted2.operations.get(1).operand1);
+    Assertions.assertEquals(2, commuted2.operations.get(1).operand2);
 
     Assertions.assertEquals(ListDiff.Operation.Type.MATCH, commuted2.operations.get(2).type);
     Assertions.assertEquals(3, commuted2.operations.get(2).operand1);
