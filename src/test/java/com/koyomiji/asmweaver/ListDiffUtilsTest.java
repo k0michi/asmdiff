@@ -70,24 +70,38 @@ class ListDiffUtilsTest {
     Assertions.assertEquals(4, commuted1.operations.size());
     // 1 2 3 -> 1 2 4
     Assertions.assertEquals(ListDiff.Operation.Type.MATCH, commuted1.operations.get(0).type);
-    Assertions.assertEquals(1, commuted1.operations.get(0).operand);
+    Assertions.assertEquals(1, commuted1.operations.get(0).operand1);
+    Assertions.assertEquals(1, commuted1.operations.get(0).operand2);
+
     Assertions.assertEquals(ListDiff.Operation.Type.MATCH, commuted1.operations.get(1).type);
-    Assertions.assertEquals(2, commuted1.operations.get(1).operand);
+    Assertions.assertEquals(2, commuted1.operations.get(1).operand1);
+    Assertions.assertEquals(2, commuted1.operations.get(1).operand2);
+
     Assertions.assertEquals(ListDiff.Operation.Type.DELETE, commuted1.operations.get(2).type);
-    Assertions.assertEquals(3, commuted1.operations.get(2).operand);
+    Assertions.assertEquals(3, commuted1.operations.get(2).operand1);
+    Assertions.assertEquals(null, commuted1.operations.get(2).operand2);
+
     Assertions.assertEquals(ListDiff.Operation.Type.INSERT, commuted1.operations.get(3).type);
-    Assertions.assertEquals(4, commuted1.operations.get(3).operand);
+    Assertions.assertEquals(null, commuted1.operations.get(3).operand1);
+    Assertions.assertEquals(4, commuted1.operations.get(3).operand2);
 
     Assertions.assertEquals(4, commuted2.operations.size());
     // 1 2 4 -> 2 2 4
     Assertions.assertEquals(ListDiff.Operation.Type.DELETE, commuted2.operations.get(0).type);
-    Assertions.assertEquals(1, commuted2.operations.get(0).operand);
+    Assertions.assertEquals(1, commuted2.operations.get(0).operand1);
+    Assertions.assertEquals(null, commuted2.operations.get(0).operand2);
+
     Assertions.assertEquals(ListDiff.Operation.Type.INSERT, commuted2.operations.get(1).type);
-    Assertions.assertEquals(2, commuted2.operations.get(1).operand);
+    Assertions.assertEquals(null, commuted2.operations.get(1).operand1);
+    Assertions.assertEquals(2, commuted2.operations.get(1).operand2);
+
     Assertions.assertEquals(ListDiff.Operation.Type.MATCH, commuted2.operations.get(2).type);
-    Assertions.assertEquals(2, commuted2.operations.get(2).operand);
+    Assertions.assertEquals(2, commuted2.operations.get(2).operand1);
+    Assertions.assertEquals(2, commuted2.operations.get(2).operand2);
+
     Assertions.assertEquals(ListDiff.Operation.Type.MATCH, commuted2.operations.get(3).type);
-    Assertions.assertEquals(4, commuted2.operations.get(3).operand);
+    Assertions.assertEquals(4, commuted2.operations.get(3).operand1);
+    Assertions.assertEquals(4, commuted2.operations.get(3).operand2);
   }
 
   @Test
@@ -118,20 +132,31 @@ class ListDiffUtilsTest {
     var commuted2 = commuted.second;
 
     Assertions.assertEquals(3, commuted1.operations.size());
+
     Assertions.assertEquals(ListDiff.Operation.Type.MATCH, commuted1.operations.get(0).type);
-    Assertions.assertEquals(1, commuted1.operations.get(0).operand);
+    Assertions.assertEquals(1, commuted1.operations.get(0).operand1);
+    Assertions.assertEquals(1, commuted1.operations.get(0).operand2);
+
     Assertions.assertEquals(ListDiff.Operation.Type.MATCH, commuted1.operations.get(1).type);
-    Assertions.assertEquals(2, commuted1.operations.get(1).operand);
+    Assertions.assertEquals(2, commuted1.operations.get(1).operand1);
+    Assertions.assertEquals(2, commuted1.operations.get(1).operand2);
+
     Assertions.assertEquals(ListDiff.Operation.Type.MATCH, commuted1.operations.get(2).type);
-    Assertions.assertEquals(3, commuted1.operations.get(2).operand);
+    Assertions.assertEquals(3, commuted1.operations.get(2).operand1);
+    Assertions.assertEquals(3, commuted1.operations.get(2).operand2);
 
     Assertions.assertEquals(3, commuted2.operations.size());
     Assertions.assertEquals(ListDiff.Operation.Type.MATCH, commuted2.operations.get(0).type);
-    Assertions.assertEquals(1, commuted2.operations.get(0).operand);
+    Assertions.assertEquals(1, commuted2.operations.get(0).operand1);
     Assertions.assertEquals(ListDiff.Operation.Type.MATCH, commuted2.operations.get(1).type);
-    Assertions.assertEquals(2, commuted2.operations.get(1).operand);
+
+    Assertions.assertEquals(ListDiff.Operation.Type.MATCH, commuted2.operations.get(1).type);
+    Assertions.assertEquals(2, commuted2.operations.get(1).operand1);
     Assertions.assertEquals(ListDiff.Operation.Type.MATCH, commuted2.operations.get(2).type);
-    Assertions.assertEquals(3, commuted2.operations.get(2).operand);
+
+    Assertions.assertEquals(ListDiff.Operation.Type.MATCH, commuted2.operations.get(2).type);
+    Assertions.assertEquals(3, commuted2.operations.get(2).operand1);
+    Assertions.assertEquals(3, commuted2.operations.get(2).operand2);
   }
 
   private static List<List<Integer>> lists = List.of(
