@@ -288,4 +288,43 @@ class ListDiffUtilsTest {
     Assertions.assertEquals(3, composed.operations.get(2).operand1);
     Assertions.assertEquals(null, composed.operations.get(2).operand2);
   }
+
+  @Test
+  void test_compose_2() throws ConflictException {
+    var list1 = List.of(1, 2);
+    var list2 = List.of(1);
+    var list3 = List.of(1, 2);
+
+    var diff12 = ListDiffUtils.diff(list1, list2, Integer::equals);
+    var diff23 = ListDiffUtils.diff(list2, list3, Integer::equals);
+
+    var composed = ListDiffUtils.compose(diff12, diff23, Integer::equals);
+
+    Assertions.assertEquals(3, composed.operations.size());
+
+    Assertions.assertEquals(ListDiff.Operation.Type.MATCH, composed.operations.get(0).type);
+    Assertions.assertEquals(1, composed.operations.get(0).operand1);
+    Assertions.assertEquals(1, composed.operations.get(0).operand2);
+
+    Assertions.assertEquals(ListDiff.Operation.Type.DELETE, composed.operations.get(1).type);
+    Assertions.assertEquals(2, composed.operations.get(1).operand1);
+    Assertions.assertEquals(null, composed.operations.get(1).operand2);
+
+    Assertions.assertEquals(ListDiff.Operation.Type.INSERT, composed.operations.get(2).type);
+    Assertions.assertEquals(null, composed.operations.get(2).operand1);
+    Assertions.assertEquals(2, composed.operations.get(2).operand2);
+  }
+
+  @Test
+  void test_compose_3() throws ConflictException {
+    var list1 = List.<Integer>of();
+    var list2 = List.of(1);
+    var list3 = List.<Integer>of();
+
+    var diff12 = ListDiffUtils.diff(list1, list2, Integer::equals);
+    var diff23 = ListDiffUtils.diff(list2, list3, Integer::equals);
+
+    var composed = ListDiffUtils.compose(diff12, diff23, Integer::equals);
+    Assertions.assertEquals(0, composed.operations.size());
+  }
 }
