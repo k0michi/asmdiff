@@ -287,21 +287,16 @@ public class ListDiffUtils {
     return insertions;
   }
 
-  public static <T> ListDiff<T> compose(ListDiff<T> p, ListDiff<T> q, BiPredicate<T, T> compare) throws ConflictException {
-    return compose(p, q, compare, compare);
-  }
-
   /**
    *
    * @param p Diff from list 1 to list 2.
    * @param q Diff from list 2 to list 3.
-   * @param compare13 Compare element in list 1 and element in list 3.
    * @param compare2 Compare element in list 2 and element in list 2.
    * @return
    * @param <T>
    * @throws ConflictException
    */
-  public static <T> ListDiff<T> compose(ListDiff<T> p, ListDiff<T> q, BiPredicate<T, T> compare13, BiPredicate<T, T> compare2) throws ConflictException {
+  public static <T> ListDiff<T> compose(ListDiff<T> p, ListDiff<T> q, BiPredicate<T, T> compare2) throws ConflictException {
     List<ListDiff.Operation<T>> result = new ArrayList<>();
 
     PeekableIterator<ListDiff.Operation<T>> itP = new PeekableIterator<>(p.operations.iterator());
