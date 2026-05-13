@@ -1,6 +1,5 @@
 package com.koyomiji.asmweaver;
 
-import com.koyomiji.asmweaver.util.BiHashMap;
 import com.koyomiji.asmweaver.util.BiPersistentHashMap;
 import com.koyomiji.asmweaver.util.PeekableIterator;
 import com.koyomiji.asmweaver.util.PersistentHashMap;
@@ -389,7 +388,7 @@ public class InsnListDiffUtils {
         }
         InsnListDiff.Operation opQ = itQ.next();
 
-        // FIXME:
+        // FIXME: should ignore
         if (!compareInsnsIgnoreLabelsIgnoreLocals(opP.operand, opQ.operand)) {
           throw new IllegalDiffException("Composition Error: Operand mismatch at B.");
         }
@@ -402,8 +401,7 @@ public class InsnListDiffUtils {
 
         int matchIndex = -1;
         for (int i = 0; i < qInsertions.size(); i++) {
-          // FIXME:
-//          if (compareInsns(qInsertions.get(i).operand, opP.operand, Function.identity())) {
+          // FIXME: should not ignore
           if (compareInsnsIgnoreLabelsIgnoreLocals(qInsertions.get(i).operand, opP.operand)) {
             matchIndex = i;
             break;
@@ -434,9 +432,7 @@ public class InsnListDiffUtils {
         }
         InsnListDiff.Operation opQ = itQ.next();
 
-        // FIXME:
-//        if (!compareInsns(opP.operand, opQ.operand, Function.identity())) {
-//        if (!compareInsns(opP.operand, opQ.operand, (l1, l2) -> true)) {
+        // FIXME: should not ignore
         if (!compareInsnsIgnoreLabelsIgnoreLocals(opP.operand, opQ.operand)) {
           throw new IllegalDiffException("Composition Error: Operand mismatch at C.");
         }
@@ -980,7 +976,7 @@ public class InsnListDiffUtils {
 
     // 変更があった場合のみ、元のStateに反映
 //    if (isCopied) {
-      state.labelMap = currentLabelMap;
+    state.labelMap = currentLabelMap;
 //    }
   }
 
