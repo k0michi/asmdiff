@@ -327,4 +327,34 @@ class ListDiffUtilsTest {
     var composed = ListDiffUtils.compose(diff12, diff23, Integer::equals);
     Assertions.assertEquals(0, composed.operations.size());
   }
+
+  @Test
+  void test_invert_0() throws ConflictException {
+    var list1 = List.of(1);
+    var list2 = List.of(1, 2);
+
+    var diff12 = ListDiffUtils.diff(list1, list2, Integer::equals);
+    var diff12Inverted = ListDiffUtils.invert(diff12);
+    var composed = ListDiffUtils.compose(diff12, diff12Inverted, Integer::equals);
+
+    Assertions.assertTrue(composed.isEmpty());
+
+    var patched = ListDiffUtils.patch(list1, composed);
+
+    Assertions.assertEquals(list1, patched);
+  }
+
+  @Test
+  void test_invert_1() throws ConflictException {
+    var list1 = List.of(1, 2);
+    var list2 = List.of(1);
+
+    var diff12 = ListDiffUtils.diff(list1, list2, Integer::equals);
+    var diff12Inverted = ListDiffUtils.invert(diff12);
+    var composed = ListDiffUtils.compose(diff12, diff12Inverted, Integer::equals);
+
+    var patched = ListDiffUtils.patch(list1, composed);
+
+    Assertions.assertEquals(list1, patched);
+  }
 }
