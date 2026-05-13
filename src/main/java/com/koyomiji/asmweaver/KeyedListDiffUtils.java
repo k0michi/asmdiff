@@ -6,6 +6,26 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class KeyedListDiffUtils {
+  public static <Key, Value, Diff extends IDiff> KeyedListDiff<Key, Value, Diff> invert(KeyedListDiff<Key, Value, Diff> diff, Function<Diff, Diff> invert) {
+    List<KeyedListDiff.Operation<Key, Value, Diff>> invertedOperations = new ArrayList<>();
+
+    for (KeyedListDiff.Operation<Key, Value, Diff> op : diff.operations) {
+      switch (op.type) {
+        case MATCH:
+          invertedOperations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.MATCH, op.mode, op.operandKey, op.operandValue, invert.apply(op.operandDiff)));
+          break;
+        case INSERT:
+          invertedOperations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.DELETE, op.mode, op.operandKey, op.operandValue, null));
+          break;
+        case DELETE:
+          invertedOperations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.INSERT, op.mode, op.operandKey, op.operandValue, null));
+          break;
+      }
+    }
+
+    return new KeyedListDiff<>(invertedOperations);
+  }
+
   // FIXME: Myers
   public static <Key, Value, Diff extends IDiff> KeyedListDiff<Key, Value, Diff> diff(List<Value> list1, List<Value> list2, Function<Value, Key> keyExtractor, BiFunction<Value, Value, Diff> diffFunction) {
     int[][] dp = new int[list1.size() + 1][list2.size() + 1];
@@ -42,13 +62,13 @@ public class KeyedListDiffUtils {
         operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.INSERT, null, keyExtractor.apply(list2.get(j - 1)), list2.get(j - 1), null));
         j--;
       } else {
-        operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.DELETE, null, keyExtractor.apply(list1.get(i - 1)), null, null));
+        operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.DELETE, null, keyExtractor.apply(list1.get(i - 1)), list1.get(i - 1), null));
         i--;
       }
     }
 
     while (i > 0) {
-      operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.DELETE, null, keyExtractor.apply(list1.get(i - 1)), null, null));
+      operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.DELETE, null, keyExtractor.apply(list1.get(i - 1)), list1.get(i - 1), null));
       i--;
     }
 
