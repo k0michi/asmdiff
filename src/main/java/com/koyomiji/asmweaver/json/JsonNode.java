@@ -44,14 +44,14 @@ public class JsonNode extends JsonVisitor {
 
   @Override
   public JsonVisitor visitObject(String key) {
-    JsonNode child = new JsonNode();
+    JsonNode child = new JsonNode(Type.OBJECT);
     children.add(Pair.of(key, child));
     return child;
   }
 
   @Override
   public JsonVisitor visitArray(String key) {
-    JsonNode child = new JsonNode();
+    JsonNode child = new JsonNode(Type.ARRAY);
     children.add(Pair.of(key, child));
     return child;
   }
