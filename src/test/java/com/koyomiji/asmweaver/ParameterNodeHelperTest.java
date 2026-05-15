@@ -1,45 +1,33 @@
 package com.koyomiji.asmweaver;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.tree.ParameterNode;
 
+import java.util.List;
+
 public class ParameterNodeHelperTest {
-  @Test
-  void test_equals_0() {
-    ParameterNode node1 = new ParameterNode("param1", 0);
-    ParameterNode node2 = new ParameterNode("param1", 0);
-    Assertions.assertTrue(ParameterNodeHelper.equals(node1, node2));
+  List<ParameterNode> generateUnique() {
+    return List.of(
+            new ParameterNode("param1", 0),
+            new ParameterNode("param2", 0),
+            new ParameterNode(null, 0),
+            new ParameterNode("param1", 1)
+    );
   }
 
   @Test
-  void test_equals_1() {
-    ParameterNode node1 = new ParameterNode("param1", 0);
-    ParameterNode node2 = new ParameterNode("param2", 0);
-    Assertions.assertFalse(ParameterNodeHelper.equals(node1, node2));
+  void test_equals() {
+    TestUtils.verifyEquals(
+            this::generateUnique,
+            ParameterNodeHelper::equals
+    );
   }
 
   @Test
-  void test_equals_2() {
-    ParameterNode node1 = new ParameterNode("param1", 0);
-    ParameterNode node2 = new ParameterNode("param1", 1);
-    Assertions.assertFalse(ParameterNodeHelper.equals(node1, node2));
-  }
-
-  @Test
-  void test_equals_3() {
-    ParameterNode node1 = new ParameterNode("param1", 0);
-    Assertions.assertFalse(ParameterNodeHelper.equals(node1, null));
-  }
-
-  @Test
-  void test_equals_5() {
-    ParameterNode node2 = new ParameterNode("param1", 0);
-    Assertions.assertFalse(ParameterNodeHelper.equals(null, node2));
-  }
-
-  @Test
-  void test_equals_6() {
-    Assertions.assertTrue(ParameterNodeHelper.equals(null, null));
+  void test_hashCode() {
+    TestUtils.verifyHashCode(
+            this::generateUnique,
+            ParameterNodeHelper::hashCode
+    );
   }
 }

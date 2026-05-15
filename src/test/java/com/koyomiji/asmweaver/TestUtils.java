@@ -1,7 +1,13 @@
 package com.koyomiji.asmweaver;
 
+import org.junit.jupiter.api.Assertions;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
+
+import java.util.List;
+import java.util.function.BiPredicate;
+import java.util.function.Supplier;
+import java.util.function.ToIntFunction;
 
 public class TestUtils {
   public static byte[] readResource(String resourcePath) {
@@ -21,5 +27,46 @@ public class TestUtils {
     var classReader = new ClassReader(classBytes);
     classReader.accept(classNode, ClassReader.EXPAND_FRAMES);
     return classNode;
+  }
+
+  public static <T> void verifyEquals(Supplier<List<T>> nodesSupplier, BiPredicate<T, T> equals) {
+    Assertions.assertTrue(equals.test(null, null), "null compared with null should be true");
+
+    List<T> nodes1 = nodesSupplier.get();
+    List<T> nodes2 = nodesSupplier.get();
+
+    int size = nodes1.size();
+
+    for (int i = 0; i < size; i++) {
+      T node1 = nodes1.get(i);
+      T node2 = nodes2.get(i);
+
+      Assertions.assertTrue(equals.test(node1, node2), "Index " + i + " should equal its counterpart instance");
+      Assertions.assertFalse(equals.test(node1, null), "Index " + i + " compared with null should be false");
+      Assertions.assertFalse(equals.test(null, node2), "null compared with index " + i + " should be false");
+
+      for (int j = 0; j < size; j++) {
+        if (i != j) {
+          Assertions.assertFalse(equals.test(node1, nodes1.get(j)),
+                  String.format("Index %d and %d should not be equal", i, j));
+        }
+      }
+    }
+  }
+
+  public static <T> void verifyHashCode(Supplier<List<T>> nodesSupplier, ToIntFunction<T> hashCode) {
+    Assertions.assertEquals(
+            hashCode.applyAsInt(null),
+            hashCode.applyAsInt(null),
+            "Hash code for null should be consistent"
+    );
+
+    List<T> nodes = nodesSupplier.get();
+
+    for (int i = 0; i < nodes.size(); i++) {
+      T node = nodes.get(i);
+      int expectedHashCode = hashCode.applyAsInt(node);
+      Assertions.assertEquals(expectedHashCode, hashCode.applyAsInt(node), "Hash code should be consistent for index " + i);
+    }
   }
 }
