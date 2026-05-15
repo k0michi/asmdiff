@@ -1,6 +1,5 @@
 package com.koyomiji.asmweaver;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.FieldNode;
@@ -20,34 +19,18 @@ public class FieldNodeHelperTest {
   }
 
   @Test
-  void test_equals_0() {
-    var uniqueNodes1 = generateUnique();
-    var uniqueNodes2 = generateUnique();
-
-    for (int i = 0; i < uniqueNodes1.size(); i++) {
-      Assertions.assertTrue(FieldNodeHelper.equals(uniqueNodes1.get(i), uniqueNodes2.get(i)));
-    }
+  void test_equals() {
+    TestUtils.verifyEquals(
+            FieldNodeHelperTest::generateUnique,
+            FieldNodeHelper::equals
+    );
   }
 
   @Test
-  void test_equals_1() {
-    var uniqueNodes = generateUnique();
-
-    for (int i = 0; i < uniqueNodes.size(); i++) {
-      for (int j = 0; j < uniqueNodes.size(); j++) {
-        if (i != j) {
-          Assertions.assertFalse(FieldNodeHelper.equals(uniqueNodes.get(i), uniqueNodes.get(j)));
-        }
-      }
-    }
-  }
-
-  @Test
-  void test_hashCode_0() {
-    var uniqueNodes = generateUnique();
-
-    for (int i = 0; i < uniqueNodes.size(); i++) {
-      Assertions.assertEquals(FieldNodeHelper.hashCode(uniqueNodes.get(i)), FieldNodeHelper.hashCode(uniqueNodes.get(i)));
-    }
+  void test_hashCode() {
+    TestUtils.verifyHashCode(
+            FieldNodeHelperTest::generateUnique,
+            FieldNodeHelper::hashCode
+    );
   }
 }
