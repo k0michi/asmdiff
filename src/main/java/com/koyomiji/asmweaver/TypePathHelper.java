@@ -1,7 +1,12 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.DataStreamHelper;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.TypePath;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
 public class TypePathHelper {
   public static boolean equals(TypePath a, TypePath b) {
@@ -48,5 +53,18 @@ public class TypePathHelper {
     }
 
     return builder.build();
+  }
+
+  public static void write(TypePath typePath, DataOutputStream stream) throws IOException {
+    DataStreamHelper.writeUTFNullable(stream,
+            NullableHelper.map(typePath, TypePath::toString)
+    );
+  }
+
+  public static TypePath read(DataInputStream stream) throws IOException {
+    return NullableHelper.map(
+            DataStreamHelper.readUTFNullable(stream),
+            TypePath::fromString
+    );
   }
 }
