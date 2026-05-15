@@ -1,6 +1,5 @@
 package com.koyomiji.asmweaver;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.tree.*;
 
@@ -67,25 +66,17 @@ class ModuleNodeHelperTest {
 
   @Test
   void test_equals() {
-    List<ModuleNode> unique = generateUnique();
-
-    for (int i = 0; i < unique.size(); i++) {
-      for (int j = 0; j < unique.size(); j++) {
-        if (i == j) {
-          Assertions.assertTrue(ModuleNodeHelper.equals(unique.get(i), unique.get(j)), "i=" + i + ", j=" + j);
-        } else {
-          Assertions.assertFalse(ModuleNodeHelper.equals(unique.get(i), unique.get(j)), "i=" + i + ", j=" + j);
-        }
-      }
-    }
+    TestUtils.verifyEquals(
+            ModuleNodeHelperTest::generateUnique,
+            ModuleNodeHelper::equals
+    );
   }
 
   @Test
   void test_hashCode() {
-    List<ModuleNode> unique = generateUnique();
-
-    for (int i = 0; i < unique.size(); i++) {
-      Assertions.assertEquals(ModuleNodeHelper.hashCode(unique.get(i)), ModuleNodeHelper.hashCode(unique.get(i)), "i=" + i);
-    }
+    TestUtils.verifyHashCode(
+            ModuleNodeHelperTest::generateUnique,
+            ModuleNodeHelper::hashCode
+    );
   }
 }
