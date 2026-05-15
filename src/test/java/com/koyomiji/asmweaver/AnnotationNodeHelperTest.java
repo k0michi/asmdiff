@@ -28,6 +28,7 @@ class AnnotationNodeHelperTest {
           new AnnotationNode("Lcom/example/OtherAnnotation;"),
           setValues(new AnnotationNode("Lcom/example/Annotation;"), List.of("key", "value")),
           setValues(new AnnotationNode("Lcom/example/Annotation;"), List.of("key", (byte) 0)),
+          setValues(new AnnotationNode("Lcom/example/Annotation;"), List.of("key", false)),
           setValues(new AnnotationNode("Lcom/example/Annotation;"), List.of("key", (char) 0)),
           setValues(new AnnotationNode("Lcom/example/Annotation;"), List.of("key", (short) 0)),
           setValues(new AnnotationNode("Lcom/example/Annotation;"), List.of("key", (int) 0)),
