@@ -1,8 +1,12 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.DataStreamHelper;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.tree.RecordComponentNode;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Objects;
 
 public class RecordComponentNodeHelper {
@@ -54,5 +58,55 @@ public class RecordComponentNodeHelper {
             .append(node.invisibleTypeAnnotations,
                     (l) -> ListHelper.hashCodeNullToEmpty(l, AnnotationNodeHelper::hashCode)
             ).build();
+  }
+
+  public static void write(RecordComponentNode node, DataOutputStream out) throws IOException {
+    out.writeUTF(node.name);
+    out.writeUTF(node.descriptor);
+    DataStreamHelper.writeUTFNullable(out, node.signature);
+    ListHelper.write(
+            ListHelper.nullToEmpty(node.visibleAnnotations),
+            out,
+            AnnotationNodeHelper::write
+    );
+    ListHelper.write(
+            ListHelper.nullToEmpty(node.invisibleAnnotations),
+            out,
+            AnnotationNodeHelper::write
+    );
+    ListHelper.write(
+            ListHelper.nullToEmpty(node.visibleTypeAnnotations),
+            out,
+            AnnotationNodeHelper::write
+    );
+    ListHelper.write(
+            ListHelper.nullToEmpty(node.invisibleTypeAnnotations),
+            out,
+            AnnotationNodeHelper::write
+    );
+  }
+
+  public static RecordComponentNode read(DataInputStream in) throws IOException {
+    String name = in.readUTF();
+    String descriptor = in.readUTF();
+    String signature = DataStreamHelper.readUTFNullable(in);
+    RecordComponentNode node = new RecordComponentNode(name, descriptor, signature);
+    node.visibleAnnotations = ListHelper.read(
+            in,
+            AnnotationNodeHelper::readAnnotationNode
+    );
+    node.invisibleAnnotations = ListHelper.read(
+            in,
+            AnnotationNodeHelper::readAnnotationNode
+    );
+    node.visibleTypeAnnotations = ListHelper.read(
+            in,
+            AnnotationNodeHelper::readTypeAnnotationNode
+    );
+    node.invisibleAnnotations = ListHelper.read(
+            in,
+            AnnotationNodeHelper::readTypeAnnotationNode
+    );
+    return node;
   }
 }

@@ -3,6 +3,7 @@ package com.koyomiji.asmweaver;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.tree.RecordComponentNode;
 
+import java.io.IOException;
 import java.util.List;
 
 class RecordComponentNodeHelperTest {
@@ -16,7 +17,7 @@ class RecordComponentNodeHelperTest {
   }
 
   @Test
-  void test_equals_0() {
+  void test_equals() {
     TestUtils.verifyEquals(
             RecordComponentNodeHelperTest::generateUnique,
             RecordComponentNodeHelper::equals
@@ -28,6 +29,16 @@ class RecordComponentNodeHelperTest {
     TestUtils.verifyHashCode(
             RecordComponentNodeHelperTest::generateUnique,
             RecordComponentNodeHelper::hashCode
+    );
+  }
+
+  @Test
+  void test_roundTrip() throws IOException {
+    TestUtils.verifyRoundTrip(
+            RecordComponentNodeHelperTest::generateUnique,
+            RecordComponentNodeHelper::write,
+            RecordComponentNodeHelper::read,
+            RecordComponentNodeHelper::equals
     );
   }
 }
