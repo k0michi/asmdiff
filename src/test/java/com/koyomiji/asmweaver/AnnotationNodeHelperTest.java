@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.util.BiHashMap;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -13,6 +14,7 @@ import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LocalVariableAnnotationNode;
 import org.objectweb.asm.tree.TypeAnnotationNode;
 
+import java.io.*;
 import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -156,5 +158,31 @@ class AnnotationNodeHelperTest {
   @MethodSource("provideAll")
   void test_hashCode_provideAllPairs(int i, AnnotationNode node) {
     Assertions.assertEquals(AnnotationNodeHelper.hashCode(node), AnnotationNodeHelper.hashCode(node));
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideAll")
+  void test_readWrite_roundTrip(int i, AnnotationNode node) throws IOException {
+    BiHashMap<LabelNode, Integer> labelIndexMap = new BiHashMap<>();
+
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    DataOutputStream dos = new DataOutputStream(baos);
+    AnnotationNodeHelper.write(node, dos, (l) -> labelIndexMap.computeIfAbsent(l, k -> labelIndexMap.size()));
+    dos.flush();
+
+    byte[] data = baos.toByteArray();
+    ByteArrayInputStream bais = new ByteArrayInputStream(data);
+    DataInputStream dis = new DataInputStream(bais);
+
+    if (node.getClass() == AnnotationNode.class) {
+      AnnotationNode nodeRead = AnnotationNodeHelper.readAnnotationNode(dis);
+      Assertions.assertTrue(AnnotationNodeHelper.equals(node, nodeRead));
+    } else if (node.getClass() == TypeAnnotationNode.class) {
+      TypeAnnotationNode nodeRead = AnnotationNodeHelper.readTypeAnnotationNode(dis);
+      Assertions.assertTrue(AnnotationNodeHelper.equals(node, nodeRead));
+    } else if (node.getClass() == LocalVariableAnnotationNode.class) {
+      LocalVariableAnnotationNode nodeRead = AnnotationNodeHelper.readLocalVariableAnnotationNode(dis, labelIndexMap::getKey);
+      Assertions.assertTrue(AnnotationNodeHelper.equals(node, nodeRead));
+    }
   }
 }

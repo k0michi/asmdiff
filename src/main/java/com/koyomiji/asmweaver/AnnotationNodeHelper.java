@@ -1,15 +1,21 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.util.tuple.Triplet;
+import org.objectweb.asm.TypePath;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LocalVariableAnnotationNode;
 import org.objectweb.asm.tree.TypeAnnotationNode;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 
 public class AnnotationNodeHelper {
   public static boolean equals(AnnotationNode a, AnnotationNode b) {
@@ -136,5 +142,226 @@ public class AnnotationNodeHelper {
 
     // Byte, Boolean, Character, Short, Integer, Long, Float, Double, String, Type
     return Objects.hashCode(value);
+  }
+
+  public static enum ValueType {
+    BYTE,
+    CHAR,
+    DOUBLE,
+    FLOAT,
+    INT,
+    LONG,
+    SHORT,
+    BOOLEAN,
+    STRING,
+    ENUM,
+    CLASS,
+    ANNOTATION,
+    ARRAY
+  }
+
+  public static void write(AnnotationNode node, DataOutputStream out, Function<LabelNode, Integer> labelIndexProvider) throws IOException {
+    if (node == null) {
+      out.writeBoolean(false);
+      return;
+    }
+
+    out.writeBoolean(true);
+    out.writeUTF(node.desc);
+    List<Object> values = node.values;
+
+    if (values == null) {
+      out.writeInt(0);
+    } else {
+      out.writeInt(values.size());
+      for (Object value : values) {
+        writeValue(value, out, labelIndexProvider);
+      }
+    }
+
+    if (node instanceof TypeAnnotationNode) {
+      TypeAnnotationNode typeNode = (TypeAnnotationNode) node;
+      out.writeInt(typeNode.typeRef);
+      TypePathHelper.write(typeNode.typePath, out);
+
+      if (node instanceof LocalVariableAnnotationNode) {
+        LocalVariableAnnotationNode localVarNode = (LocalVariableAnnotationNode) node;
+        List<LabelNode> start = localVarNode.start;
+        ListHelper.write(start, out, (label, stream) -> {
+          stream.writeInt(labelIndexProvider.apply(label));
+        });
+        List<LabelNode> end = localVarNode.end;
+        ListHelper.write(end, out, (label, stream) -> {
+          stream.writeInt(labelIndexProvider.apply(label));
+        });
+        List<Integer> index = localVarNode.index;
+        ListHelper.write(index, out, (idx, stream) -> {
+          stream.writeInt(idx);
+        });
+      }
+    }
+  }
+
+  public static void writeValue(Object value, DataOutputStream out, Function<LabelNode, Integer> labelIndexProvider) throws IOException {
+    if (value instanceof String) {
+      out.writeByte(ValueType.STRING.ordinal());
+      out.writeUTF((String) value);
+    } else if (value instanceof Byte) {
+      out.writeByte(ValueType.BYTE.ordinal());
+      out.writeByte((Byte) value);
+    } else if (value instanceof Character) {
+      out.writeByte(ValueType.CHAR.ordinal());
+      out.writeChar((Character) value);
+    } else if (value instanceof Double) {
+      out.writeByte(ValueType.DOUBLE.ordinal());
+      out.writeDouble((Double) value);
+    } else if (value instanceof Float) {
+      out.writeByte(ValueType.FLOAT.ordinal());
+      out.writeFloat((Float) value);
+    } else if (value instanceof Integer) {
+      out.writeByte(ValueType.INT.ordinal());
+      out.writeInt((Integer) value);
+    } else if (value instanceof Long) {
+      out.writeByte(ValueType.LONG.ordinal());
+      out.writeLong((Long) value);
+    } else if (value instanceof Short) {
+      out.writeByte(ValueType.SHORT.ordinal());
+      out.writeShort((Short) value);
+    } else if (value instanceof Boolean) {
+      out.writeByte(ValueType.BOOLEAN.ordinal());
+      out.writeBoolean((Boolean) value);
+    } else if (value instanceof String[]) {
+      out.writeByte(ValueType.ENUM.ordinal());
+      String[] enumValue = (String[]) value;
+      out.writeUTF(enumValue[0]); // Enum type descriptor
+      out.writeUTF(enumValue[1]); // Enum constant name
+    } else if (value instanceof org.objectweb.asm.Type) {
+      out.writeByte(ValueType.CLASS.ordinal());
+      out.writeUTF(((org.objectweb.asm.Type) value).getDescriptor());
+    } else if (value instanceof AnnotationNode) {
+      out.writeByte(ValueType.ANNOTATION.ordinal());
+//      write((AnnotationNode) value, out);
+      write((AnnotationNode) value, out, labelIndexProvider);
+    } else if (value instanceof List<?>) {
+      out.writeByte(ValueType.ARRAY.ordinal());
+      List<Object> list = (List<Object>) value;
+      out.writeInt(list.size());
+      for (Object item : list) {
+        writeValue(item, out, labelIndexProvider);
+      }
+    } else {
+      throw new IllegalArgumentException("Unsupported annotation value type: " + value.getClass());
+    }
+  }
+
+  public static AnnotationNode readAnnotationNode(DataInputStream in) throws IOException {
+    if (!in.readBoolean()) {
+      return null;
+    }
+
+    String desc = in.readUTF();
+    AnnotationNode node = new AnnotationNode(desc);
+    int valuesSize = in.readInt();
+
+    if (valuesSize > 0) {
+      node.values = new ArrayList<>(valuesSize);
+
+      for (int i = 0; i < valuesSize; i++) {
+        Object value = readValue(in);
+        node.values.add(value);
+      }
+    }
+
+    return node;
+  }
+
+  public static TypeAnnotationNode readTypeAnnotationNode(DataInputStream in) throws IOException {
+    AnnotationNode node = readAnnotationNode(in);
+
+    if (node == null) {
+      return null;
+    }
+
+    int typeRef = in.readInt();
+    TypePath typePath = TypePathHelper.read(in);
+    TypeAnnotationNode typeNode = new TypeAnnotationNode(typeRef, typePath, node.desc);
+    typeNode.values = node.values;
+    return typeNode;
+  }
+
+  public static LocalVariableAnnotationNode readLocalVariableAnnotationNode(DataInputStream in, Function<Integer, LabelNode> labelMapper) throws IOException {
+    TypeAnnotationNode typeNode = readTypeAnnotationNode(in);
+
+    if (typeNode == null) {
+      return null;
+    }
+
+    List<LabelNode> start = ListHelper.read(in, stream -> {
+      int labelIndex = stream.readInt();
+      return labelMapper.apply(labelIndex);
+    });
+
+    List<LabelNode> end = ListHelper.read(in, stream -> {
+      int labelIndex = stream.readInt();
+      return labelMapper.apply(labelIndex);
+    });
+
+    List<Integer> index = ListHelper.read(in, DataInputStream::readInt);
+
+    LocalVariableAnnotationNode localVarNode = new LocalVariableAnnotationNode(
+            typeNode.typeRef,
+            typeNode.typePath,
+            start.toArray(new LabelNode[0]),
+            end.toArray(new LabelNode[0]),
+            index.stream().mapToInt(Integer::intValue).toArray(),
+            typeNode.desc
+    );
+    localVarNode.values = typeNode.values;
+
+    return localVarNode;
+  }
+
+  public static Object readValue(DataInputStream in) throws IOException {
+    int typeOrdinal = in.readByte();
+    ValueType type = ValueType.values()[typeOrdinal];
+
+    switch (type) {
+      case STRING:
+        return in.readUTF();
+      case BYTE:
+        return in.readByte();
+      case CHAR:
+        return in.readChar();
+      case DOUBLE:
+        return in.readDouble();
+      case FLOAT:
+        return in.readFloat();
+      case INT:
+        return in.readInt();
+      case LONG:
+        return in.readLong();
+      case SHORT:
+        return in.readShort();
+      case BOOLEAN:
+        return in.readBoolean();
+      case ENUM:
+        String enumTypeDesc = in.readUTF();
+        String enumConstName = in.readUTF();
+        return new String[]{enumTypeDesc, enumConstName};
+      case CLASS:
+        String classDesc = in.readUTF();
+        return org.objectweb.asm.Type.getType(classDesc);
+      case ANNOTATION:
+        return readAnnotationNode(in);
+      case ARRAY:
+        int size = in.readInt();
+        List<Object> list = new java.util.ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+          list.add(readValue(in));
+        }
+        return list;
+      default:
+        throw new IllegalArgumentException("Unsupported annotation value type ordinal: " + typeOrdinal);
+    }
   }
 }
