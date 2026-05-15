@@ -160,6 +160,12 @@ public class AnnotationNodeHelper {
     ARRAY
   }
 
+  public static void write(AnnotationNode node, DataOutputStream out) throws IOException {
+    write(node, out, label -> {
+      throw new UnsupportedOperationException("Label index provider is required for writing annotations with labels");
+    });
+  }
+
   public static void write(AnnotationNode node, DataOutputStream out, Function<LabelNode, Integer> labelIndexProvider) throws IOException {
     if (node == null) {
       out.writeBoolean(false);
