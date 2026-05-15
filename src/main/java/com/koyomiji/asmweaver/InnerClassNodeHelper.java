@@ -1,7 +1,11 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.DataStreamHelper;
 import org.objectweb.asm.tree.InnerClassNode;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Objects;
 
 public class InnerClassNodeHelper {
@@ -26,5 +30,20 @@ public class InnerClassNodeHelper {
     }
 
     return Objects.hash(node.name, node.outerName, node.innerName, node.access);
+  }
+
+  public static void write(InnerClassNode node, DataOutputStream out) throws IOException {
+    out.writeUTF(node.name);
+    DataStreamHelper.writeUTFNullable(out, node.outerName);
+    DataStreamHelper.writeUTFNullable(out, node.innerName);
+    out.writeInt(node.access);
+  }
+
+  public static InnerClassNode read(DataInputStream in) throws IOException {
+    String name = in.readUTF();
+    String outerName = DataStreamHelper.readUTFNullable(in);
+    String innerName = DataStreamHelper.readUTFNullable(in);
+    int access = in.readInt();
+    return new InnerClassNode(name, outerName, innerName, access);
   }
 }

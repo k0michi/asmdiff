@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.tree.InnerClassNode;
 
+import java.io.*;
 import java.util.List;
 
 class InnerClassNodeHelperTest {
@@ -46,6 +47,25 @@ class InnerClassNodeHelperTest {
 
     for (int i = 0; i < uniqueNodes.size(); i++) {
       Assertions.assertEquals(InnerClassNodeHelper.hashCode(uniqueNodes.get(i)), InnerClassNodeHelper.hashCode(uniqueNodes.get(i)));
+    }
+  }
+
+  @Test
+  void test_readWrite_roundTrip() throws IOException {
+    var uniqueNodes = generateUnique();
+
+    for (int i = 0; i < uniqueNodes.size(); i++) {
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+      DataOutputStream out = new DataOutputStream(baos);
+      InnerClassNodeHelper.write(uniqueNodes.get(i), out);
+      out.close();
+
+      ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+      DataInputStream in = new DataInputStream(bais);
+      InnerClassNode read = InnerClassNodeHelper.read(in);
+      in.close();
+
+      Assertions.assertTrue(InnerClassNodeHelper.equals(uniqueNodes.get(i), read));
     }
   }
 }
