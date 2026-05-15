@@ -1,10 +1,12 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.util.BiHashMap;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.TryCatchBlockNode;
 
+import java.io.*;
 import java.util.Map;
 import java.util.Objects;
 
@@ -72,5 +74,19 @@ class TryCatchBlockNodeHelperTest {
     TryCatchBlockNode node2 = new TryCatchBlockNode(l1, l1, l1, null);
     Map<LabelNode, LabelNode> labelMap = Map.of(l0, l1);
     Assertions.assertTrue(TryCatchBlockNodeHelper.equals(node1, node2, (lA, lB) -> Objects.equals(labelMap.get(lA), lB)));
+  }
+
+  @Test
+  void test_readWrite() throws IOException {
+    TryCatchBlockNode node1 = new TryCatchBlockNode(l0, l1, l2, null);
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    DataOutputStream dos = new DataOutputStream(baos);
+    BiHashMap<LabelNode, Integer> labelToIndex = new BiHashMap<>();
+    TryCatchBlockNodeHelper.write(node1, dos, l -> labelToIndex.computeIfAbsent(l, k -> labelToIndex.size()));
+
+    ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+    DataInputStream dis = new DataInputStream(bais);
+    TryCatchBlockNode read = TryCatchBlockNodeHelper.read(dis, labelToIndex::getKey);
+    Assertions.assertTrue(TryCatchBlockNodeHelper.equals(node1, read));
   }
 }

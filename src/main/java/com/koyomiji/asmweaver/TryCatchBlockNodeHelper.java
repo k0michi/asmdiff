@@ -1,11 +1,18 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.DataStreamHelper;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.TryCatchBlockNode;
+import org.objectweb.asm.tree.TypeAnnotationNode;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 
 public class TryCatchBlockNodeHelper {
   public static boolean equals(TryCatchBlockNode node1, TryCatchBlockNode node2, BiPredicate<LabelNode, LabelNode> labelEquals) {
@@ -21,8 +28,8 @@ public class TryCatchBlockNodeHelper {
             && labelEquals.test(node1.end, node2.end)
             && labelEquals.test(node1.handler, node2.handler)
             && Objects.equals(node1.type, node2.type)
-            && ListHelper.equals(node1.visibleTypeAnnotations, node2.visibleTypeAnnotations, AnnotationNodeHelper::equals)
-            && ListHelper.equals(node1.invisibleTypeAnnotations, node2.invisibleTypeAnnotations, AnnotationNodeHelper::equals);
+            && ListHelper.equalsNullToEmpty(node1.visibleTypeAnnotations, node2.visibleTypeAnnotations, AnnotationNodeHelper::equals)
+            && ListHelper.equalsNullToEmpty(node1.invisibleTypeAnnotations, node2.invisibleTypeAnnotations, AnnotationNodeHelper::equals);
   }
 
   public static boolean equals(TryCatchBlockNode node1, TryCatchBlockNode node2) {
@@ -42,5 +49,41 @@ public class TryCatchBlockNodeHelper {
             .append(ListHelper.hashCodeNullToEmpty(node.visibleTypeAnnotations, AnnotationNodeHelper::hashCode))
             .append(ListHelper.hashCodeNullToEmpty(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode))
             .build();
+  }
+
+  public static void write(TryCatchBlockNode node, DataOutputStream out, Function<LabelNode, Integer> labelToIndex) throws IOException {
+    out.writeInt(labelToIndex.apply(node.start));
+    out.writeInt(labelToIndex.apply(node.end));
+    out.writeInt(labelToIndex.apply(node.handler));
+    DataStreamHelper.writeUTFNullable(out, node.type);
+    ListHelper.write(
+            ListHelper.nullToEmpty(node.visibleTypeAnnotations),
+            out,
+            (a, out2) -> AnnotationNodeHelper.write(a, out2, labelToIndex)
+    );
+    ListHelper.write(
+            ListHelper.nullToEmpty(node.invisibleTypeAnnotations),
+            out,
+            (a, out2) -> AnnotationNodeHelper.write(a, out2, labelToIndex)
+    );
+  }
+
+  public static TryCatchBlockNode read(DataInputStream in, Function<Integer, LabelNode> indexToLabel) throws IOException {
+    LabelNode start = indexToLabel.apply(in.readInt());
+    LabelNode end = indexToLabel.apply(in.readInt());
+    LabelNode handler = indexToLabel.apply(in.readInt());
+    String type = DataStreamHelper.readUTFNullable(in);
+    List<TypeAnnotationNode> visibleTypeAnnotations = ListHelper.read(
+            in,
+            AnnotationNodeHelper::readTypeAnnotationNode
+    );
+    List<TypeAnnotationNode> invisibleTypeAnnotations = ListHelper.read(
+            in,
+            AnnotationNodeHelper::readTypeAnnotationNode
+    );
+    TryCatchBlockNode tryCatchBlockNode = new TryCatchBlockNode(start, end, handler, type);
+    tryCatchBlockNode.visibleTypeAnnotations = visibleTypeAnnotations;
+    tryCatchBlockNode.invisibleTypeAnnotations = invisibleTypeAnnotations;
+    return tryCatchBlockNode;
   }
 }
