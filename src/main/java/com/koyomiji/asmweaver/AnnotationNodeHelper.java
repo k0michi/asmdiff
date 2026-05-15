@@ -167,12 +167,6 @@ public class AnnotationNodeHelper {
   }
 
   public static void write(AnnotationNode node, DataOutputStream out, Function<LabelNode, Integer> labelIndexProvider) throws IOException {
-    if (node == null) {
-      out.writeBoolean(false);
-      return;
-    }
-
-    out.writeBoolean(true);
     out.writeUTF(node.desc);
     List<Object> values = node.values;
 
@@ -261,10 +255,6 @@ public class AnnotationNodeHelper {
   }
 
   public static AnnotationNode readAnnotationNode(DataInputStream in) throws IOException {
-    if (!in.readBoolean()) {
-      return null;
-    }
-
     String desc = in.readUTF();
     AnnotationNode node = new AnnotationNode(desc);
     int valuesSize = in.readInt();
@@ -284,10 +274,6 @@ public class AnnotationNodeHelper {
   public static TypeAnnotationNode readTypeAnnotationNode(DataInputStream in) throws IOException {
     AnnotationNode node = readAnnotationNode(in);
 
-    if (node == null) {
-      return null;
-    }
-
     int typeRef = in.readInt();
     TypePath typePath = TypePathHelper.read(in);
     TypeAnnotationNode typeNode = new TypeAnnotationNode(typeRef, typePath, node.desc);
@@ -297,10 +283,6 @@ public class AnnotationNodeHelper {
 
   public static LocalVariableAnnotationNode readLocalVariableAnnotationNode(DataInputStream in, Function<Integer, LabelNode> labelMapper) throws IOException {
     TypeAnnotationNode typeNode = readTypeAnnotationNode(in);
-
-    if (typeNode == null) {
-      return null;
-    }
 
     List<LabelNode> start = ListHelper.read(in, stream -> {
       int labelIndex = stream.readInt();
