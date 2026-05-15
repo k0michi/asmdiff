@@ -2,9 +2,14 @@ package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
 public class ListHelper {
@@ -89,11 +94,43 @@ public class ListHelper {
     return hashCode(list, Objects::hashCode);
   }
 
-  public  static <T> int hashCodeNullToEmpty(List<T> list, ToIntFunction<T> hashFunction) {
+  public static <T> int hashCodeNullToEmpty(List<T> list, ToIntFunction<T> hashFunction) {
     return hashCode(nullToEmpty(list), hashFunction);
   }
 
   public static <T> int hashCodeNullToEmpty(List<T> list) {
     return hashCodeNullToEmpty(list, Objects::hashCode);
+  }
+
+  public static <T, U> List<U> map(List<T> list, Function<T, U> mapper) {
+    if (list == null) {
+      return List.of();
+    }
+
+    return list.stream().map(mapper).toList();
+  }
+
+  public interface ElementWriter<T> {
+    void write(T element, DataOutputStream stream)throws IOException ;
+  }
+
+  public interface ElementReader<T> {
+    T read(DataInputStream stream) throws IOException;
+  }
+
+  public static <T> void write(List<T> list, DataOutputStream stream, ElementWriter<T> elementWriter) throws IOException {
+    stream.writeInt(list.size());
+    for (T element : list) {
+      elementWriter.write(element, stream);
+    }
+  }
+
+  public static <T> List<T> read(DataInputStream stream, ElementReader<T> elementReader) throws IOException {
+    int size = stream.readInt();
+    List<T> list = new ArrayList<>(size);
+    for (int i = 0; i < size; i++) {
+      list.add(elementReader.read(stream));
+    }
+    return list;
   }
 }
