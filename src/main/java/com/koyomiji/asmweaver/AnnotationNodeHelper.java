@@ -49,6 +49,10 @@ public class AnnotationNodeHelper {
   }
 
   private static boolean equalsValue(Object a, Object b) {
+    if (a instanceof String[] && b instanceof String[]) {
+      return Arrays.equals((String[]) a, (String[]) b);
+    }
+
     if (a instanceof AnnotationNode && b instanceof AnnotationNode) {
       return AnnotationNodeHelper.equals((AnnotationNode) a, (AnnotationNode) b);
     }
