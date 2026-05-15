@@ -15,7 +15,10 @@ public class FieldNodeHelperTest {
             new FieldNode(0, "field2", "I", null, null),
             new FieldNode(0, "field1", "J", null, null),
             new FieldNode(0, "field1", "I", "Ljava/lang/Object;", null),
-            new FieldNode(0, "field1", "I", null, 123)
+            new FieldNode(0, "field1", "I", null, 123),
+            new FieldNode(0, "field1", "I", null, (float) 123),
+            new FieldNode(0, "field1", "I", null, (double) 123),
+            new FieldNode(0, "field1", "I", null, "a")
     );
   }
 
