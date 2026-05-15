@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.FieldNode;
 
+import java.io.IOException;
 import java.util.List;
 
 public class FieldNodeHelperTest {
@@ -31,6 +32,16 @@ public class FieldNodeHelperTest {
     TestUtils.verifyHashCode(
             FieldNodeHelperTest::generateUnique,
             FieldNodeHelper::hashCode
+    );
+  }
+
+  @Test
+  void test_roundTrip() throws IOException {
+    TestUtils.verifyRoundTrip(
+            FieldNodeHelperTest::generateUnique,
+            FieldNodeHelper::write,
+            FieldNodeHelper::read,
+            FieldNodeHelper::equals
     );
   }
 }
