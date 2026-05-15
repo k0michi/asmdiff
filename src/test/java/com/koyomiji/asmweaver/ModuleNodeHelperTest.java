@@ -3,6 +3,7 @@ package com.koyomiji.asmweaver;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.tree.*;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -77,6 +78,16 @@ class ModuleNodeHelperTest {
     TestUtils.verifyHashCode(
             ModuleNodeHelperTest::generateUnique,
             ModuleNodeHelper::hashCode
+    );
+  }
+
+  @Test
+  void test_roundTrip() throws IOException {
+    TestUtils.verifyRoundTrip(
+            ModuleNodeHelperTest::generateUnique,
+            ModuleNodeHelper::write,
+            ModuleNodeHelper::read,
+            ModuleNodeHelper::equals
     );
   }
 }

@@ -3,6 +3,11 @@ package com.koyomiji.asmweaver;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.tree.ModuleOpenNode;
 
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
 
 public class ModuleOpenNodeHelper {
@@ -35,5 +40,27 @@ public class ModuleOpenNodeHelper {
             .append(node.modules,
                     (l) -> ListHelper.hashCodeNullToEmpty(l, String::hashCode)
             ).build();
+  }
+
+  public static void write(ModuleOpenNode node, DataOutputStream out) throws IOException {
+    out.writeUTF(node.packaze);
+    out.writeInt(node.access);
+    ListHelper.write(
+            ListHelper.nullToEmpty(node.modules),
+            out,
+            (element, stream) -> {
+              stream.writeUTF(element);
+            }
+    );
+  }
+
+  public static ModuleOpenNode read(DataInputStream in) throws IOException {
+    String packaze = in.readUTF();
+    int access = in.readInt();
+    List<String> modules = ListHelper.read(
+            in,
+            DataInput::readUTF
+    );
+    return new ModuleOpenNode(packaze, access, modules);
   }
 }

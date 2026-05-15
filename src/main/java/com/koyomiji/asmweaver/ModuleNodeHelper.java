@@ -1,8 +1,13 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.DataStreamHelper;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.tree.ModuleNode;
 
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Objects;
 
 public class ModuleNodeHelper {
@@ -60,5 +65,77 @@ public class ModuleNodeHelper {
                     l -> ListHelper.hashCodeNullToEmpty(l, ModuleProvideNodeHelper::hashCode)
             )
             .build();
+  }
+
+  public static void write(ModuleNode node, DataOutputStream out) throws IOException {
+    out.writeUTF(node.name);
+    out.writeInt(node.access);
+    DataStreamHelper.writeUTFNullable(out, node.version);
+    DataStreamHelper.writeUTFNullable(out, node.mainClass);
+    ListHelper.write(
+            ListHelper.nullToEmpty(node.packages),
+            out,
+            (element, stream) -> stream.writeUTF(element)
+    );
+    ListHelper.write(
+            ListHelper.nullToEmpty(node.requires),
+            out,
+            ModuleRequireNodeHelper::write
+    );
+    ListHelper.write(
+            ListHelper.nullToEmpty(node.exports),
+            out,
+            ModuleExportNodeHelper::write
+    );
+    ListHelper.write(
+            ListHelper.nullToEmpty(node.opens),
+            out,
+            ModuleOpenNodeHelper::write
+    );
+    ListHelper.write(
+            ListHelper.nullToEmpty(node.uses),
+            out,
+            (element, stream) -> stream.writeUTF(element)
+    );
+    ListHelper.write(
+            ListHelper.nullToEmpty(node.provides),
+            out,
+            ModuleProvideNodeHelper::write
+    );
+  }
+
+  public static ModuleNode read(DataInputStream in) throws IOException {
+    String name = in.readUTF();
+    int access = in.readInt();
+    String version = DataStreamHelper.readUTFNullable(in);
+    ModuleNode node = new ModuleNode(
+            name, access, version
+    );
+    node.mainClass = DataStreamHelper.readUTFNullable(in);
+    node.packages = ListHelper.read(
+            in,
+            DataInput::readUTF
+    );
+    node.requires = ListHelper.read(
+            in,
+            ModuleRequireNodeHelper::read
+    );
+    node.exports = ListHelper.read(
+            in,
+            ModuleExportNodeHelper::read
+    );
+    node.opens = ListHelper.read(
+            in,
+            ModuleOpenNodeHelper::read
+    );
+    node.uses = ListHelper.read(
+            in,
+            DataInput::readUTF
+    );
+    node.provides = ListHelper.read(
+            in,
+            ModuleProvideNodeHelper::read
+    );
+    return node;
   }
 }

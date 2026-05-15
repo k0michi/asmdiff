@@ -1,7 +1,11 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.DataStreamHelper;
 import org.objectweb.asm.tree.ModuleRequireNode;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Objects;
 
 public class ModuleRequireNodeHelper {
@@ -29,5 +33,18 @@ public class ModuleRequireNodeHelper {
     }
 
     return Objects.hash(node.module, node.access, node.version);
+  }
+
+  public static void write(ModuleRequireNode node, DataOutputStream out) throws IOException {
+    out.writeUTF(node.module);
+    out.writeInt(node.access);
+    DataStreamHelper.writeUTFNullable(out, node.version);
+  }
+
+  public static ModuleRequireNode read(DataInputStream in) throws IOException {
+    String module = in.readUTF();
+    int access = in.readInt();
+    String version = DataStreamHelper.readUTFNullable(in);
+    return new ModuleRequireNode(module, access, version);
   }
 }
