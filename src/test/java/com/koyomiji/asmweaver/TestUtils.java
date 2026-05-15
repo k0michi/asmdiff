@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 
+import java.io.*;
 import java.util.List;
 import java.util.function.BiPredicate;
 import java.util.function.Supplier;
@@ -67,6 +68,37 @@ public class TestUtils {
       T node = nodes.get(i);
       int expectedHashCode = hashCode.applyAsInt(node);
       Assertions.assertEquals(expectedHashCode, hashCode.applyAsInt(node), "Hash code should be consistent for index " + i);
+    }
+  }
+
+  @FunctionalInterface
+  public interface Writer<T> {
+    void write(T value, DataOutputStream out) throws IOException;
+  }
+
+  @FunctionalInterface
+  public interface Reader<T> {
+    T read(DataInputStream in) throws IOException;
+  }
+
+  public static <T> void verifyRoundTrip(Supplier<List<T>> nodesSupplier, Writer<T> writer, Reader<T> reader, BiPredicate<T, T> equals) throws IOException {
+    List<T> nodes = nodesSupplier.get();
+
+    for (int i = 0; i < nodes.size(); i++) {
+      T original = nodes.get(i);
+
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+      try (DataOutputStream out = new DataOutputStream(baos)) {
+        writer.write(original, out);
+      }
+
+      ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+      T restored;
+      try (DataInputStream in = new DataInputStream(bais)) {
+        restored = reader.read(in);
+      }
+
+      Assertions.assertTrue(equals.test(original, restored), String.format("Round-trip should restore the original value for index %d", i));
     }
   }
 }

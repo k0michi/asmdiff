@@ -3,6 +3,7 @@ package com.koyomiji.asmweaver;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.tree.ParameterNode;
 
+import java.io.IOException;
 import java.util.List;
 
 public class ParameterNodeHelperTest {
@@ -28,6 +29,16 @@ public class ParameterNodeHelperTest {
     TestUtils.verifyHashCode(
             this::generateUnique,
             ParameterNodeHelper::hashCode
+    );
+  }
+
+  @Test
+  void test_roundTrip() throws IOException {
+    TestUtils.verifyRoundTrip(
+            this::generateUnique,
+            ParameterNodeHelper::write,
+            ParameterNodeHelper::read,
+            ParameterNodeHelper::equals
     );
   }
 }

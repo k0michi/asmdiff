@@ -1,7 +1,11 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.DataStreamHelper;
 import org.objectweb.asm.tree.ParameterNode;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Objects;
 
 public class ParameterNodeHelper {
@@ -33,5 +37,16 @@ public class ParameterNodeHelper {
     }
 
     return Objects.hash(node.name, node.access);
+  }
+
+  public static void write(ParameterNode node, DataOutputStream out) throws IOException {
+    DataStreamHelper.writeUTFNullable(out, node.name);
+    out.writeInt(node.access);
+  }
+
+  public static ParameterNode read(DataInputStream in) throws IOException {
+    String name = DataStreamHelper.readUTFNullable(in);
+    int access = in.readInt();
+    return new ParameterNode(name, access);
   }
 }
