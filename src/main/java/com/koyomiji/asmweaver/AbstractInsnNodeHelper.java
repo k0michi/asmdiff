@@ -2,9 +2,14 @@ package com.koyomiji.asmweaver;
 
 import org.objectweb.asm.tree.*;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 
 public class AbstractInsnNodeHelper {
   public static boolean equals(AbstractInsnNode node1, AbstractInsnNode node2) {
@@ -32,11 +37,11 @@ public class AbstractInsnNodeHelper {
       return false;
     }
 
-    if (!ListHelper.equals(node1.visibleTypeAnnotations, node2.visibleTypeAnnotations, AnnotationNodeHelper::equals)) {
+    if (!ListHelper.equalsNullToEmpty(node1.visibleTypeAnnotations, node2.visibleTypeAnnotations, AnnotationNodeHelper::equals)) {
       return false;
     }
 
-    if (!ListHelper.equals(node1.invisibleTypeAnnotations, node2.invisibleTypeAnnotations, AnnotationNodeHelper::equals)) {
+    if (!ListHelper.equalsNullToEmpty(node1.invisibleTypeAnnotations, node2.invisibleTypeAnnotations, AnnotationNodeHelper::equals)) {
       return false;
     }
 
@@ -320,5 +325,241 @@ public class AbstractInsnNodeHelper {
     }
 
     return Objects.hash(node);
+  }
+
+  public static void write(AbstractInsnNode node, DataOutputStream out, Function<LabelNode, Integer> labelToIndex) throws IOException {
+    out.writeInt(node.getOpcode());
+    out.writeInt(node.getType());
+    ListHelper.write(
+            ListHelper.nullToEmpty(node.visibleTypeAnnotations),
+            out, (a, out2) -> AnnotationNodeHelper.write(a, out2, labelToIndex)
+    );
+    ListHelper.write(
+            ListHelper.nullToEmpty(node.invisibleTypeAnnotations),
+            out, (a, out2) -> AnnotationNodeHelper.write(a, out2, labelToIndex)
+    );
+
+    switch (node.getType()) {
+      case AbstractInsnNode.INSN:
+        break;
+      case AbstractInsnNode.INT_INSN:
+        IntInsnNode intInsnNode = (IntInsnNode) node;
+        out.writeInt(intInsnNode.operand);
+        break;
+      case AbstractInsnNode.VAR_INSN:
+        VarInsnNode varInsnNode = (VarInsnNode) node;
+        out.writeInt(varInsnNode.var);
+        break;
+      case AbstractInsnNode.TYPE_INSN:
+        TypeInsnNode typeInsnNode = (TypeInsnNode) node;
+        out.writeUTF(typeInsnNode.desc);
+        break;
+      case AbstractInsnNode.FIELD_INSN:
+        FieldInsnNode fieldInsnNode = (FieldInsnNode) node;
+        out.writeUTF(fieldInsnNode.owner);
+        out.writeUTF(fieldInsnNode.name);
+        out.writeUTF(fieldInsnNode.desc);
+        break;
+      case AbstractInsnNode.METHOD_INSN:
+        MethodInsnNode methodInsnNode = (MethodInsnNode) node;
+        out.writeUTF(methodInsnNode.owner);
+        out.writeUTF(methodInsnNode.name);
+        out.writeUTF(methodInsnNode.desc);
+        out.writeBoolean(methodInsnNode.itf);
+        break;
+      case AbstractInsnNode.INVOKE_DYNAMIC_INSN:
+        InvokeDynamicInsnNode indyNode = (InvokeDynamicInsnNode) node;
+        out.writeUTF(indyNode.name);
+        out.writeUTF(indyNode.desc);
+        HandleHelper.write(indyNode.bsm, out);
+        ListHelper.write(Arrays.asList(indyNode.bsmArgs), out, ConstantHelper::write);
+        break;
+      case AbstractInsnNode.JUMP_INSN:
+        JumpInsnNode jumpInsnNode = (JumpInsnNode) node;
+        out.writeInt(labelToIndex.apply(jumpInsnNode.label));
+        break;
+      case AbstractInsnNode.LABEL:
+        LabelNode labelNode = (LabelNode) node;
+        out.writeInt(labelToIndex.apply(labelNode));
+        break;
+      case AbstractInsnNode.LDC_INSN:
+        LdcInsnNode ldcInsnNode = (LdcInsnNode) node;
+        ConstantHelper.write(ldcInsnNode.cst, out);
+        break;
+      case AbstractInsnNode.IINC_INSN:
+        IincInsnNode iincInsnNode = (IincInsnNode) node;
+        out.writeInt(iincInsnNode.var);
+        out.writeInt(iincInsnNode.incr);
+        break;
+      case AbstractInsnNode.TABLESWITCH_INSN:
+        TableSwitchInsnNode tableSwitchInsnNode = (TableSwitchInsnNode) node;
+        out.writeInt(tableSwitchInsnNode.min);
+        out.writeInt(tableSwitchInsnNode.max);
+        out.writeInt(labelToIndex.apply(tableSwitchInsnNode.dflt));
+        ListHelper.write(tableSwitchInsnNode.labels, out, (l, stream) -> stream.writeInt(labelToIndex.apply(l)));
+        break;
+      case AbstractInsnNode.LOOKUPSWITCH_INSN:
+        LookupSwitchInsnNode lookupSwitchInsnNode = (LookupSwitchInsnNode) node;
+        out.writeInt(labelToIndex.apply(lookupSwitchInsnNode.dflt));
+        ListHelper.write(lookupSwitchInsnNode.keys, out, (k, stream) -> stream.writeInt(k));
+        ListHelper.write(lookupSwitchInsnNode.labels, out, (l, stream) -> stream.writeInt(labelToIndex.apply(l)));
+        break;
+      case AbstractInsnNode.MULTIANEWARRAY_INSN:
+        MultiANewArrayInsnNode multiANewArrayInsnNode = (MultiANewArrayInsnNode) node;
+        out.writeUTF(multiANewArrayInsnNode.desc);
+        out.writeInt(multiANewArrayInsnNode.dims);
+        break;
+      case AbstractInsnNode.FRAME:
+        FrameNode frameNode = (FrameNode) node;
+        out.writeInt(frameNode.type);
+        ListHelper.write(
+                frameNode.local,
+                out,
+                (value, stream) -> {
+                  writeFrameValue(value, stream, labelToIndex);
+                }
+        );
+        ListHelper.write(
+                frameNode.stack,
+                out,
+                (value, stream) -> {
+                  writeFrameValue(value, stream, labelToIndex);
+                }
+        );
+        break;
+      case AbstractInsnNode.LINE:
+        LineNumberNode lineNumberNode = (LineNumberNode) node;
+        out.writeInt(lineNumberNode.line);
+        out.writeInt(labelToIndex.apply(lineNumberNode.start));
+        break;
+      default:
+        throw new IllegalArgumentException("Unknown node type: " + node.toString());
+    }
+  }
+
+  private static void writeFrameValue(Object value, DataOutputStream out, Function<LabelNode, Integer> labelToIndex) throws IOException {
+    if (value instanceof Integer) {
+      out.writeInt(0);
+      out.writeInt((Integer) value);
+    } else if (value instanceof String) {
+      out.writeInt(1);
+      out.writeUTF((String) value);
+    } else if (value instanceof LabelNode) {
+      out.writeInt(2);
+      out.writeInt(labelToIndex.apply((LabelNode) value));
+    } else {
+      throw new IllegalArgumentException("Unsupported frame value type: " + value.getClass());
+    }
+  }
+
+  public static AbstractInsnNode read(DataInputStream in, Function<Integer, LabelNode> indexToLabel) throws IOException {
+    int opcode = in.readInt();
+    int type = in.readInt();
+    List<TypeAnnotationNode> visibleTypeAnnotations = ListHelper.read(in, AnnotationNodeHelper::readTypeAnnotationNode);
+    List<TypeAnnotationNode> invisibleTypeAnnotations = ListHelper.read(in, AnnotationNodeHelper::readTypeAnnotationNode);
+    AbstractInsnNode insnNode;
+
+    switch (type) {
+      case AbstractInsnNode.INSN:
+        insnNode = new InsnNode(opcode);
+        break;
+      case AbstractInsnNode.INT_INSN:
+        insnNode = new IntInsnNode(opcode, in.readInt());
+        break;
+      case AbstractInsnNode.VAR_INSN:
+        insnNode = new VarInsnNode(opcode, in.readInt());
+        break;
+      case AbstractInsnNode.TYPE_INSN:
+        insnNode = new TypeInsnNode(opcode, in.readUTF());
+        break;
+      case AbstractInsnNode.FIELD_INSN:
+        insnNode = new FieldInsnNode(opcode, in.readUTF(), in.readUTF(), in.readUTF());
+        break;
+      case AbstractInsnNode.METHOD_INSN:
+        insnNode = new MethodInsnNode(opcode, in.readUTF(), in.readUTF(), in.readUTF(), in.readBoolean());
+        break;
+      case AbstractInsnNode.INVOKE_DYNAMIC_INSN:
+        insnNode = new InvokeDynamicInsnNode(
+                in.readUTF(),
+                in.readUTF(),
+                HandleHelper.read(in),
+                ListHelper.read(in, AnnotationNodeHelper::readTypeAnnotationNode).toArray()
+        );
+        break;
+      case AbstractInsnNode.JUMP_INSN:
+        insnNode = new JumpInsnNode(
+                opcode,
+                indexToLabel.apply(in.readInt())
+        );
+        break;
+      case AbstractInsnNode.LABEL:
+        insnNode = indexToLabel.apply(in.readInt());
+        break;
+      case AbstractInsnNode.LDC_INSN:
+        insnNode = new LdcInsnNode(ConstantHelper.read(in));
+        break;
+      case AbstractInsnNode.IINC_INSN:
+        insnNode = new IincInsnNode(in.readInt(), in.readInt());
+        break;
+      case AbstractInsnNode.TABLESWITCH_INSN:
+        insnNode = new TableSwitchInsnNode(
+                in.readInt(),
+                in.readInt(),
+                indexToLabel.apply(in.readInt()),
+                ListHelper.read(in, i -> indexToLabel.apply(in.readInt())).toArray(new LabelNode[0])
+        );
+        break;
+      case AbstractInsnNode.LOOKUPSWITCH_INSN:
+        insnNode = new LookupSwitchInsnNode(
+                indexToLabel.apply(in.readInt()),
+                ListHelper.read(in, i -> in.readInt()).stream().mapToInt(Integer::intValue).toArray(),
+                ListHelper.read(in, i -> indexToLabel.apply(in.readInt())).toArray(new LabelNode[0])
+        );
+        break;
+      case AbstractInsnNode.MULTIANEWARRAY_INSN:
+        insnNode = new MultiANewArrayInsnNode(
+                in.readUTF(),
+                in.readInt()
+        );
+        break;
+      case AbstractInsnNode.FRAME:
+        int frameType = in.readInt();
+        List<Object> locals = ListHelper.read(in, i -> readFrameValue(in, indexToLabel));
+        List<Object> stack = ListHelper.read(in, i -> readFrameValue(in, indexToLabel));
+        insnNode = new FrameNode(
+                frameType,
+                locals.size(),
+                locals.toArray(),
+                stack.size(),
+                stack.toArray()
+        );
+        break;
+      case AbstractInsnNode.LINE:
+        insnNode = new LineNumberNode(
+                in.readInt(),
+                indexToLabel.apply(in.readInt())
+        );
+        break;
+      default:
+        throw new IllegalArgumentException("Unsupported frame type: " + type);
+    }
+
+    insnNode.visibleTypeAnnotations = visibleTypeAnnotations;
+    insnNode.invisibleTypeAnnotations = invisibleTypeAnnotations;
+
+    return insnNode;
+  }
+
+  private static Object readFrameValue(DataInputStream in, Function<Integer, LabelNode> indexToLabel) throws IOException {
+    switch (in.readInt()) {
+      case 0:
+        return in.readInt();
+      case 1:
+        return in.readUTF();
+      case 2:
+        return indexToLabel.apply(in.readInt());
+      default:
+        throw new IllegalArgumentException("Unknown frame value type: " + in.readInt());
+    }
   }
 }

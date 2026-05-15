@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.util.BiHashMap;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -9,6 +10,7 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 
+import java.io.*;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
@@ -30,8 +32,8 @@ class AbstractInsnNodeHelperTest {
           new FieldInsnNode(Opcodes.GETFIELD, "java/lang/Object", "field2", "I"),
           new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "method", "()V", false),
           new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "method2", "()V", false),
-          new InvokeDynamicInsnNode("method", "()V", new Handle(Opcodes.H_INVOKESTATIC, "java/lang/Object", "bootstrap", "()V"), new Object[0], false),
-          new InvokeDynamicInsnNode("method", "()V", new Handle(Opcodes.H_INVOKESTATIC, "java/lang/Object", "bootstrap2", "()V"), new Object[0], false),
+          new InvokeDynamicInsnNode("method", "()V", new Handle(Opcodes.H_INVOKESTATIC, "java/lang/Object", "bootstrap", "()V", false)),
+          new InvokeDynamicInsnNode("method", "()V", new Handle(Opcodes.H_INVOKESTATIC, "java/lang/Object", "bootstrap2", "()V", false)),
           new JumpInsnNode(Opcodes.IFEQ, new LabelNode()),
           new JumpInsnNode(Opcodes.IFEQ, new LabelNode()),
           new LabelNode(),
@@ -86,6 +88,22 @@ class AbstractInsnNodeHelperTest {
               AbstractInsnNodeHelper.hashCode(nodeA),
               AbstractInsnNodeHelper.hashCode(nodeB)
       );
+    }
+  }
+
+  @Test
+  void test_readWrite() throws IOException {
+    for (int i = 0; i < UNIQUE_NODES.size(); i++) {
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+      DataOutputStream dos = new DataOutputStream(baos);
+      BiHashMap<LabelNode, Integer> labelToIndex = new BiHashMap<>();
+      AbstractInsnNodeHelper.write(UNIQUE_NODES.get(i), dos, l -> labelToIndex.computeIfAbsent(l, k -> labelToIndex.size()));
+
+      ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+      DataInputStream dis = new DataInputStream(bais);
+      AbstractInsnNode read = AbstractInsnNodeHelper.read(dis, labelToIndex::getKey);
+
+      Assertions.assertTrue(AbstractInsnNodeHelper.equals(UNIQUE_NODES.get(i), read, Objects::equals, Objects::equals), String.format("Failed at index %d", i));
     }
   }
 }
