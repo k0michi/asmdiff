@@ -1,11 +1,16 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.DataStreamHelper;
 import com.koyomiji.asmweaver.util.tuple.Triplet;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LocalVariableNode;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Objects;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 
 public class LocalVariableNodeHelper {
   public static boolean equals(LocalVariableNode a, LocalVariableNode b, BiPredicate<LabelNode, LabelNode> labelEquals, BiPredicate<Triplet<LabelNode, LabelNode, Integer>, Triplet<LabelNode, LabelNode, Integer>> localEquals) {
@@ -39,5 +44,24 @@ public class LocalVariableNodeHelper {
     }
 
     return Objects.hash(node.name, node.desc, node.signature, node.start, node.end, node.index);
+  }
+
+  public static void write(LocalVariableNode node, DataOutputStream out, Function<LabelNode, Integer> labelToIndex) throws IOException {
+    out.writeUTF(node.name);
+    out.writeUTF(node.desc);
+    DataStreamHelper.writeUTFNullable(out, node.signature);
+    out.writeInt(labelToIndex.apply(node.start));
+    out.writeInt(labelToIndex.apply(node.end));
+    out.writeInt(node.index);
+  }
+
+  public static LocalVariableNode read(DataInputStream in, Function<Integer, LabelNode> indexToLabel) throws IOException {
+    String name = in.readUTF();
+    String desc = in.readUTF();
+    String signature = DataStreamHelper.readUTFNullable(in);
+    LabelNode start = indexToLabel.apply(in.readInt());
+    LabelNode end = indexToLabel.apply(in.readInt());
+    int index = in.readInt();
+    return new LocalVariableNode(name, desc, signature, start, end, index);
   }
 }

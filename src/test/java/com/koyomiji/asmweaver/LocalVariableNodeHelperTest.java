@@ -1,11 +1,13 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.util.BiHashMap;
 import com.koyomiji.asmweaver.util.tuple.Triplet;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LocalVariableNode;
 
+import java.io.*;
 import java.util.Map;
 import java.util.Objects;
 
@@ -104,5 +106,19 @@ class LocalVariableNodeHelperTest {
             Triplet.of(l0, l1, 0), Triplet.of(l2, l3, 1)
     );
     Assertions.assertTrue(LocalVariableNodeHelper.equals(node1, node2, (a, b) -> Objects.equals(labelMap.get(a), b), (a, b) -> Objects.equals(localMap.get(a), b)));
+  }
+
+  @Test
+  void test_readWrite() throws IOException {
+    LocalVariableNode node1 = new LocalVariableNode("name", "desc", "signature", l0, l1, 0);
+    BiHashMap<LabelNode, Integer> labelIndexMap = new BiHashMap<>();
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    DataOutputStream dos = new DataOutputStream(baos);
+    LocalVariableNodeHelper.write(node1, dos, l -> labelIndexMap.computeIfAbsent(l, k -> labelIndexMap.size()));
+
+    ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+    DataInputStream dis = new DataInputStream(bais);
+    LocalVariableNode read = LocalVariableNodeHelper.read(dis, labelIndexMap::getKey);
+    Assertions.assertTrue(LocalVariableNodeHelper.equals(node1, read));
   }
 }
