@@ -2,6 +2,11 @@ package com.koyomiji.asmweaver;
 
 import org.objectweb.asm.tree.RecordComponentNode;
 
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
 public class RecordComponentDiffUtils {
   public static RecordComponentDiff diff(RecordComponentNode node1, RecordComponentNode node2) {
     RecordComponentDiff diff = new RecordComponentDiff();
@@ -55,5 +60,27 @@ public class RecordComponentDiffUtils {
     );
     // attrs
     return patchedNode;
+  }
+
+  public static void write(RecordComponentDiff diff, DataOutputStream out) throws IOException {
+    ListDiffUtils.write(diff.name, out, (e, s) -> s.writeUTF(e));
+    ListDiffUtils.write(diff.descriptor, out, (e, s) -> s.writeUTF(e));
+    ListDiffUtils.write(diff.signature, out, (e, s) -> s.writeUTF(e));
+    ListDiffUtils.write(diff.visibleAnnotations, out, AnnotationNodeHelper::write);
+    ListDiffUtils.write(diff.invisibleAnnotations, out, AnnotationNodeHelper::write);
+    ListDiffUtils.write(diff.visibleTypeAnnotations, out, AnnotationNodeHelper::write);
+    ListDiffUtils.write(diff.invisibleTypeAnnotations, out, AnnotationNodeHelper::write);
+  }
+
+  public static RecordComponentDiff read(DataInputStream in) throws IOException {
+    RecordComponentDiff diff = new RecordComponentDiff();
+    diff.name = ListDiffUtils.read(in, DataInput::readUTF);
+    diff.descriptor = ListDiffUtils.read(in, DataInput::readUTF);
+    diff.signature = ListDiffUtils.read(in, DataInput::readUTF);
+    diff.visibleAnnotations = ListDiffUtils.read(in, AnnotationNodeHelper::readAnnotationNode);
+    diff.invisibleAnnotations = ListDiffUtils.read(in, AnnotationNodeHelper::readAnnotationNode);
+    diff.visibleTypeAnnotations = ListDiffUtils.read(in, AnnotationNodeHelper::readTypeAnnotationNode);
+    diff.invisibleTypeAnnotations = ListDiffUtils.read(in, AnnotationNodeHelper::readTypeAnnotationNode);
+    return diff;
   }
 }

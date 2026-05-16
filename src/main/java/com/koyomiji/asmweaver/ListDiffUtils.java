@@ -3,6 +3,9 @@ package com.koyomiji.asmweaver;
 import com.koyomiji.asmweaver.util.PeekableIterator;
 import com.koyomiji.asmweaver.util.tuple.Pair;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -286,11 +289,11 @@ public class ListDiffUtils {
 
   /**
    *
-   * @param p Diff from list 1 to list 2.
-   * @param q Diff from list 2 to list 3.
+   * @param p        Diff from list 1 to list 2.
+   * @param q        Diff from list 2 to list 3.
    * @param compare2 Compare element in list 2 and element in list 2.
-   * @return
    * @param <T>
+   * @return
    * @throws ConflictException
    */
   public static <T> ListDiff<T> compose(ListDiff<T> p, ListDiff<T> q, BiPredicate<T, T> compare2) throws ConflictException {
@@ -358,5 +361,36 @@ public class ListDiffUtils {
     IteratorHelper.throwIfNext(itQ, () -> new IllegalDiffException("Composition Error: q has remaining operations after p is exhausted."));
 
     return new ListDiff<>(result);
+  }
+
+  public static <T> void write(ListDiff<T> diff, DataOutputStream out, ListHelper.ElementWriter<T> elementWriter) throws IOException {
+    out.writeInt(diff.operations.size());
+
+    for (ListDiff.Operation<T> op : diff.operations) {
+      out.writeInt(op.type.ordinal());
+      out.writeInt(op.mode.ordinal());
+      NullableHelper.write(op.operand1, out, elementWriter);
+      NullableHelper.write(op.operand2, out, elementWriter);
+    }
+  }
+
+  public static <T> ListDiff<T> read(DataInputStream in, ListHelper.ElementReader<T> elementReader) throws IOException {
+    ArrayList<ListDiff.Operation<T>> operations = new ArrayList<>();
+    int size = in.readInt();
+
+    for (int i = 0; i < size; i++) {
+      ListDiff.Operation<T> operation = new ListDiff.Operation<>(
+              ListDiff.Operation.Type.values()[in.readInt()],
+              ListDiff.Operation.Mode.values()[in.readInt()],
+              NullableHelper.read(in, elementReader),
+              NullableHelper.read(in, elementReader)
+//              elementReader.read(in),
+//              elementReader.read(in)
+      );
+
+      operations.add(operation);
+    }
+
+    return new ListDiff<>(operations);
   }
 }
