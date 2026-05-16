@@ -1,9 +1,12 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.util.AutoIncrementBiHashMap;
 import org.junit.jupiter.api.Test;
+import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.ParameterNode;
 
+import java.io.IOException;
 import java.util.List;
 
 class MethodNodeHelperTest {
@@ -27,5 +30,17 @@ class MethodNodeHelperTest {
   @Test
   void test_hashCode() {
     TestUtils.verifyHashCode(this::generateUnique, MethodNodeHelper::hashCode);
+  }
+
+  @Test
+  void test_readWrite_roundTrip() throws IOException {
+    AutoIncrementBiHashMap<LabelNode> labels = new AutoIncrementBiHashMap<>();
+
+    TestUtils.verifyRoundTrip(
+            this::generateUnique,
+            (value, out) -> MethodNodeHelper.write(value, out, labels::get),
+            (in) -> MethodNodeHelper.read(in, labels::getKey),
+            MethodNodeHelper::equals
+    );
   }
 }
