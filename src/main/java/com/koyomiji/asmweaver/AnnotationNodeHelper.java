@@ -202,6 +202,10 @@ public class AnnotationNodeHelper {
     }
   }
 
+  public static void writeValue(Object value, DataOutputStream out) throws IOException {
+    writeValue(value, out, label -> 0);
+  }
+
   public static void writeValue(Object value, DataOutputStream out, Function<LabelNode, Integer> labelIndexProvider) throws IOException {
     if (value instanceof String) {
       out.writeByte(ValueType.STRING.ordinal());
