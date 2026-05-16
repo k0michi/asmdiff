@@ -21,13 +21,17 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
       - name: Run tests and generate coverage
-        run: ./gradlew test jacocoTestReport
+        run: ./gradlew test jacocoTestReport --build-cache
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
