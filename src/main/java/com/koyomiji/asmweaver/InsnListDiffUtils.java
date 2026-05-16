@@ -151,7 +151,7 @@ public class InsnListDiffUtils {
 
     }
 
-    // Non-structural instructions
+    // Non-standard instructions
     return Objects.equals(insn1, insn2);
   }
 
