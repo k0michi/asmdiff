@@ -1,10 +1,12 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.util.AutoIncrementBiHashMap;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.TypePath;
 import org.objectweb.asm.TypeReference;
 import org.objectweb.asm.tree.*;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -159,5 +161,17 @@ class ClassNodeHelperTest {
   @Test
   void test_hashCode() {
     TestUtils.verifyHashCode(this::generateUnique, ClassNodeHelper::hashCode);
+  }
+
+  @Test
+  void test_readWrite_roundTrip() throws IOException {
+    AutoIncrementBiHashMap<LabelNode> labels = new AutoIncrementBiHashMap<>();
+
+    TestUtils.verifyRoundTrip(
+            this::generateUnique,
+            (node, stream) -> ClassNodeHelper.write(node, stream, labels::get),
+            stream -> ClassNodeHelper.read(stream, labels::getKey),
+            ClassNodeHelper::equals
+    );
   }
 }
