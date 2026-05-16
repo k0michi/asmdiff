@@ -1,6 +1,4 @@
-package com.koyomiji.asmweaver;
-
-import com.koyomiji.asmweaver.util.BiHashMap;
+package com.koyomiji.asmweaver.util;
 
 public class AutoIncrementBiHashMap<K> extends BiHashMap<K, Integer> {
   private int nextId = 0;

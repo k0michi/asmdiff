@@ -1,6 +1,6 @@
 package com.koyomiji.asmweaver;
 
-import com.koyomiji.asmweaver.util.BiHashMap;
+import com.koyomiji.asmweaver.util.AutoIncrementBiHashMap;
 import com.koyomiji.asmweaver.util.tuple.Triplet;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
