@@ -2,6 +2,11 @@ package com.koyomiji.asmweaver;
 
 import org.objectweb.asm.tree.ModuleNode;
 
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
 public class ModuleDiffUtils {
   public static ModuleDiff diff(ModuleNode node1, ModuleNode node2) {
     ModuleDiff diff = new ModuleDiff();
@@ -89,5 +94,33 @@ public class ModuleDiffUtils {
             diff.provides
     );
     return patchedNode;
+  }
+
+  public static void write(ModuleDiff diff, DataOutputStream out) throws IOException {
+    ListDiffUtils.write(diff.name, out, (e, s) -> s.writeUTF(e));
+    ListDiffUtils.write(diff.access, out, (e, s) -> s.writeInt(e));
+    ListDiffUtils.write(diff.version, out, (e, s) -> s.writeUTF(e));
+    ListDiffUtils.write(diff.mainClass, out, (e, s) -> s.writeUTF(e));
+    ListDiffUtils.write(diff.packages, out, (e, s) -> s.writeUTF(e));
+    ListDiffUtils.write(diff.requires, out, ModuleRequireNodeHelper::write);
+    ListDiffUtils.write(diff.exports, out, ModuleExportNodeHelper::write);
+    ListDiffUtils.write(diff.opens, out, ModuleOpenNodeHelper::write);
+    ListDiffUtils.write(diff.uses, out, (e, s) -> s.writeUTF(e));
+    ListDiffUtils.write(diff.provides, out, ModuleProvideNodeHelper::write);
+  }
+
+  public static ModuleDiff read(DataInputStream in) throws IOException {
+    ModuleDiff diff = new ModuleDiff();
+    diff.name = ListDiffUtils.read(in, DataInput::readUTF);
+    diff.access = ListDiffUtils.read(in, DataInputStream::readInt);
+    diff.version = ListDiffUtils.read(in, DataInput::readUTF);
+    diff.mainClass = ListDiffUtils.read(in, DataInput::readUTF);
+    diff.packages = ListDiffUtils.read(in, DataInput::readUTF);
+    diff.requires = ListDiffUtils.read(in, ModuleRequireNodeHelper::read);
+    diff.exports = ListDiffUtils.read(in, ModuleExportNodeHelper::read);
+    diff.opens = ListDiffUtils.read(in, ModuleOpenNodeHelper::read);
+    diff.uses = ListDiffUtils.read(in, DataInput::readUTF);
+    diff.provides = ListDiffUtils.read(in, ModuleProvideNodeHelper::read);
+    return diff;
   }
 }
