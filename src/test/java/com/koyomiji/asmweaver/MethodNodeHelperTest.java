@@ -1,6 +1,5 @@
 package com.koyomiji.asmweaver;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.ParameterNode;
@@ -21,26 +20,12 @@ class MethodNodeHelperTest {
   }
 
   @Test
-  void test_equals_0() {
-    List<MethodNode> unique = generateUnique();
-
-    for (int i = 0; i < unique.size(); i++) {
-      for (int j = 0; j < unique.size(); j++) {
-        if (i == j) {
-          Assertions.assertTrue(MethodNodeHelper.equals(unique.get(i), unique.get(j)));
-        } else {
-          Assertions.assertFalse(MethodNodeHelper.equals(unique.get(i), unique.get(j)));
-        }
-      }
-    }
+  void test_equals() {
+    TestUtils.verifyEquals(this::generateUnique, MethodNodeHelper::equals);
   }
 
   @Test
   void test_hashCode() {
-    List<MethodNode> unique = generateUnique();
-
-    for (int i = 0; i < unique.size(); i++) {
-      Assertions.assertEquals(MethodNodeHelper.hashCode(unique.get(i)), MethodNodeHelper.hashCode(unique.get(i)));
-    }
+    TestUtils.verifyHashCode(this::generateUnique, MethodNodeHelper::hashCode);
   }
 }

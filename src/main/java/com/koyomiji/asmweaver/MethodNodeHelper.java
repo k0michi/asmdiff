@@ -23,8 +23,8 @@ public class MethodNodeHelper {
             && Objects.equals(node1.name, node2.name)
             && Objects.equals(node1.desc, node2.desc)
             && Objects.equals(node1.signature, node2.signature)
-            && Objects.equals(node1.exceptions, node2.exceptions)
-            && Objects.equals(node1.parameters, node2.parameters)
+            && ListHelper.equalsNullToEmpty(node1.exceptions, node2.exceptions, Objects::equals)
+            && ListHelper.equalsNullToEmpty(node1.parameters, node2.parameters, ParameterNodeHelper::equals)
             && ListHelper.equalsNullToEmpty(node1.visibleAnnotations, node2.visibleAnnotations, AnnotationNodeHelper::equals)
             && ListHelper.equalsNullToEmpty(node1.invisibleAnnotations, node2.invisibleAnnotations, AnnotationNodeHelper::equals)
             && ListHelper.equalsNullToEmpty(node1.visibleTypeAnnotations, node2.visibleTypeAnnotations, AnnotationNodeHelper::equals)
@@ -62,7 +62,9 @@ public class MethodNodeHelper {
             .append(node.name)
             .append(node.desc)
             .append(node.signature)
-            .append(node.exceptions)
+            .append(node.exceptions,
+                    l -> ListHelper.hashCodeNullToEmpty(l, Objects::hashCode)
+            )
             .append(node.parameters,
                     l -> ListHelper.hashCodeNullToEmpty(l, ParameterNodeHelper::hashCode)
             )
