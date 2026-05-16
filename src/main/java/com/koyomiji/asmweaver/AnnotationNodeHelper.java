@@ -203,7 +203,7 @@ public class AnnotationNodeHelper {
   }
 
   public static void writeValue(Object value, DataOutputStream out) throws IOException {
-    writeValue(value, out, label -> 0);
+    writeValue(value, out, FunctionHelper.throwIfInvokedFunction());
   }
 
   public static void writeValue(Object value, DataOutputStream out, Function<LabelNode, Integer> labelIndexProvider) throws IOException {
