@@ -1,5 +1,8 @@
 package com.koyomiji.asmweaver;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -55,25 +58,25 @@ public class KeyedListDiffUtils {
 
     while (i > 0 && j > 0) {
       if (keyExtractor.apply(list1.get(i - 1)).equals(keyExtractor.apply(list2.get(j - 1)))) {
-        operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.MATCH, null, keyExtractor.apply(list1.get(i - 1)), null, diffFunction.apply(list1.get(i - 1), list2.get(j - 1))));
+        operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.MATCH, KeyedListDiff.Operation.Mode.BETWEEN, keyExtractor.apply(list1.get(i - 1)), null, diffFunction.apply(list1.get(i - 1), list2.get(j - 1))));
         i--;
         j--;
       } else if (dp[i][j] == dp[i][j - 1] + 1) {
-        operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.INSERT, null, keyExtractor.apply(list2.get(j - 1)), list2.get(j - 1), null));
+        operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.INSERT, KeyedListDiff.Operation.Mode.BETWEEN, keyExtractor.apply(list2.get(j - 1)), list2.get(j - 1), null));
         j--;
       } else {
-        operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.DELETE, null, keyExtractor.apply(list1.get(i - 1)), list1.get(i - 1), null));
+        operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.DELETE, KeyedListDiff.Operation.Mode.BETWEEN, keyExtractor.apply(list1.get(i - 1)), list1.get(i - 1), null));
         i--;
       }
     }
 
     while (i > 0) {
-      operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.DELETE, null, keyExtractor.apply(list1.get(i - 1)), list1.get(i - 1), null));
+      operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.DELETE, KeyedListDiff.Operation.Mode.BETWEEN, keyExtractor.apply(list1.get(i - 1)), list1.get(i - 1), null));
       i--;
     }
 
     while (j > 0) {
-      operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.INSERT, null, keyExtractor.apply(list2.get(j - 1)), list2.get(j - 1), null));
+      operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.INSERT, KeyedListDiff.Operation.Mode.BETWEEN, keyExtractor.apply(list2.get(j - 1)), list2.get(j - 1), null));
       j--;
     }
 
@@ -106,5 +109,60 @@ public class KeyedListDiffUtils {
     }
 
     return result;
+  }
+
+  public static <Key, Value, Diff extends IDiff> void write(
+          KeyedListDiff<Key, Value, Diff> diff,
+          DataOutputStream out,
+          ListHelper.ElementWriter<Key> keyWriter,
+          ListHelper.ElementWriter<Value> valueWriter,
+          ListHelper.ElementWriter<Diff> diffWriter
+  ) throws IOException {
+    out.writeInt(diff.operations.size());
+
+    for (KeyedListDiff.Operation<Key, Value, Diff> op : diff.operations) {
+      out.writeInt(op.type.ordinal());
+      out.writeInt(op.mode.ordinal());
+      keyWriter.write(op.operandKey, out);
+      NullableHelper.write(
+              op.operandValue,
+              out,
+              valueWriter
+      );
+      NullableHelper.write(
+              op.operandDiff,
+              out,
+              diffWriter
+      );
+    }
+  }
+
+  public static <Key, Value, Diff extends IDiff> KeyedListDiff<Key, Value, Diff> read(
+          DataInputStream in,
+          ListHelper.ElementReader<Key> keyReader,
+          ListHelper.ElementReader<Value> valueReader,
+          ListHelper.ElementReader<Diff> diffReader
+  ) throws IOException {
+    int size = in.readInt();
+    List<KeyedListDiff.Operation<Key, Value, Diff>> operations = new ArrayList<>();
+
+    for (int i = 0; i < size; i++) {
+      int typeOrdinal = in.readInt();
+      int modeOrdinal = in.readInt();
+      Key key = keyReader.read(in);
+      Value value = NullableHelper.read(in, valueReader);
+      Diff diff = NullableHelper.read(in, diffReader);
+      operations.add(
+              new KeyedListDiff.Operation<>(
+                      KeyedListDiff.Operation.Type.values()[typeOrdinal],
+                      KeyedListDiff.Operation.Mode.values()[modeOrdinal],
+                      key,
+                      value,
+                      diff
+              )
+      );
+    }
+
+    return new KeyedListDiff<>(operations);
   }
 }

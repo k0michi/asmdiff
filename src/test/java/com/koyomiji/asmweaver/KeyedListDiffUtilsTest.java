@@ -3,6 +3,7 @@ package com.koyomiji.asmweaver;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.io.*;
 import java.util.List;
 import java.util.Objects;
 
@@ -57,6 +58,16 @@ class KeyedListDiffUtilsTest {
 
   private KeyedObjectDiff invertKeyedObjectDiff(KeyedObjectDiff diff) {
     return new KeyedObjectDiff(ListDiffUtils.invert(diff.value));
+  }
+
+  private void writeDiff(KeyedObjectDiff diff, DataOutputStream out) throws IOException {
+    ListDiffUtils.write(diff.value, out, (v, s) -> s.writeUTF(v));
+  }
+
+  private KeyedObjectDiff readDiff(DataInputStream in) throws IOException {
+    return new KeyedObjectDiff(
+            ListDiffUtils.read(in, DataInput::readUTF)
+    );
   }
 
   @Test
@@ -215,5 +226,51 @@ class KeyedListDiffUtilsTest {
     );
 
     Assertions.assertEquals(oldList, patched);
+  }
+
+  @Test
+  void test_readWrite() throws IOException {
+    var oldList = List.of(
+            new KeyedObject(1, "a"),
+            new KeyedObject(2, "b"),
+            new KeyedObject(3, "c")
+    );
+    var newList = List.of(
+            new KeyedObject(1, "a"),
+            new KeyedObject(2, "x"),
+            new KeyedObject(4, "d")
+    );
+    var diff = KeyedListDiffUtils.diff(oldList, newList,
+            KeyedObject::getKey,
+            this::diffKeyedObject
+    );
+
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    DataOutputStream dos = new DataOutputStream(baos);
+    KeyedListDiffUtils.write(
+            diff,
+            dos,
+            (k, s) -> s.writeInt(k),
+            (v, s) -> {
+              s.writeInt(v.key);
+              s.writeUTF(v.value);
+            },
+            this::writeDiff
+    );
+
+    ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+    DataInputStream dis = new DataInputStream(bais);
+    var readDiff = KeyedListDiffUtils.read(
+            dis,
+            DataInputStream::readInt,
+            s -> new KeyedObject(s.readInt(), s.readUTF()),
+            this::readDiff
+    );
+
+    var patched = KeyedListDiffUtils.patch(oldList, readDiff,
+            this::patchKeyedObject
+    );
+
+    Assertions.assertEquals(newList, patched);
   }
 }
