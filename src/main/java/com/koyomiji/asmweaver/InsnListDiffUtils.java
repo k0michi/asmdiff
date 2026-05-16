@@ -68,91 +68,12 @@ public class InsnListDiffUtils {
   }
 
   public static boolean compareInsns(AbstractInsnNode insn1, AbstractInsnNode insn2, BiPredicate<LabelNode, LabelNode> compareLabels, BiPredicate<Integer, Integer> compareLocals) {
-    if (insn1.getOpcode() != insn2.getOpcode()) {
-      return false;
-    }
-
-    if (insn1 instanceof InsnNode && insn2 instanceof InsnNode) {
-      return true;
-    } else if (insn1 instanceof IntInsnNode && insn2 instanceof IntInsnNode) {
-      return ((IntInsnNode) insn1).operand == ((IntInsnNode) insn2).operand;
-    } else if (insn1 instanceof VarInsnNode && insn2 instanceof VarInsnNode) {
-//      return ((VarInsnNode) insn1).var == ((VarInsnNode) insn2).var;
-      return compareLocals.test(((VarInsnNode) insn1).var, ((VarInsnNode) insn2).var);
-    } else if (insn1 instanceof TypeInsnNode && insn2 instanceof TypeInsnNode) {
-      return Objects.equals(((TypeInsnNode) insn1).desc, ((TypeInsnNode) insn2).desc);
-    } else if (insn1 instanceof FieldInsnNode && insn2 instanceof FieldInsnNode) {
-      FieldInsnNode field1 = (FieldInsnNode) insn1;
-      FieldInsnNode field2 = (FieldInsnNode) insn2;
-      return Objects.equals(field1.owner, field2.owner)
-              && Objects.equals(field1.name, field2.name)
-              && Objects.equals(field1.desc, field2.desc);
-    } else if (insn1 instanceof MethodInsnNode && insn2 instanceof MethodInsnNode) {
-      MethodInsnNode method1 = (MethodInsnNode) insn1;
-      MethodInsnNode method2 = (MethodInsnNode) insn2;
-      return Objects.equals(method1.owner, method2.owner)
-              && Objects.equals(method1.name, method2.name)
-              && Objects.equals(method1.desc, method2.desc)
-              && method1.itf == method2.itf;
-    } else if (insn1 instanceof InvokeDynamicInsnNode && insn2 instanceof InvokeDynamicInsnNode) {
-      InvokeDynamicInsnNode indy1 = (InvokeDynamicInsnNode) insn1;
-      InvokeDynamicInsnNode indy2 = (InvokeDynamicInsnNode) insn2;
-      return Objects.equals(indy1.name, indy2.name)
-              && Objects.equals(indy1.desc, indy2.desc)
-              && Objects.equals(indy1.bsm, indy2.bsm)
-              && Arrays.equals(indy1.bsmArgs, indy2.bsmArgs);
-    } else if (insn1 instanceof JumpInsnNode && insn2 instanceof JumpInsnNode) {
-      JumpInsnNode jump1 = (JumpInsnNode) insn1;
-      JumpInsnNode jump2 = (JumpInsnNode) insn2;
-      return compareLabels.test(jump1.label, jump2.label);
-    } else if (insn1 instanceof LabelNode && insn2 instanceof LabelNode) {
-//      return compareLabels((LabelNode) insn1, (LabelNode) insn2, labelMap);
-      return compareLabels.test((LabelNode) insn1, (LabelNode) insn2);
-    } else if (insn1 instanceof LdcInsnNode && insn2 instanceof LdcInsnNode) {
-      return Objects.equals(((LdcInsnNode) insn1).cst, ((LdcInsnNode) insn2).cst);
-    } else if (insn1 instanceof IincInsnNode && insn2 instanceof IincInsnNode) {
-      IincInsnNode iinc1 = (IincInsnNode) insn1;
-      IincInsnNode iinc2 = (IincInsnNode) insn2;
-//      return iinc1.var == iinc2.var && iinc1.incr == iinc2.incr;
-      return compareLocals.test(iinc1.var, iinc2.var) && iinc1.incr == iinc2.incr;
-    } else if (insn1 instanceof TableSwitchInsnNode && insn2 instanceof TableSwitchInsnNode) {
-      TableSwitchInsnNode switch1 = (TableSwitchInsnNode) insn1;
-      TableSwitchInsnNode switch2 = (TableSwitchInsnNode) insn2;
-      return switch1.min == switch2.min
-              && switch1.max == switch2.max
-//              && compareLabels(switch1.dflt, switch2.dflt, labelMap)
-//              && compareLabels(switch1.labels, switch2.labels, labelMap);
-              && compareLabels.test(switch1.dflt, switch2.dflt)
-              && ListHelper.equals(switch1.labels, switch2.labels, compareLabels::test);
-    } else if (insn1 instanceof LookupSwitchInsnNode && insn2 instanceof LookupSwitchInsnNode) {
-      LookupSwitchInsnNode switch1 = (LookupSwitchInsnNode) insn1;
-      LookupSwitchInsnNode switch2 = (LookupSwitchInsnNode) insn2;
-//      return compareLabels(switch1.dflt, switch2.dflt, labelMap)
-//              && Objects.equals(switch1.keys, switch2.keys)
-//              && compareLabels(switch1.labels, switch2.labels, labelMap);
-      return compareLabels.test(switch1.dflt, switch2.dflt)
-              && Objects.equals(switch1.keys, switch2.keys)
-              && ListHelper.equals(switch1.labels, switch2.labels, compareLabels::test);
-    } else if (insn1 instanceof MultiANewArrayInsnNode && insn2 instanceof MultiANewArrayInsnNode) {
-      MultiANewArrayInsnNode array1 = (MultiANewArrayInsnNode) insn1;
-      MultiANewArrayInsnNode array2 = (MultiANewArrayInsnNode) insn2;
-      return Objects.equals(array1.desc, array2.desc) && array1.dims == array2.dims;
-    } else if (insn1 instanceof FrameNode && insn2 instanceof FrameNode) {
-      FrameNode frame1 = (FrameNode) insn1;
-      FrameNode frame2 = (FrameNode) insn2;
-      return frame1.type == frame2.type
-              && Objects.equals(frame1.local, frame2.local)
-              && Objects.equals(frame1.stack, frame2.stack);
-    } else if (insn1 instanceof LineNumberNode && insn2 instanceof LineNumberNode) {
-      LineNumberNode line1 = (LineNumberNode) insn1;
-      LineNumberNode line2 = (LineNumberNode) insn2;
-//      return line1.line == line2.line && compareLabels(line1.start, line2.start, labelMap);
-      return line1.line == line2.line && compareLabels.test(line1.start, line2.start);
-
-    }
-
-    // Non-standard instructions
-    return Objects.equals(insn1, insn2);
+    return AbstractInsnNodeHelper.equals(
+            insn1,
+            insn2,
+            compareLabels,
+            compareLocals
+    );
   }
 
   public static boolean compareInsnsIgnoreLabelsIgnoreLocals(AbstractInsnNode insn1, AbstractInsnNode insn2) {
