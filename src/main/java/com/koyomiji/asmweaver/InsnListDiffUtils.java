@@ -67,23 +67,6 @@ public class InsnListDiffUtils {
     return true;
   }
 
-  public static boolean compareInsns(AbstractInsnNode insn1, AbstractInsnNode insn2, BiPredicate<LabelNode, LabelNode> compareLabels, BiPredicate<Integer, Integer> compareLocals) {
-    return AbstractInsnNodeHelper.equals(
-            insn1,
-            insn2,
-            compareLabels,
-            compareLocals
-    );
-  }
-
-  public static boolean compareInsnsIgnoreLabelsIgnoreLocals(AbstractInsnNode insn1, AbstractInsnNode insn2) {
-    return compareInsns(insn1, insn2, (l1, l2) -> true, (v1, v2) -> true);
-  }
-
-  public static boolean compareInsnsIgnoreLabelsExactLocals(AbstractInsnNode insn1, AbstractInsnNode insn2) {
-    return compareInsns(insn1, insn2, (l1, l2) -> true, Integer::equals);
-  }
-
   /**
    * Compare two instruction lists taking labels into account.
    *
@@ -99,7 +82,7 @@ public class InsnListDiffUtils {
 
     while (iter1.hasNext() && iter2.hasNext()) {
 //      if (!compareInsns(iter1.next(), iter2.next(), compareLabels)) {
-      if (!compareInsns(iter1.next(), iter2.next(), compareLabels, compareLocals)) {
+      if (!AbstractInsnNodeHelper.equals(iter1.next(), iter2.next(), compareLabels, compareLocals)) {
         return false;
       }
     }
@@ -193,7 +176,7 @@ public class InsnListDiffUtils {
 
         // FIXME
 //        if (!compareInsns(opP.operand, opQBase.operand, Function.identity())) {
-        if (!compareInsnsIgnoreLabelsIgnoreLocals(opP.operand, opQBase.operand)) {
+        if (!AbstractInsnNodeHelper.equalsIgnoreLabelsIgnoreLocals(opP.operand, opQBase.operand)) {
           throw new IllegalDiffException("p and q disagree on node identity");
         }
 
@@ -307,7 +290,7 @@ public class InsnListDiffUtils {
         InsnListDiff.Operation opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
 
         // FIXME: should not ignore
-        if (!compareInsnsIgnoreLabelsIgnoreLocals(opP.operand, opQ.operand)) {
+        if (!AbstractInsnNodeHelper.equalsIgnoreLabelsIgnoreLocals(opP.operand, opQ.operand)) {
           throw new IllegalDiffException("Composition Error: Operand mismatch at B.");
         }
 
@@ -320,7 +303,7 @@ public class InsnListDiffUtils {
         int matchIndex = -1;
         for (int i = 0; i < qInsertions.size(); i++) {
           // FIXME: should not ignore
-          if (compareInsnsIgnoreLabelsIgnoreLocals(qInsertions.get(i).operand, opP.operand)) {
+          if (AbstractInsnNodeHelper.equalsIgnoreLabelsIgnoreLocals(qInsertions.get(i).operand, opP.operand)) {
             matchIndex = i;
             break;
           }
@@ -348,7 +331,7 @@ public class InsnListDiffUtils {
         InsnListDiff.Operation opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
 
         // FIXME: should not ignore
-        if (!compareInsnsIgnoreLabelsIgnoreLocals(opP.operand, opQ.operand)) {
+        if (!AbstractInsnNodeHelper.equalsIgnoreLabelsIgnoreLocals(opP.operand, opQ.operand)) {
           throw new IllegalDiffException("Composition Error: Operand mismatch at C.");
         }
 
@@ -528,7 +511,7 @@ public class InsnListDiffUtils {
 
           table[i][j] = 1 + Math.min(table[i + 1][j], table[i][j + 1]);
 
-          if (compareInsnsIgnoreLabelsIgnoreLocals(a, b)) {
+          if (AbstractInsnNodeHelper.equalsIgnoreLabelsIgnoreLocals(a, b)) {
             table[i][j] = Math.min(table[i][j], table[i + 1][j + 1]);
           }
         }
@@ -638,7 +621,7 @@ public class InsnListDiffUtils {
 
           // スネーク（一致移動）を処理
           // 配列の後ろ（n-1, m-1）から前へ向かって比較する
-          while (u < n && w < m && compareInsnsIgnoreLabelsIgnoreLocals(src.get(n - 1 - u), dst.get(m - 1 - w))) {
+          while (u < n && w < m && AbstractInsnNodeHelper.equalsIgnoreLabelsIgnoreLocals(src.get(n - 1 - u), dst.get(m - 1 - w))) {
             u++;
             w++;
           }
@@ -1047,7 +1030,7 @@ public class InsnListDiffUtils {
         List<LabelNode> targetsB = getLabelTargets(insnB);
 
         // TODO: local
-        boolean contentMatch = compareInsnsIgnoreLabelsIgnoreLocals(insnA, insnB);
+        boolean contentMatch = AbstractInsnNodeHelper.equalsIgnoreLabelsIgnoreLocals(insnA, insnB);
 
         // Having different number of target labels implies mismatch
         if (targetsA.size() != targetsB.size()) {

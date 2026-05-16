@@ -64,10 +64,10 @@ class InsnListDiffUtilsTest {
     Pair<InsnListDiff, InsnListDiff> commuted = InsnListDiffUtils.commute(diff1, diff2);
     Assertions.assertEquals(1, commuted.first.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, commuted.first.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabelsExactLocals(commuted.first.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(commuted.first.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
     Assertions.assertEquals(1, commuted.second.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, commuted.second.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabelsExactLocals(commuted.second.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(commuted.second.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
   }
 
   @Test
@@ -82,7 +82,7 @@ class InsnListDiffUtilsTest {
     Assertions.assertEquals(0, commuted.first.operations.size());
     Assertions.assertEquals(1, commuted.second.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.INSERT, commuted.second.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabelsExactLocals(commuted.second.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(commuted.second.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
   }
 
   @Test
@@ -95,10 +95,10 @@ class InsnListDiffUtilsTest {
     Pair<InsnListDiff, InsnListDiff> commuted = InsnListDiffUtils.commute(diff1, diff2);
     Assertions.assertEquals(1, commuted.first.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.INSERT, commuted.first.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabelsExactLocals(commuted.first.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(commuted.first.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
     Assertions.assertEquals(1, commuted.second.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, commuted.second.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabelsExactLocals(commuted.second.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(commuted.second.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
   }
 
   @Test
@@ -150,7 +150,7 @@ class InsnListDiffUtilsTest {
     InsnListDiff composed = InsnListDiffUtils.compose(diff1, diff2);
     Assertions.assertEquals(1, composed.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, composed.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabelsExactLocals(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
   }
 
   @Test
@@ -192,9 +192,9 @@ class InsnListDiffUtilsTest {
     InsnListDiff composed = InsnListDiffUtils.compose(diff1, diff2);
     Assertions.assertEquals(2, composed.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, composed.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabelsExactLocals(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
     Assertions.assertEquals(InsnListDiff.Operation.Type.INSERT, composed.operations.get(1).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabelsExactLocals(composed.operations.get(1).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(composed.operations.get(1).operand, new InsnNode(Opcodes.NOP)));
   }
 
   // insert -> delete
@@ -222,7 +222,7 @@ class InsnListDiffUtilsTest {
     InsnListDiff composed = InsnListDiffUtils.compose(diff1, diff2);
     Assertions.assertEquals(1, composed.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, composed.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabelsExactLocals(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
   }
 
   // match -> delete
@@ -237,7 +237,7 @@ class InsnListDiffUtilsTest {
     InsnListDiff composed = InsnListDiffUtils.compose(diff1, diff2);
     Assertions.assertEquals(1, composed.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.DELETE, composed.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabelsExactLocals(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
   }
 
   // insert -> match
@@ -252,7 +252,7 @@ class InsnListDiffUtilsTest {
     InsnListDiff composed = InsnListDiffUtils.compose(diff1, diff2);
     Assertions.assertEquals(1, composed.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.INSERT, composed.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabelsExactLocals(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
   }
 
   @Test
@@ -274,7 +274,7 @@ class InsnListDiffUtilsTest {
     InsnListDiff composed = InsnListDiffUtils.compose(diff1, diff2);
     Assertions.assertEquals(1, composed.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, composed.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabelsExactLocals(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
   }
 
   @Test
@@ -327,7 +327,7 @@ class InsnListDiffUtilsTest {
     );
     Assertions.assertEquals(1, diff.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, diff.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabelsExactLocals(diff.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(diff.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
   }
 
   @Test
@@ -344,9 +344,9 @@ class InsnListDiffUtilsTest {
     );
     Assertions.assertEquals(2, diff.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.DELETE, diff.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabelsExactLocals(diff.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(diff.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
     Assertions.assertEquals(InsnListDiff.Operation.Type.INSERT, diff.operations.get(1).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabelsExactLocals(diff.operations.get(1).operand, new InsnNode(Opcodes.ACONST_NULL)));
+    Assertions.assertTrue(AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(diff.operations.get(1).operand, new InsnNode(Opcodes.ACONST_NULL)));
   }
 
   @Test
@@ -364,9 +364,9 @@ class InsnListDiffUtilsTest {
     );
     Assertions.assertEquals(2, diff.operations.size());
     Assertions.assertEquals(InsnListDiff.Operation.Type.DELETE, diff.operations.get(0).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabelsExactLocals(diff.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(diff.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
     Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, diff.operations.get(1).type);
-    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabelsExactLocals(diff.operations.get(1).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertTrue(AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(diff.operations.get(1).operand, new InsnNode(Opcodes.NOP)));
   }
 
   @ParameterizedTest
@@ -390,7 +390,7 @@ class InsnListDiffUtilsTest {
     Assertions.assertEquals(numInsns, diff.operations.size());
     for (int i = 0; i < numInsns; i++) {
       Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, diff.operations.get(i).type);
-      Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabelsExactLocals(diff.operations.get(i).operand, new InsnNode(Opcodes.NOP)));
+      Assertions.assertTrue(AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(diff.operations.get(i).operand, new InsnNode(Opcodes.NOP)));
     }
   }
 
@@ -412,13 +412,13 @@ class InsnListDiffUtilsTest {
     Assertions.assertEquals(numInsns, diff.operations.size());
     for (int i = 0; i < numInsns; i++) {
       Assertions.assertEquals(InsnListDiff.Operation.Type.DELETE, diff.operations.get(i).type);
-      Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabelsExactLocals(diff.operations.get(i).operand, new InsnNode(Opcodes.NOP)));
+      Assertions.assertTrue(AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(diff.operations.get(i).operand, new InsnNode(Opcodes.NOP)));
     }
   }
 
   @Test
   void test_compareInsnsIgnoreLabelsExactLocals_0() {
-    Assertions.assertTrue(InsnListDiffUtils.compareInsnsIgnoreLabelsExactLocals(
+    Assertions.assertTrue(AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(
             new LabelNode(),
             new LabelNode()
     ));

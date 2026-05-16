@@ -568,4 +568,12 @@ public class AbstractInsnNodeHelper {
         throw new IllegalArgumentException("Unknown frame value type: " + in.readInt());
     }
   }
+
+  public static boolean equalsIgnoreLabelsIgnoreLocals(AbstractInsnNode insn1, AbstractInsnNode insn2) {
+    return equals(insn1, insn2, (l1, l2) -> true, (v1, v2) -> true);
+  }
+
+  public static boolean equalsIgnoreLabelsExactLocals(AbstractInsnNode insn1, AbstractInsnNode insn2) {
+    return equals(insn1, insn2, (l1, l2) -> true, Integer::equals);
+  }
 }
