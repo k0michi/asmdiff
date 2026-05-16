@@ -111,14 +111,14 @@ class LocalVariableNodeHelperTest {
   @Test
   void test_readWrite() throws IOException {
     LocalVariableNode node1 = new LocalVariableNode("name", "desc", "signature", l0, l1, 0);
-    BiHashMap<LabelNode, Integer> labelIndexMap = new BiHashMap<>();
+    AutoIncrementBiHashMap<LabelNode> labelToIndex = new AutoIncrementBiHashMap<>();
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(baos);
-    LocalVariableNodeHelper.write(node1, dos, l -> labelIndexMap.computeIfAbsent(l, k -> labelIndexMap.size()));
+    LocalVariableNodeHelper.write(node1, dos, labelToIndex::get);
 
     ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
     DataInputStream dis = new DataInputStream(bais);
-    LocalVariableNode read = LocalVariableNodeHelper.read(dis, labelIndexMap::getKey);
+    LocalVariableNode read = LocalVariableNodeHelper.read(dis, labelToIndex::getKey);
     Assertions.assertTrue(LocalVariableNodeHelper.equals(node1, read));
   }
 }

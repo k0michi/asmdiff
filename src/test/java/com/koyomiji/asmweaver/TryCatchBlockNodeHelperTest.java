@@ -1,6 +1,5 @@
 package com.koyomiji.asmweaver;
 
-import com.koyomiji.asmweaver.util.BiHashMap;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.tree.LabelNode;
@@ -81,8 +80,8 @@ class TryCatchBlockNodeHelperTest {
     TryCatchBlockNode node1 = new TryCatchBlockNode(l0, l1, l2, null);
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(baos);
-    BiHashMap<LabelNode, Integer> labelToIndex = new BiHashMap<>();
-    TryCatchBlockNodeHelper.write(node1, dos, l -> labelToIndex.computeIfAbsent(l, k -> labelToIndex.size()));
+    AutoIncrementBiHashMap<LabelNode> labelToIndex = new AutoIncrementBiHashMap<>();
+    TryCatchBlockNodeHelper.write(node1, dos, labelToIndex::get);
 
     ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
     DataInputStream dis = new DataInputStream(bais);

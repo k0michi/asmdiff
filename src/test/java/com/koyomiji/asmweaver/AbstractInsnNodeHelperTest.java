@@ -96,8 +96,8 @@ class AbstractInsnNodeHelperTest {
     for (int i = 0; i < UNIQUE_NODES.size(); i++) {
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
       DataOutputStream dos = new DataOutputStream(baos);
-      BiHashMap<LabelNode, Integer> labelToIndex = new BiHashMap<>();
-      AbstractInsnNodeHelper.write(UNIQUE_NODES.get(i), dos, l -> labelToIndex.computeIfAbsent(l, k -> labelToIndex.size()));
+      AutoIncrementBiHashMap<LabelNode> labelToIndex = new AutoIncrementBiHashMap<>();
+      AbstractInsnNodeHelper.write(UNIQUE_NODES.get(i), dos, labelToIndex::get);
 
       ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
       DataInputStream dis = new DataInputStream(bais);

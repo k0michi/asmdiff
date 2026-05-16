@@ -164,11 +164,11 @@ class AnnotationNodeHelperTest {
   @ParameterizedTest
   @MethodSource("provideAll")
   void test_readWrite_roundTrip(int i, AnnotationNode node) throws IOException {
-    BiHashMap<LabelNode, Integer> labelIndexMap = new BiHashMap<>();
+    AutoIncrementBiHashMap<LabelNode> labelToIndex = new AutoIncrementBiHashMap<>();
 
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(baos);
-    AnnotationNodeHelper.write(node, dos, (l) -> labelIndexMap.computeIfAbsent(l, k -> labelIndexMap.size()));
+    AnnotationNodeHelper.write(node, dos, labelToIndex::get);
     dos.flush();
 
     byte[] data = baos.toByteArray();
@@ -182,7 +182,7 @@ class AnnotationNodeHelperTest {
       TypeAnnotationNode nodeRead = AnnotationNodeHelper.readTypeAnnotationNode(dis);
       Assertions.assertTrue(AnnotationNodeHelper.equals(node, nodeRead));
     } else if (node.getClass() == LocalVariableAnnotationNode.class) {
-      LocalVariableAnnotationNode nodeRead = AnnotationNodeHelper.readLocalVariableAnnotationNode(dis, labelIndexMap::getKey);
+      LocalVariableAnnotationNode nodeRead = AnnotationNodeHelper.readLocalVariableAnnotationNode(dis, labelToIndex::getKey);
       Assertions.assertTrue(AnnotationNodeHelper.equals(node, nodeRead));
     }
   }
