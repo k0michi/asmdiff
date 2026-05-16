@@ -61,6 +61,8 @@ public class AbstractInsnNodeHelper {
       return equals((InvokeDynamicInsnNode) node1, (InvokeDynamicInsnNode) node2);
     } else if (node1.getClass() == JumpInsnNode.class) {
       return equals((JumpInsnNode) node1, (JumpInsnNode) node2, labelEquals);
+    } else if (node1.getClass() == LabelNode.class) {
+      return equals((LabelNode) node1, (LabelNode) node2, labelEquals);
     } else if (node1.getClass() == LdcInsnNode.class) {
       return equals((LdcInsnNode) node1, (LdcInsnNode) node2);
     } else if (node1.getClass() == IincInsnNode.class) {
@@ -118,6 +120,10 @@ public class AbstractInsnNodeHelper {
 
   private static boolean equals(JumpInsnNode node1, JumpInsnNode node2, BiPredicate<LabelNode, LabelNode> labelEquals) {
     return labelEquals.test(node1.label, node2.label);
+  }
+
+  private static boolean equals(LabelNode node1, LabelNode node2, BiPredicate<LabelNode, LabelNode> labelEquals) {
+    return labelEquals.test(node1, node2);
   }
 
   private static boolean equals(LdcInsnNode node1, LdcInsnNode node2) {
