@@ -1,5 +1,7 @@
 package com.koyomiji.asmweaver.io;
 
+import com.koyomiji.asmweaver.util.tuple.Triplet;
+
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,7 +49,21 @@ public class BinaryReader implements CustomDataInput {
     }
   }
 
-  // --- 以下のプリミティブメソッド群は、DataInputStream へ 100% 透過的に委譲 ---
+  @Override
+  public <T> T readVariant(Triplet<String, Integer, ElementReader<? extends T>>... cases) throws IOException {
+    int id = in.readUnsignedByte();
+
+    // 2. IDが一致するケースを探索
+    for (Triplet<String, Integer, ElementReader<? extends T>> c : cases) {
+      if (c.second == id) {
+        return c.third.read();
+      }
+    }
+
+    throw new IOException("Unknown binary variant ID: " + id);
+  }
+
+// --- 以下のプリミティブメソッド群は、DataInputStream へ 100% 透過的に委譲 ---
 
   @Override
   public void readFully(byte[] b) throws IOException {

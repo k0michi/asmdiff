@@ -145,4 +145,11 @@ public class TextWriter implements CustomDataOutput {
       writer.write(element);
     }
   }
+
+  @Override
+  public <T> void writeVariant(String name, int id, T element, ElementWriter<T> writer) throws IOException {
+    beginList(name);
+    writer.write(element);
+    endList();
+  }
 }

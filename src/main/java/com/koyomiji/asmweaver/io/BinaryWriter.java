@@ -120,7 +120,9 @@ public class BinaryWriter implements CustomDataOutput {
     }
   }
 
-  public void flush() throws IOException {
-    out.flush();
+  @Override
+  public <T> void writeVariant(String name, int id, T element, ElementWriter<T> writer) throws IOException {
+    out.writeByte(id);
+    writer.write(element);
   }
 }

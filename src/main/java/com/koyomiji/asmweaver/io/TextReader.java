@@ -1,9 +1,12 @@
 package com.koyomiji.asmweaver.io;
 
+import com.koyomiji.asmweaver.util.tuple.Triplet;
+
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class TextReader implements CustomDataInput {
   private final StreamTokenizer tokenizer;
@@ -100,7 +103,63 @@ public class TextReader implements CustomDataInput {
     return reader.read();
   }
 
-  // --- プリミティブデータのパース実装 ---
+  @SafeVarargs
+  @Override
+  public final <T> T readVariant(Triplet<String, Integer, ElementReader<? extends T>>... cases) throws IOException {
+    int token = tokenizer.nextToken();
+    if (token != '(') { // 構文チェック
+      throw new IOException("Expected '(' for variant start at line " + tokenizer.lineno());
+    }
+
+    String actualName = nextWord();
+
+    // 3. タグ名が一致するケースを探索
+//    for (VariantCase<? extends T> c : cases) {
+    for (Triplet<String, Integer, ElementReader<? extends T>> c : cases) {
+//      if (c.name.equals(actualName)) {
+      if (Objects.equals(actualName, c.first)) {
+        // 4. マッチしたラムダを実行して中身を復元
+//        T result = c.reader.read();
+        T result = c.third.read();
+
+        // 5. ★ここでTextReaderが責任を持って閉じカッコ ')' を回収！
+        consumeEndList();
+
+        return result;
+      }
+    }
+
+    throw new IOException("Unknown text variant tag: '" + actualName + "' at line " + tokenizer.lineno());
+  }
+
+//  @SafeVarargs
+//  @Override
+//  public final <T> T readVariant(VariantCase<? extends T>... cases) throws IOException {
+//    // 1. 開始カッコ '(' を消費
+//    int token = tokenizer.nextToken();
+//    if (token != 'I' && token != '(') { // 構文チェック
+//      throw new IOException("Expected '(' for variant start at line " + tokenizer.lineno());
+//    }
+//
+//    // 2. カッコの次のワード（タグ名）を取得
+//    String actualName = nextWord();
+//
+//    // 3. タグ名が一致するケースを探索
+//    for (VariantCase<? extends T> c : cases) {
+//      if (c.name.equals(actualName)) {
+//        // 4. マッチしたラムダを実行して中身を復元
+//        T result = c.reader.read();
+//
+//        // 5. ★ここでTextReaderが責任を持って閉じカッコ ')' を回収！
+//        consumeEndList();
+//
+//        return result;
+//      }
+//    }
+//    throw new IOException("Unknown text variant tag: '" + actualName + "' at line " + tokenizer.lineno());
+//  }
+
+// --- プリミティブデータのパース実装 ---
 
   @Override
   public int readInt() throws IOException {
