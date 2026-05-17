@@ -7,6 +7,7 @@ import org.objectweb.asm.tree.*;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -577,5 +578,29 @@ public class AbstractInsnNodeHelper {
 
   public static boolean equalsIgnoreLabelsExactLocals(AbstractInsnNode insn1, AbstractInsnNode insn2) {
     return equals(insn1, insn2, (l1, l2) -> true, Integer::equals);
+  }
+
+  public static List<LabelNode> getLabelTargets(AbstractInsnNode insn) {
+    List<LabelNode> targets = new ArrayList<>();
+
+    if (insn instanceof JumpInsnNode) {
+      targets.add(((JumpInsnNode) insn).label);
+    } else if (insn instanceof LabelNode) {
+      targets.add((LabelNode) insn);
+    } else if (insn instanceof TableSwitchInsnNode) {
+      TableSwitchInsnNode tsw = (TableSwitchInsnNode) insn;
+      targets.add(tsw.dflt);
+      targets.addAll(tsw.labels);
+    } else if (insn instanceof LookupSwitchInsnNode) {
+      LookupSwitchInsnNode lsw = (LookupSwitchInsnNode) insn;
+      targets.add(lsw.dflt);
+      targets.addAll(lsw.labels);
+    } else if (insn instanceof LineNumberNode) {
+      targets.add(((LineNumberNode) insn).start);
+    } else if (insn instanceof IHasLabelNodes) {
+      targets.addAll(((IHasLabelNodes) insn).getLabels());
+    }
+
+    return targets;
   }
 }

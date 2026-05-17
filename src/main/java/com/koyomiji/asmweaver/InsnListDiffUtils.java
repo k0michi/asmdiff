@@ -2,7 +2,6 @@ package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.heuristic.Heuristic;
 import com.koyomiji.asmweaver.heuristic.MyersFuzzyDistanceHeuristic;
-import com.koyomiji.asmweaver.util.BiHashMap;
 import com.koyomiji.asmweaver.util.BiPersistentHashMap;
 import com.koyomiji.asmweaver.util.PeekableIterator;
 import com.koyomiji.asmweaver.util.PersistentHashMap;
@@ -372,7 +371,7 @@ public class InsnListDiffUtils {
 
     for (int i = 0; i < arr.length; i++) {
       var insn = arr[i];
-      var labels = getLabelTargets(insn);
+      var labels = AbstractInsnNodeHelper.getLabelTargets(insn);
 
       for (var label : labels) {
         map.put(label, i);
@@ -396,7 +395,7 @@ public class InsnListDiffUtils {
 
     if (prevIdxA >= 0) {
       var prevA = insnsA.get(prevIdxA);
-      var labels = getLabelTargets(prevA);
+      var labels = AbstractInsnNodeHelper.getLabelTargets(prevA);
       for (var label : labels) {
         if (lastOccurrenceMapA.get(label) == prevIdxA) {
           var mappedB = currentLabelMap.get(label);
@@ -414,7 +413,7 @@ public class InsnListDiffUtils {
     int prevIdxB = state.idxB - 1;
     if (prevIdxB >= 0) {
       var prevB = insnsB.get(prevIdxB);
-      var labels = getLabelTargets(prevB);
+      var labels = AbstractInsnNodeHelper.getLabelTargets(prevB);
       for (var label : labels) {
         if (lastOccurrenceMapB.get(label) == prevIdxB) {
           var mappedA = currentLabelMap.getKey(label);
@@ -429,30 +428,6 @@ public class InsnListDiffUtils {
     }
 
     state.labelMap = currentLabelMap;
-  }
-
-  public static List<LabelNode> getLabelTargets(AbstractInsnNode insn) {
-    List<LabelNode> targets = new ArrayList<>();
-
-    if (insn instanceof JumpInsnNode) {
-      targets.add(((JumpInsnNode) insn).label);
-    } else if (insn instanceof LabelNode) {
-      targets.add((LabelNode) insn);
-    } else if (insn instanceof TableSwitchInsnNode) {
-      TableSwitchInsnNode tsw = (TableSwitchInsnNode) insn;
-      targets.add(tsw.dflt);
-      targets.addAll(tsw.labels);
-    } else if (insn instanceof LookupSwitchInsnNode) {
-      LookupSwitchInsnNode lsw = (LookupSwitchInsnNode) insn;
-      targets.add(lsw.dflt);
-      targets.addAll(lsw.labels);
-    } else if (insn instanceof LineNumberNode) {
-      targets.add(((LineNumberNode) insn).start);
-    } else if (insn instanceof IHasLabelNodes) {
-      targets.addAll(((IHasLabelNodes) insn).getLabels());
-    }
-
-    return targets;
   }
 
   public static InsnListDiff diff(List<AbstractInsnNode> listA, Function<AbstractInsnNode, Integer> duChainsA, List<AbstractInsnNode> listB, Function<AbstractInsnNode, Integer> duChainsB) {
@@ -577,8 +552,8 @@ public class InsnListDiffUtils {
         AbstractInsnNode insnA = insnsA[current.idxA];
         AbstractInsnNode insnB = insnsB[current.idxB];
 
-        List<LabelNode> targetsA = getLabelTargets(insnA);
-        List<LabelNode> targetsB = getLabelTargets(insnB);
+        List<LabelNode> targetsA = AbstractInsnNodeHelper.getLabelTargets(insnA);
+        List<LabelNode> targetsB = AbstractInsnNodeHelper.getLabelTargets(insnB);
 
         boolean contentMatch = AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(insnA, insnB);
 

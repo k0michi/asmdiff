@@ -3,7 +3,6 @@ package com.koyomiji.asmweaver;
 import com.koyomiji.asmweaver.analysis.DefUse;
 import com.koyomiji.asmweaver.analysis.DefUseChainAnalyzer;
 import com.koyomiji.asmweaver.util.UnionFind;
-import com.koyomiji.asmweaver.util.tuple.Pair;
 import org.objectweb.asm.tree.*;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
 
@@ -192,8 +191,8 @@ public class MethodDiffUtils {
     for (InsnListDiff.Operation op : diff.operations) {
       switch (op.type) {
         case MATCH:
-          List<LabelNode> labels1 = InsnListDiffUtils.getLabelTargets(list1.get(i));
-          List<LabelNode> labels2 = InsnListDiffUtils.getLabelTargets(list2.get(j));
+          List<LabelNode> labels1 = AbstractInsnNodeHelper.getLabelTargets(list1.get(i));
+          List<LabelNode> labels2 = AbstractInsnNodeHelper.getLabelTargets(list2.get(j));
           for (int k = 0; k < Math.min(labels1.size(), labels2.size()); k++) {
             labelMap.put(labels1.get(k), labels2.get(k));
           }
