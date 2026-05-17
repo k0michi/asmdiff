@@ -140,8 +140,8 @@ public class MethodDiffUtils {
     }
 
     Map<LabelNode, LabelNode> labelMap = extractLabelMap(node1.instructions, node2.instructions, diff.instructions);
-    List<Pair<Integer, Integer>> locals1 = new ArrayList<>();
-    List<Pair<Integer, Integer>> locals2 = new ArrayList<>();
+//    List<Pair<Integer, Integer>> locals1 = new ArrayList<>();
+//    List<Pair<Integer, Integer>> locals2 = new ArrayList<>();
 
     diff.tryCatchBlocks = ListDiffUtils.diff(
             node1.tryCatchBlocks,
@@ -155,7 +155,7 @@ public class MethodDiffUtils {
             (a, b) ->
                     LocalVariableNodeHelper.equals(a, b,
                             (lA, lB) -> labelMap.get(lA) == lB,
-                            // FIXME:
+                            // FIXME: this is exact local match
                             (tA, tB) -> labelMap.get(tA.first) == tB.first && labelMap.get(tA.second) == tB.second && Objects.equals(tA.third, tB.third)
                     )
     );
@@ -166,7 +166,7 @@ public class MethodDiffUtils {
             (a, b) ->
                     AnnotationNodeHelper.equals(a, b,
                             (lA, lB) -> labelMap.get(lA) == lB,
-                            // FIXME:
+                            // FIXME: this is exact local match
                             (tA, tB) -> labelMap.get(tA.first) == tB.first && labelMap.get(tA.second) == tB.second && Objects.equals(tA.third, tB.third)
                     )
     );
@@ -177,7 +177,7 @@ public class MethodDiffUtils {
             (a, b) ->
                     AnnotationNodeHelper.equals(a, b,
                             (lA, lB) -> labelMap.get(lA) == lB,
-                            // FIXME:
+                            // FIXME: this is exact local match
                             (tA, tB) -> labelMap.get(tA.first) == tB.first && labelMap.get(tA.second) == tB.second && Objects.equals(tA.third, tB.third)
                     )
     );
