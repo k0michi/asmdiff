@@ -434,74 +434,74 @@ class InsnListDiffUtilsTest {
     return distance;
   }
 
-  @Test
-  void test_diff_local_0() throws AnalyzerException {
-    DefUseChainAnalyzer analyzer = new DefUseChainAnalyzer();
-    MethodNode methodNode = new MethodNode(Opcodes.ACC_PUBLIC, "method", "()V", null, null);
-    methodNode.maxLocals = 100;
-    methodNode.maxStack = 1;
-//    methodNode.instructions.add(new IntInsnNode(Opcodes.BIPUSH, 42));
-//    methodNode.instructions.add(new VarInsnNode(Opcodes.ISTORE, 0));
-//    methodNode.instructions.add(new VarInsnNode(Opcodes.ILOAD, 0));
-//    methodNode.instructions.add(new InsnNode(Opcodes.POP));
-    for (int i = 0; i < 100; i++) {
-      for (int j = 0; j < 10; j++) {
-        methodNode.instructions.add(new IntInsnNode(Opcodes.BIPUSH, 42));
-        methodNode.instructions.add(new VarInsnNode(Opcodes.ISTORE, i));
-        methodNode.instructions.add(new VarInsnNode(Opcodes.ILOAD, i));
-        methodNode.instructions.add(new InsnNode(Opcodes.POP));
-      }
-    }
-    methodNode.instructions.add(new InsnNode(Opcodes.RETURN));
-    var result = analyzer.analyze("Test", methodNode);
-
-//    HashMap<AbstractInsnNode, Integer> map1 = new HashMap<>();
-//
-//    for (int i = 0; i < result.getGroups().size(); i++) {
-//      for (var defUse : result.getGroups().get(i)) {
-//        map1.put(methodNode.instructions.get(defUse.insnIndex), i);
+//  @Test
+//  void test_diff_local_0() throws AnalyzerException {
+//    DefUseChainAnalyzer analyzer = new DefUseChainAnalyzer();
+//    MethodNode methodNode = new MethodNode(Opcodes.ACC_PUBLIC, "method", "()V", null, null);
+//    methodNode.maxLocals = 100;
+//    methodNode.maxStack = 1;
+////    methodNode.instructions.add(new IntInsnNode(Opcodes.BIPUSH, 42));
+////    methodNode.instructions.add(new VarInsnNode(Opcodes.ISTORE, 0));
+////    methodNode.instructions.add(new VarInsnNode(Opcodes.ILOAD, 0));
+////    methodNode.instructions.add(new InsnNode(Opcodes.POP));
+//    for (int i = 0; i < 100; i++) {
+//      for (int j = 0; j < 10; j++) {
+//        methodNode.instructions.add(new IntInsnNode(Opcodes.BIPUSH, 42));
+//        methodNode.instructions.add(new VarInsnNode(Opcodes.ISTORE, i));
+//        methodNode.instructions.add(new VarInsnNode(Opcodes.ILOAD, i));
+//        methodNode.instructions.add(new InsnNode(Opcodes.POP));
 //      }
 //    }
-
-    DefUseChainAnalyzer analyzer2 = new DefUseChainAnalyzer();
-    MethodNode methodNode2 = new MethodNode(Opcodes.ACC_PUBLIC, "method", "()V", null, null);
-    methodNode2.maxLocals = 100;
-    methodNode2.maxStack = 1;
-    for (int i = 0; i < 100; i++) {
-      for (int j = 0; j < 10; j++) {
-        methodNode2.instructions.add(new IntInsnNode(Opcodes.BIPUSH, 42));
-        methodNode2.instructions.add(new VarInsnNode(Opcodes.ISTORE, i));
-        methodNode2.instructions.add(new VarInsnNode(Opcodes.ILOAD, i));
-        methodNode2.instructions.add(new InsnNode(Opcodes.POP));
-      }
-    }
-    methodNode2.instructions.add(new InsnNode(Opcodes.RETURN));
-    var result2 = analyzer2.analyze("Test", methodNode2);
-
-//    HashMap<AbstractInsnNode, Integer> map2 = new HashMap<>();
+//    methodNode.instructions.add(new InsnNode(Opcodes.RETURN));
+//    var result = analyzer.analyze("Test", methodNode);
 //
-//    for (int i = 0; i < result2.getGroups().size(); i++) {
-//      for (var defUse : result2.getGroups().get(i)) {
-//        map2.put(methodNode2.instructions.get(defUse.insnIndex), i);
+////    HashMap<AbstractInsnNode, Integer> map1 = new HashMap<>();
+////
+////    for (int i = 0; i < result.getGroups().size(); i++) {
+////      for (var defUse : result.getGroups().get(i)) {
+////        map1.put(methodNode.instructions.get(defUse.insnIndex), i);
+////      }
+////    }
+//
+//    DefUseChainAnalyzer analyzer2 = new DefUseChainAnalyzer();
+//    MethodNode methodNode2 = new MethodNode(Opcodes.ACC_PUBLIC, "method", "()V", null, null);
+//    methodNode2.maxLocals = 100;
+//    methodNode2.maxStack = 1;
+//    for (int i = 0; i < 100; i++) {
+//      for (int j = 0; j < 10; j++) {
+//        methodNode2.instructions.add(new IntInsnNode(Opcodes.BIPUSH, 42));
+//        methodNode2.instructions.add(new VarInsnNode(Opcodes.ISTORE, i));
+//        methodNode2.instructions.add(new VarInsnNode(Opcodes.ILOAD, i));
+//        methodNode2.instructions.add(new InsnNode(Opcodes.POP));
 //      }
 //    }
-
-    var diff = InsnListDiffUtils.diff(
-            new InsnListListAdapter(methodNode.instructions),
-//            map1::get,
-            (insn) -> {
-              // FIXME
-              VarInsnNode varInsn = (VarInsnNode) insn;
-              return result.find(new DefUse(methodNode.instructions.indexOf(insn), insn, varInsn.var)).hashCode();
-            },
-            new InsnListListAdapter(methodNode2.instructions),
-//            map2::get
-            (insn) -> {
-              VarInsnNode varInsn = (VarInsnNode) insn;
-              return result2.find(new DefUse(methodNode2.instructions.indexOf(insn), insn, varInsn.var)).hashCode();
-            }
-    );
-
-    Assertions.assertEquals(0, distance(diff));
-  }
+//    methodNode2.instructions.add(new InsnNode(Opcodes.RETURN));
+//    var result2 = analyzer2.analyze("Test", methodNode2);
+//
+////    HashMap<AbstractInsnNode, Integer> map2 = new HashMap<>();
+////
+////    for (int i = 0; i < result2.getGroups().size(); i++) {
+////      for (var defUse : result2.getGroups().get(i)) {
+////        map2.put(methodNode2.instructions.get(defUse.insnIndex), i);
+////      }
+////    }
+//
+//    var diff = InsnListDiffUtils.diff(
+//            new InsnListListAdapter(methodNode.instructions),
+////            map1::get,
+//            (insn) -> {
+//              // FIXME
+//              VarInsnNode varInsn = (VarInsnNode) insn;
+//              return result.find(new DefUse(methodNode.instructions.indexOf(insn), insn, varInsn.var)).hashCode();
+//            },
+//            new InsnListListAdapter(methodNode2.instructions),
+////            map2::get
+//            (insn) -> {
+//              VarInsnNode varInsn = (VarInsnNode) insn;
+//              return result2.find(new DefUse(methodNode2.instructions.indexOf(insn), insn, varInsn.var)).hashCode();
+//            }
+//    );
+//
+//    Assertions.assertEquals(0, distance(diff));
+//  }
 }

@@ -2,6 +2,7 @@ package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.heuristic.Heuristic;
 import com.koyomiji.asmweaver.heuristic.MyersFuzzyDistanceHeuristic;
+import com.koyomiji.asmweaver.util.BiHashMap;
 import com.koyomiji.asmweaver.util.BiPersistentHashMap;
 import com.koyomiji.asmweaver.util.PeekableIterator;
 import com.koyomiji.asmweaver.util.PersistentHashMap;
@@ -579,8 +580,7 @@ public class InsnListDiffUtils {
         List<LabelNode> targetsA = getLabelTargets(insnA);
         List<LabelNode> targetsB = getLabelTargets(insnB);
 
-        // TODO: local
-        boolean contentMatch = AbstractInsnNodeHelper.equalsIgnoreLabelsIgnoreLocals(insnA, insnB);
+        boolean contentMatch = AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(insnA, insnB);
 
         // Having different number of target labels implies mismatch
         if (targetsA.size() != targetsB.size()) {
@@ -608,7 +608,9 @@ public class InsnListDiffUtils {
           PersistentHashMap<Integer, Integer> newDuAToB = current.duAToB;
           PersistentHashMap<Integer, Integer> newDuBToA = current.duBToA;
 
-          // fixme
+          // fixme: iinc
+          /* Disabled*/
+          /*
           if (insnA instanceof VarInsnNode && insnB instanceof VarInsnNode) {
             int varA = ((VarInsnNode) insnA).var;
             int varB = ((VarInsnNode) insnB).var;
@@ -632,11 +634,10 @@ public class InsnListDiffUtils {
               break match;
             }
 
-//            newDuAToB.put(duChainA, varB);
-//            newDuBToA.put(duChainB, varA);
             newDuAToB = newDuAToB.put(duChainA, varB);
             newDuBToA = newDuBToA.put(duChainB, varA);
           }
+           */
 
           var state = State.create(
                   nextRealIdxA, nextRealIdxB,
