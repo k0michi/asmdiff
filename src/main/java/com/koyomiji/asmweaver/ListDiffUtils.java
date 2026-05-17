@@ -240,22 +240,12 @@ public class ListDiffUtils {
 
 
     for (ListDiff.Operation<T> o : ins2) {
-//      if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.AFTER) result.add(o);
       if (o.type == ListDiff.Operation.Type.INSERT && o.mode == ListDiff.Operation.Mode.AFTER) result.add(o);
     }
-//    for (InsnListDiff.Operation o : ins1) {
-//      if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.AFTER) result.add(o);
-//    }
     for (ListDiff.Operation<T> o : ins1) {
       if (o.type == ListDiff.Operation.Type.INSERT && o.mode == ListDiff.Operation.Mode.AFTER) result.add(o);
     }
 
-//    for (InsnListDiff.Operation o : ins1) {
-//      if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BETWEEN) result.add(o);
-//    }
-//    for (InsnListDiff.Operation o : ins2) {
-//      if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BETWEEN) result.add(o);
-//    }
     for (ListDiff.Operation<T> o : ins1) {
       if (o.type == ListDiff.Operation.Type.INSERT && o.mode == ListDiff.Operation.Mode.BETWEEN) result.add(o);
     }
@@ -263,12 +253,6 @@ public class ListDiffUtils {
       if (o.type == ListDiff.Operation.Type.INSERT && o.mode == ListDiff.Operation.Mode.BETWEEN) result.add(o);
     }
 
-//    for (InsnListDiff.Operation o : ins1) {
-//      if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BEFORE) result.add(o);
-//    }
-//    for (InsnListDiff.Operation o : ins2) {
-//      if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BEFORE) result.add(o);
-//    }
     for (ListDiff.Operation<T> o : ins1) {
       if (o.type == ListDiff.Operation.Type.INSERT && o.mode == ListDiff.Operation.Mode.BEFORE) result.add(o);
     }
@@ -308,26 +292,20 @@ public class ListDiffUtils {
     List<ListDiff.Operation<T>> ins2 = new ArrayList<>();
 
     while (itP.hasNext()) {
-//      InsnListDiff.Operation opP = itP.next();
       ListDiff.Operation<T> opP = itP.next();
 
-//      if (opP.type == InsnListDiff.Operation.Type.INSERT) {
       if (opP.type == ListDiff.Operation.Type.INSERT) {
         ins2.addAll(collectInsertions(itQ));
 
-//        InsnListDiff.Operation opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
         ListDiff.Operation<T> opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
 
-//        if (!compare.test(opP.operand2, opQ.operand1)) {
         if (!compare2.test(opP.operand2, opQ.operand1)) {
           throw new IllegalDiffException("Composition Error: Operand mismatch at B.");
         }
 
-//        if (opQ.type == InsnListDiff.Operation.Type.MATCH) {
         if (opQ.type == ListDiff.Operation.Type.MATCH) {
           ins1.add(opP);
         }
-//      } else if (opP.type == InsnListDiff.Operation.Type.DELETE) {
       } else if (opP.type == ListDiff.Operation.Type.DELETE) {
         result.addAll(mergeInsertionSlot(ins1, ins2));
         ins1.clear();
@@ -337,13 +315,8 @@ public class ListDiffUtils {
       } else { // MATCH
         ins2.addAll(collectInsertions(itQ));
 
-//        InsnListDiff.Operation opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
         ListDiff.Operation<T> opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
 
-        // FIXME: should not ignore
-//        if (!compareInsnsIgnoreLabelsIgnoreLocals(opP.operand, opQ.operand)) {
-//          throw new IllegalDiffException("Composition Error: Operand mismatch at C.");
-//        }
         if (!compare2.test(opP.operand2, opQ.operand1)) {
           throw new IllegalDiffException("Composition Error: Operand mismatch at C.");
         }
@@ -352,7 +325,6 @@ public class ListDiffUtils {
         ins1.clear();
         ins2.clear();
 
-//        result.add(new InsnListDiff.Operation(opQ.type, opQ.mode, opP.operand));
         result.add(new ListDiff.Operation<>(opQ.type, opQ.mode, opP.operand1, opQ.operand2));
       }
     }
@@ -386,8 +358,6 @@ public class ListDiffUtils {
               ListDiff.Operation.Mode.values()[in.readInt()],
               NullableHelper.read(in, elementReader),
               NullableHelper.read(in, elementReader)
-//              elementReader.read(in),
-//              elementReader.read(in)
       );
 
       operations.add(operation);
