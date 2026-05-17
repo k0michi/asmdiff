@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 import com.koyomiji.asmweaver.io.DataStreamHelper;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.tree.LabelNode;
@@ -52,7 +53,7 @@ public class TryCatchBlockNodeHelper {
             .build();
   }
 
-  public static void write(TryCatchBlockNode node, DataOutputStream out, Function<LabelNode, Integer> labelToIndex) throws IOException {
+  public static void write(TryCatchBlockNode node, CustomDataOutput out, Function<LabelNode, Integer> labelToIndex) throws IOException {
     out.writeInt(labelToIndex.apply(node.start));
     out.writeInt(labelToIndex.apply(node.end));
     out.writeInt(labelToIndex.apply(node.handler));

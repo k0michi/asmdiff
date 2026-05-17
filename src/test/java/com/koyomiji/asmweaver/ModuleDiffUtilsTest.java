@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.BinaryReader;
+import com.koyomiji.asmweaver.io.BinaryWriter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.tree.ModuleNode;
@@ -48,7 +49,7 @@ public class ModuleDiffUtilsTest {
         var diff = ModuleDiffUtils.diff(unique.get(i), unique.get(j));
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(baos);
+        BinaryWriter dos = new BinaryWriter(baos);
         ModuleDiffUtils.write(diff, dos);
 
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());

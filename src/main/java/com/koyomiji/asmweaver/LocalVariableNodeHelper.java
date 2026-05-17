@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 import com.koyomiji.asmweaver.io.DataStreamHelper;
 import com.koyomiji.asmweaver.util.tuple.Triplet;
 import org.objectweb.asm.tree.LabelNode;
@@ -47,7 +48,7 @@ public class LocalVariableNodeHelper {
     return Objects.hash(node.name, node.desc, node.signature, node.start, node.end, node.index);
   }
 
-  public static void write(LocalVariableNode node, DataOutputStream out, Function<LabelNode, Integer> labelToIndex) throws IOException {
+  public static void write(LocalVariableNode node, CustomDataOutput out, Function<LabelNode, Integer> labelToIndex) throws IOException {
     out.writeUTF(node.name);
     out.writeUTF(node.desc);
     DataStreamHelper.writeUTFNullable(out, node.signature);

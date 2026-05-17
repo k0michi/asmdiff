@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 import com.koyomiji.asmweaver.util.tuple.Triplet;
 import org.objectweb.asm.TypePath;
 import org.objectweb.asm.tree.AnnotationNode;
@@ -161,13 +162,13 @@ public class AnnotationNodeHelper {
     ARRAY
   }
 
-  public static void write(AnnotationNode node, DataOutputStream out) throws IOException {
+  public static void write(AnnotationNode node, CustomDataOutput out) throws IOException {
     write(node, out, label -> {
       throw new UnsupportedOperationException("Label index provider is required for writing annotations with labels");
     });
   }
 
-  public static void write(AnnotationNode node, DataOutputStream out, Function<LabelNode, Integer> labelIndexProvider) throws IOException {
+  public static void write(AnnotationNode node, CustomDataOutput out, Function<LabelNode, Integer> labelIndexProvider) throws IOException {
     out.writeUTF(node.desc);
     List<Object> values = node.values;
 
@@ -203,11 +204,11 @@ public class AnnotationNodeHelper {
     }
   }
 
-  public static void writeValue(Object value, DataOutputStream out) throws IOException {
+  public static void writeValue(Object value, CustomDataOutput out) throws IOException {
     writeValue(value, out, FunctionHelper.throwIfInvokedFunction());
   }
 
-  public static void writeValue(Object value, DataOutputStream out, Function<LabelNode, Integer> labelIndexProvider) throws IOException {
+  public static void writeValue(Object value, CustomDataOutput out, Function<LabelNode, Integer> labelIndexProvider) throws IOException {
     if (value instanceof String) {
       out.writeByte(ValueType.STRING.ordinal());
       out.writeUTF((String) value);

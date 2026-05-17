@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Type;
 
@@ -9,7 +10,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class ConstantHelper {
-  public static void write(Object arg, DataOutputStream out) throws IOException {
+  public static void write(Object arg, CustomDataOutput out) throws IOException {
     if (arg instanceof Integer) {
       out.writeInt(0);
       out.writeInt((Integer) arg);

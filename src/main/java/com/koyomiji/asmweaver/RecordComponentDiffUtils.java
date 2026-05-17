@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 import org.objectweb.asm.tree.RecordComponentNode;
 
 import java.io.DataInput;
@@ -63,7 +64,7 @@ public class RecordComponentDiffUtils {
     return patchedNode;
   }
 
-  public static void write(RecordComponentDiff diff, DataOutputStream out) throws IOException {
+  public static void write(RecordComponentDiff diff, CustomDataOutput out) throws IOException {
     ListDiffUtils.write(diff.name, out, (e, s) -> s.writeUTF(e));
     ListDiffUtils.write(diff.descriptor, out, (e, s) -> s.writeUTF(e));
     ListDiffUtils.write(diff.signature, out, (e, s) -> s.writeUTF(e));

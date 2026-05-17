@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 import com.koyomiji.asmweaver.util.PeekableIterator;
 import com.koyomiji.asmweaver.util.tuple.Pair;
 
@@ -364,7 +365,7 @@ public class ListDiffUtils {
     return new ListDiff<>(result);
   }
 
-  public static <T> void write(ListDiff<T> diff, DataOutputStream out, ListHelper.ElementWriter<T> elementWriter) throws IOException {
+  public static <T> void write(ListDiff<T> diff, CustomDataOutput out, ListHelper.ElementWriter<T> elementWriter) throws IOException {
     out.writeInt(diff.operations.size());
 
     for (ListDiff.Operation<T> op : diff.operations) {

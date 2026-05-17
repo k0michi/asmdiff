@@ -12,7 +12,7 @@ public class DataStreamHelperTest {
   @Test
   void test_readUTFNullable() throws java.io.IOException {
     ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-    DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutputStream);
+    BinaryWriter dataOutputStream = new BinaryWriter(byteArrayOutputStream);
 
     DataStreamHelper.writeUTFNullable(dataOutputStream, "Hello, World!");
     DataStreamHelper.writeUTFNullable(dataOutputStream, null);

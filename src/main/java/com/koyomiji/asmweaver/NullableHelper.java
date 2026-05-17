@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -15,7 +16,7 @@ public class NullableHelper {
     return mapper.apply(value);
   }
 
-  public static <T> void write(T value, DataOutputStream out, ListHelper.ElementWriter<T> writer) throws IOException {
+  public static <T> void write(T value, CustomDataOutput out, ListHelper.ElementWriter<T> writer) throws IOException {
     if (value == null) {
       out.writeBoolean(false);
       return;

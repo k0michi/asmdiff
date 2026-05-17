@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 import com.koyomiji.asmweaver.io.DataStreamHelper;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.tree.FieldNode;
@@ -64,7 +65,7 @@ public class FieldNodeHelper {
             ).build();
   }
 
-  public static void write(FieldNode node, DataOutputStream out) throws IOException {
+  public static void write(FieldNode node, CustomDataOutput out) throws IOException {
     out.writeInt(node.access);
     out.writeUTF(node.name);
     out.writeUTF(node.desc);

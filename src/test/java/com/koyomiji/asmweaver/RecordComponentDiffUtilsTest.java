@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.BinaryReader;
+import com.koyomiji.asmweaver.io.BinaryWriter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -46,7 +47,7 @@ class RecordComponentDiffUtilsTest {
         var diff = RecordComponentDiffUtils.diff(unique.get(i), unique.get(j));
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(baos);
+        BinaryWriter dos = new BinaryWriter(baos);
         RecordComponentDiffUtils.write(diff, dos);
 
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());

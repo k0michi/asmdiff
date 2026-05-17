@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 
 import java.io.DataInputStream;
@@ -112,14 +113,14 @@ public class ListHelper {
   }
 
   public interface ElementWriter<T> {
-    void write(T element, DataOutputStream stream)throws IOException ;
+    void write(T element, CustomDataOutput stream)throws IOException ;
   }
 
   public interface ElementReader<T> {
     T read(CustomDataInput stream) throws IOException;
   }
 
-  public static <T> void write(List<T> list, DataOutputStream stream, ElementWriter<T> elementWriter) throws IOException {
+  public static <T> void write(List<T> list, CustomDataOutput stream, ElementWriter<T> elementWriter) throws IOException {
     stream.writeInt(list.size());
     for (T element : list) {
       elementWriter.write(element, stream);

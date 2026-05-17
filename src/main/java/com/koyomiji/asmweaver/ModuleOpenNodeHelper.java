@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.tree.ModuleOpenNode;
 
@@ -43,7 +44,7 @@ public class ModuleOpenNodeHelper {
             ).build();
   }
 
-  public static void write(ModuleOpenNode node, DataOutputStream out) throws IOException {
+  public static void write(ModuleOpenNode node, CustomDataOutput out) throws IOException {
     out.writeUTF(node.packaze);
     out.writeInt(node.access);
     ListHelper.write(

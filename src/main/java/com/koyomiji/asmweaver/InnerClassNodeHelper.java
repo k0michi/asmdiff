@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 import com.koyomiji.asmweaver.io.DataStreamHelper;
 import org.objectweb.asm.tree.InnerClassNode;
 
@@ -33,7 +34,7 @@ public class InnerClassNodeHelper {
     return Objects.hash(node.name, node.outerName, node.innerName, node.access);
   }
 
-  public static void write(InnerClassNode node, DataOutputStream out) throws IOException {
+  public static void write(InnerClassNode node, CustomDataOutput out) throws IOException {
     out.writeUTF(node.name);
     DataStreamHelper.writeUTFNullable(out, node.outerName);
     DataStreamHelper.writeUTFNullable(out, node.innerName);

@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 import com.koyomiji.asmweaver.io.DataStreamHelper;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.TypePath;
@@ -56,7 +57,7 @@ public class TypePathHelper {
     return builder.build();
   }
 
-  public static void write(TypePath typePath, DataOutputStream stream) throws IOException {
+  public static void write(TypePath typePath, CustomDataOutput stream) throws IOException {
     DataStreamHelper.writeUTFNullable(stream,
             NullableHelper.map(typePath, TypePath::toString)
     );

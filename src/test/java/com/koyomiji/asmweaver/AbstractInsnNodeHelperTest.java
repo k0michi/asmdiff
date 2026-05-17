@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.BinaryReader;
+import com.koyomiji.asmweaver.io.BinaryWriter;
 import com.koyomiji.asmweaver.util.AutoIncrementBiHashMap;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -96,7 +97,7 @@ class AbstractInsnNodeHelperTest {
   void test_readWrite() throws IOException {
     for (int i = 0; i < UNIQUE_NODES.size(); i++) {
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
-      DataOutputStream dos = new DataOutputStream(baos);
+      BinaryWriter dos = new BinaryWriter(baos);
       AutoIncrementBiHashMap<LabelNode> labelToIndex = new AutoIncrementBiHashMap<>();
       AbstractInsnNodeHelper.write(UNIQUE_NODES.get(i), dos, labelToIndex::get);
 

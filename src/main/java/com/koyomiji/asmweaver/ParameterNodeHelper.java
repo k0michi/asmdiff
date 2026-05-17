@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 import com.koyomiji.asmweaver.io.DataStreamHelper;
 import org.objectweb.asm.tree.ParameterNode;
 
@@ -40,7 +41,7 @@ public class ParameterNodeHelper {
     return Objects.hash(node.name, node.access);
   }
 
-  public static void write(ParameterNode node, DataOutputStream out) throws IOException {
+  public static void write(ParameterNode node, CustomDataOutput out) throws IOException {
     DataStreamHelper.writeUTFNullable(out, node.name);
     out.writeInt(node.access);
   }

@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.tree.ModuleProvideNode;
 
@@ -41,7 +42,7 @@ public class ModuleProvideNodeHelper {
             ).build();
   }
 
-  public static void write(ModuleProvideNode node, DataOutputStream out) throws IOException {
+  public static void write(ModuleProvideNode node, CustomDataOutput out) throws IOException {
     out.writeUTF(node.service);
     ListHelper.write(
             // TODO: null check not necessary?

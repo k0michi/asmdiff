@@ -14,7 +14,7 @@ public class DataStreamHelper {
     }
   }
 
-  public static void writeUTFNullable(DataOutputStream stream, String value) throws IOException {
+  public static void writeUTFNullable(CustomDataOutput stream, String value) throws IOException {
     if (value == null) {
       stream.writeBoolean(false);
     } else {

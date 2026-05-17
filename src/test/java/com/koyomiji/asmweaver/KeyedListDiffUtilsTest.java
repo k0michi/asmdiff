@@ -1,7 +1,9 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.BinaryReader;
+import com.koyomiji.asmweaver.io.BinaryWriter;
 import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -62,7 +64,7 @@ class KeyedListDiffUtilsTest {
     return new KeyedObjectDiff(ListDiffUtils.invert(diff.value));
   }
 
-  private void writeDiff(KeyedObjectDiff diff, DataOutputStream out) throws IOException {
+  private void writeDiff(KeyedObjectDiff diff, CustomDataOutput out) throws IOException {
     ListDiffUtils.write(diff.value, out, (v, s) -> s.writeUTF(v));
   }
 
@@ -248,7 +250,7 @@ class KeyedListDiffUtilsTest {
     );
 
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    DataOutputStream dos = new DataOutputStream(baos);
+    BinaryWriter dos = new BinaryWriter(baos);
     KeyedListDiffUtils.write(
             diff,
             dos,

@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 import org.objectweb.asm.tree.ModuleNode;
 
 import java.io.DataInput;
@@ -97,7 +98,7 @@ public class ModuleDiffUtils {
     return patchedNode;
   }
 
-  public static void write(ModuleDiff diff, DataOutputStream out) throws IOException {
+  public static void write(ModuleDiff diff, CustomDataOutput out) throws IOException {
     ListDiffUtils.write(diff.name, out, (e, s) -> s.writeUTF(e));
     ListDiffUtils.write(diff.access, out, (e, s) -> s.writeInt(e));
     ListDiffUtils.write(diff.version, out, (e, s) -> s.writeUTF(e));

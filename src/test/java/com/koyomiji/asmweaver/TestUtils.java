@@ -1,14 +1,15 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.BinaryReader;
+import com.koyomiji.asmweaver.io.BinaryWriter;
 import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 import org.junit.jupiter.api.Assertions;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.function.BiPredicate;
@@ -78,7 +79,7 @@ public class TestUtils {
 
   @FunctionalInterface
   public interface Writer<T> {
-    void write(T value, DataOutputStream out) throws IOException;
+    void write(T value, CustomDataOutput out) throws IOException;
   }
 
   @FunctionalInterface
@@ -93,9 +94,7 @@ public class TestUtils {
       T original = nodes.get(i);
 
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
-      try (DataOutputStream out = new DataOutputStream(baos)) {
-        writer.write(original, out);
-      }
+      writer.write(original, new BinaryWriter(baos));
 
       ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
       T restored;

@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.BinaryReader;
+import com.koyomiji.asmweaver.io.BinaryWriter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.tree.InnerClassNode;
@@ -57,9 +58,8 @@ class InnerClassNodeHelperTest {
 
     for (int i = 0; i < uniqueNodes.size(); i++) {
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
-      DataOutputStream out = new DataOutputStream(baos);
+      BinaryWriter out = new BinaryWriter(baos);
       InnerClassNodeHelper.write(uniqueNodes.get(i), out);
-      out.close();
 
       ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
       BinaryReader in = new BinaryReader(bais);

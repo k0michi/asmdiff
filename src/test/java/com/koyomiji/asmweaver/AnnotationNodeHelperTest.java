@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.BinaryReader;
+import com.koyomiji.asmweaver.io.BinaryWriter;
 import com.koyomiji.asmweaver.util.AutoIncrementBiHashMap;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -168,9 +169,8 @@ class AnnotationNodeHelperTest {
     AutoIncrementBiHashMap<LabelNode> labelToIndex = new AutoIncrementBiHashMap<>();
 
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    DataOutputStream dos = new DataOutputStream(baos);
+    BinaryWriter dos = new BinaryWriter(baos);
     AnnotationNodeHelper.write(node, dos, labelToIndex::get);
-    dos.flush();
 
     byte[] data = baos.toByteArray();
     ByteArrayInputStream bais = new ByteArrayInputStream(data);

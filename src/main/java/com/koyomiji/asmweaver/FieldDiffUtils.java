@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 import com.koyomiji.asmweaver.io.DataStreamHelper;
 import org.objectweb.asm.tree.FieldNode;
 
@@ -81,7 +82,7 @@ public class FieldDiffUtils {
     return patchedNode;
   }
 
-  public static void write(FieldDiff diff, DataOutputStream out) throws IOException {
+  public static void write(FieldDiff diff, CustomDataOutput out) throws IOException {
     ListDiffUtils.write(diff.access, out, (d, out2) -> out2.writeInt(d));
     ListDiffUtils.write(diff.name, out, (d, out2) -> out2.writeUTF(d));
     ListDiffUtils.write(diff.desc, out, (d, out2) -> out2.writeUTF(d));

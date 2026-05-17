@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 import com.koyomiji.asmweaver.io.DataStreamHelper;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.tree.RecordComponentNode;
@@ -61,7 +62,7 @@ public class RecordComponentNodeHelper {
             ).build();
   }
 
-  public static void write(RecordComponentNode node, DataOutputStream out) throws IOException {
+  public static void write(RecordComponentNode node, CustomDataOutput out) throws IOException {
     out.writeUTF(node.name);
     out.writeUTF(node.descriptor);
     DataStreamHelper.writeUTFNullable(out, node.signature);

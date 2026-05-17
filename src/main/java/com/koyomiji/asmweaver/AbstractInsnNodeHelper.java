@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 import org.objectweb.asm.tree.*;
 
 import java.io.DataInputStream;
@@ -334,7 +335,7 @@ public class AbstractInsnNodeHelper {
     return Objects.hash(node);
   }
 
-  public static void write(AbstractInsnNode node, DataOutputStream out, Function<LabelNode, Integer> labelToIndex) throws IOException {
+  public static void write(AbstractInsnNode node, CustomDataOutput out, Function<LabelNode, Integer> labelToIndex) throws IOException {
     out.writeInt(node.getOpcode());
     out.writeInt(node.getType());
     ListHelper.write(
@@ -444,7 +445,7 @@ public class AbstractInsnNodeHelper {
     }
   }
 
-  private static void writeFrameValue(Object value, DataOutputStream out, Function<LabelNode, Integer> labelToIndex) throws IOException {
+  private static void writeFrameValue(Object value, CustomDataOutput out, Function<LabelNode, Integer> labelToIndex) throws IOException {
     if (value instanceof Integer) {
       out.writeInt(0);
       out.writeInt((Integer) value);

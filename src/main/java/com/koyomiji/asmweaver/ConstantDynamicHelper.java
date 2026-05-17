@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 import org.objectweb.asm.ConstantDynamic;
 import org.objectweb.asm.Handle;
 
@@ -11,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ConstantDynamicHelper {
-  public static void write(ConstantDynamic node, DataOutputStream out) throws IOException {
+  public static void write(ConstantDynamic node, CustomDataOutput out) throws IOException {
     out.writeUTF(node.getName());
     out.writeUTF(node.getDescriptor());
     HandleHelper.write(node.getBootstrapMethod(), out);

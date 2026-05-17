@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 import com.koyomiji.asmweaver.io.DataStreamHelper;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.tree.ModuleNode;
@@ -68,7 +69,7 @@ public class ModuleNodeHelper {
             .build();
   }
 
-  public static void write(ModuleNode node, DataOutputStream out) throws IOException {
+  public static void write(ModuleNode node, CustomDataOutput out) throws IOException {
     out.writeUTF(node.name);
     out.writeInt(node.access);
     DataStreamHelper.writeUTFNullable(out, node.version);

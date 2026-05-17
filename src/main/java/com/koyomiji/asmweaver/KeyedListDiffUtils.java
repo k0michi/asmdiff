@@ -1,6 +1,7 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -115,7 +116,7 @@ public class KeyedListDiffUtils {
 
   public static <Key, Value, Diff extends IDiff> void write(
           KeyedListDiff<Key, Value, Diff> diff,
-          DataOutputStream out,
+          CustomDataOutput out,
           ListHelper.ElementWriter<Key> keyWriter,
           ListHelper.ElementWriter<Value> valueWriter,
           ListHelper.ElementWriter<Diff> diffWriter
