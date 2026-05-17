@@ -224,10 +224,6 @@ public class ListDiffUtils {
     return patched.get(0);
   }
 
-  private static <T> boolean isInsert(ListDiff.Operation<T> op) {
-    return op.type == ListDiff.Operation.Type.INSERT;
-  }
-
   private static <T> List<ListDiff.Operation<T>> mergeInsertionSlot(List<ListDiff.Operation<T>> ins1, List<ListDiff.Operation<T>> ins2) throws ConflictException {
     List<ListDiff.Operation<T>> result = new ArrayList<>();
 
