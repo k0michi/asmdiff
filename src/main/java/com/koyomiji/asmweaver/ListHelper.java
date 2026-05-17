@@ -8,6 +8,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiPredicate;
@@ -33,7 +34,7 @@ public class ListHelper {
 
   // TODO: rename
   public static <T> List<T> ofNullableArray(T[] array) {
-    return array != null ? List.of(array) : List.of();
+    return array != null ? Arrays.asList(array) : List.of();
   }
 
   public static <T> boolean equals(List<T> a, List<T> b, BiPredicate<T, T> compare) {

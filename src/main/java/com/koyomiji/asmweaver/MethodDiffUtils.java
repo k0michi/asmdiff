@@ -48,20 +48,22 @@ public class MethodDiffUtils {
     diff.visibleAnnotableParameterCount = ListDiffUtils.diff(ListHelper.ofNullable(node1.visibleAnnotableParameterCount), ListHelper.ofNullable(node2.visibleAnnotableParameterCount), Integer::equals);
 
     {
-      List<List<AnnotationNode>> vpa1 = ListHelper.ofNullableArray(node1.visibleParameterAnnotations);
-      List<List<AnnotationNode>> vpa2 = ListHelper.ofNullableArray(node2.visibleParameterAnnotations);
-      Map<AnnotationNode, Integer> vpaIndexMap = new HashMap<>();
+      List<List<AnnotationNode>> vpa1 = ListHelper.map(
+              ListHelper.ofNullableArray(node1.visibleParameterAnnotations),
+              ListHelper::nullToEmpty
+      );
+      List<List<AnnotationNode>> vpa2 = ListHelper.map(
+              ListHelper.ofNullableArray(node2.visibleParameterAnnotations),
+              ListHelper::nullToEmpty
+      );
+      Map<List<AnnotationNode>, Integer> vpaIndexMap = new HashMap<>();
 
       for (int i = 0; i < vpa1.size(); i++) {
-        for (AnnotationNode an : vpa1.get(i)) {
-          vpaIndexMap.put(an, i);
-        }
+        vpaIndexMap.put(vpa1.get(i), i);
       }
 
       for (int i = 0; i < vpa2.size(); i++) {
-        for (AnnotationNode an : vpa2.get(i)) {
-          vpaIndexMap.put(an, i);
-        }
+        vpaIndexMap.put(vpa2.get(i), i);
       }
 
       diff.visibleParameterAnnotations = KeyedListDiffUtils.diff(vpa1, vpa2, vpaIndexMap::get, (l1, l2) -> ListDiffUtils.diff(l1, l2, AnnotationNodeHelper::equals));
@@ -70,8 +72,14 @@ public class MethodDiffUtils {
     diff.invisibleAnnotableParameterCount = ListDiffUtils.diff(ListHelper.ofNullable(node1.invisibleAnnotableParameterCount), ListHelper.ofNullable(node2.invisibleAnnotableParameterCount), Integer::equals);
 
     {
-      List<List<AnnotationNode>> ipa1 = ListHelper.ofNullableArray(node1.invisibleParameterAnnotations);
-      List<List<AnnotationNode>> ipa2 = ListHelper.ofNullableArray(node2.invisibleParameterAnnotations);
+      List<List<AnnotationNode>> ipa1 = ListHelper.map(
+              ListHelper.ofNullableArray(node1.invisibleParameterAnnotations),
+              ListHelper::nullToEmpty
+      );
+      List<List<AnnotationNode>> ipa2 = ListHelper.map(
+              ListHelper.ofNullableArray(node2.invisibleParameterAnnotations),
+              ListHelper::nullToEmpty
+      );
 
       Map<AnnotationNode, Integer> ipaIndexMap = new HashMap<>();
 
@@ -155,8 +163,8 @@ public class MethodDiffUtils {
     );
 
     diff.localVariables = ListDiffUtils.diff(
-            node1.localVariables,
-            node2.localVariables,
+            ListHelper.nullToEmpty(node1.localVariables),
+            ListHelper.nullToEmpty(node2.localVariables),
             (a, b) ->
                     LocalVariableNodeHelper.equals(a, b,
                             (lA, lB) -> labelMap.get(lA) == lB,
