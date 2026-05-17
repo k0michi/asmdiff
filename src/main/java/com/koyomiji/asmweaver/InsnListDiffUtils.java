@@ -45,6 +45,7 @@ public class InsnListDiffUtils {
    * @param q
    * @throws ConflictException
    */
+  // FIXME: 左でdelete、右でinsertされている時はConflictにするべき
   public static Pair<InsnListDiff, InsnListDiff> commute(InsnListDiff p, InsnListDiff q) throws ConflictException {
     List<InsnListDiff.Operation> qPrimeOps = new ArrayList<>();
     List<InsnListDiff.Operation> pPrimeOps = new ArrayList<>();
