@@ -3,10 +3,16 @@ package com.koyomiji.asmweaver;
 import com.koyomiji.asmweaver.analysis.DefUse;
 import com.koyomiji.asmweaver.analysis.DefUseChainAnalyzer;
 import com.koyomiji.asmweaver.util.UnionFind;
-import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.AnnotationNode;
+import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 public class MethodDiffUtils {
   public static MethodDiff diff(MethodNode node1, MethodNode node2) {
@@ -138,7 +144,7 @@ public class MethodDiffUtils {
 //      }
 //    }
 
-    Map<LabelNode, LabelNode> labelMap = extractLabelMap(node1.instructions, node2.instructions, diff.instructions);
+    Map<LabelNode, LabelNode> labelMap = InsnListDiffUtils.extractLabelMap(node1.instructions, node2.instructions, diff.instructions);
 //    List<Pair<Integer, Integer>> locals1 = new ArrayList<>();
 //    List<Pair<Integer, Integer>> locals2 = new ArrayList<>();
 
@@ -182,32 +188,5 @@ public class MethodDiffUtils {
     );
 
     return diff;
-  }
-
-  private static Map<LabelNode, LabelNode> extractLabelMap(InsnList list1, InsnList list2, InsnListDiff diff) {
-    int i = 0, j = 0;
-    Map<LabelNode, LabelNode> labelMap = new HashMap<>();
-
-    for (InsnListDiff.Operation op : diff.operations) {
-      switch (op.type) {
-        case MATCH:
-          List<LabelNode> labels1 = AbstractInsnNodeHelper.getLabelTargets(list1.get(i));
-          List<LabelNode> labels2 = AbstractInsnNodeHelper.getLabelTargets(list2.get(j));
-          for (int k = 0; k < Math.min(labels1.size(), labels2.size()); k++) {
-            labelMap.put(labels1.get(k), labels2.get(k));
-          }
-          i++;
-          j++;
-          break;
-        case DELETE:
-          i++;
-          break;
-        case INSERT:
-          j++;
-          break;
-      }
-    }
-
-    return labelMap;
   }
 }

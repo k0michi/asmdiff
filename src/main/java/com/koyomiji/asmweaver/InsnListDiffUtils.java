@@ -251,6 +251,33 @@ public class InsnListDiffUtils {
     return new InsnListDiff(result);
   }
 
+  public static Map<LabelNode, LabelNode> extractLabelMap(InsnList list1, InsnList list2, InsnListDiff diff) {
+    int i = 0, j = 0;
+    Map<LabelNode, LabelNode> labelMap = new HashMap<>();
+
+    for (InsnListDiff.Operation op : diff.operations) {
+      switch (op.type) {
+        case MATCH:
+          List<LabelNode> labels1 = AbstractInsnNodeHelper.getLabelTargets(list1.get(i));
+          List<LabelNode> labels2 = AbstractInsnNodeHelper.getLabelTargets(list2.get(j));
+          for (int k = 0; k < Math.min(labels1.size(), labels2.size()); k++) {
+            labelMap.put(labels1.get(k), labels2.get(k));
+          }
+          i++;
+          j++;
+          break;
+        case DELETE:
+          i++;
+          break;
+        case INSERT:
+          j++;
+          break;
+      }
+    }
+
+    return labelMap;
+  }
+
   public static class State implements Comparable<State> {
     final int idxA;
     final int idxB;
