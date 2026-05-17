@@ -1,6 +1,5 @@
 package com.koyomiji.asmweaver.heuristic;
 
-import com.koyomiji.asmweaver.InsnListDiffUtils;
 import com.koyomiji.asmweaver.util.BiPersistentHashMap;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.LabelNode;
@@ -47,8 +46,8 @@ public class BigramHeuristic extends Heuristic {
       bigramDiffSum += Math.abs(countA - countB);
     }
 
-    // Bigramの差分合計 / 2 は編集距離の強力な下界となる
-    return Math.max(dist, (bigramDiffSum + 1) / 2);
+    int bigramMinDist = (bigramDiffSum + 2) / 3;
+    return Math.max(dist, bigramMinDist);
   }
 
   private int[] simplifyInsns(List<AbstractInsnNode> insns) {
