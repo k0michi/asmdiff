@@ -6,7 +6,9 @@ import com.koyomiji.asmweaver.util.BiPersistentHashMap;
 import com.koyomiji.asmweaver.util.PeekableIterator;
 import com.koyomiji.asmweaver.util.PersistentHashMap;
 import com.koyomiji.asmweaver.util.tuple.Pair;
-import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.InsnList;
+import org.objectweb.asm.tree.LabelNode;
 
 import java.util.*;
 import java.util.function.Function;
@@ -131,35 +133,8 @@ public class InsnListDiffUtils {
           List<InsnListDiff.Operation> ins2) throws ConflictException {
 
     List<InsnListDiff.Operation> result = new ArrayList<>();
-
-    boolean hasBetween1 = ins1.stream().anyMatch(o -> o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BETWEEN);
-    boolean hasBetween2 = ins2.stream().anyMatch(o -> o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BETWEEN);
-
-    if (hasBetween1 && hasBetween2) {
-      throw new ConflictException("Both diffs have BETWEEN insertions at the same position");
-    }
-
-    for (InsnListDiff.Operation o : ins2) {
-      if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.AFTER) result.add(o);
-    }
-    for (InsnListDiff.Operation o : ins1) {
-      if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.AFTER) result.add(o);
-    }
-
-    for (InsnListDiff.Operation o : ins1) {
-      if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BETWEEN) result.add(o);
-    }
-    for (InsnListDiff.Operation o : ins2) {
-      if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BETWEEN) result.add(o);
-    }
-
-    for (InsnListDiff.Operation o : ins1) {
-      if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BEFORE) result.add(o);
-    }
-    for (InsnListDiff.Operation o : ins2) {
-      if (o.type == InsnListDiff.Operation.Type.INSERT && o.mode == InsnListDiff.Operation.Mode.BEFORE) result.add(o);
-    }
-
+    result.addAll(ins1);
+    result.addAll(ins2);
     return result;
   }
 

@@ -224,36 +224,8 @@ public class ListDiffUtils {
 
   private static <T> List<ListDiff.Operation<T>> mergeInsertionSlot(List<ListDiff.Operation<T>> ins1, List<ListDiff.Operation<T>> ins2) throws ConflictException {
     List<ListDiff.Operation<T>> result = new ArrayList<>();
-
-//    boolean hasBetween1 = ins1.stream().anyMatch(o -> o.type == ListDiff.Operation.Type.INSERT && o.mode == ListDiff.Operation.Mode.BETWEEN);
-//    boolean hasBetween2 = ins2.stream().anyMatch(o -> o.type == ListDiff.Operation.Type.INSERT && o.mode == ListDiff.Operation.Mode.BETWEEN);
-//
-//    if (hasBetween1 && hasBetween2) {
-//      throw new ConflictException("Both diffs have BETWEEN insertions at the same position");
-//    }
-
-
-    for (ListDiff.Operation<T> o : ins2) {
-      if (o.type == ListDiff.Operation.Type.INSERT && o.mode == ListDiff.Operation.Mode.AFTER) result.add(o);
-    }
-    for (ListDiff.Operation<T> o : ins1) {
-      if (o.type == ListDiff.Operation.Type.INSERT && o.mode == ListDiff.Operation.Mode.AFTER) result.add(o);
-    }
-
-    for (ListDiff.Operation<T> o : ins1) {
-      if (o.type == ListDiff.Operation.Type.INSERT && o.mode == ListDiff.Operation.Mode.BETWEEN) result.add(o);
-    }
-    for (ListDiff.Operation<T> o : ins2) {
-      if (o.type == ListDiff.Operation.Type.INSERT && o.mode == ListDiff.Operation.Mode.BETWEEN) result.add(o);
-    }
-
-    for (ListDiff.Operation<T> o : ins1) {
-      if (o.type == ListDiff.Operation.Type.INSERT && o.mode == ListDiff.Operation.Mode.BEFORE) result.add(o);
-    }
-    for (ListDiff.Operation<T> o : ins2) {
-      if (o.type == ListDiff.Operation.Type.INSERT && o.mode == ListDiff.Operation.Mode.BEFORE) result.add(o);
-    }
-
+    result.addAll(ins1);
+    result.addAll(ins2);
     return result;
   }
 
@@ -366,11 +338,12 @@ public class ListDiffUtils {
    * $$
    * AA^{-1}B\leftrightarrow AB'{A^{-1}}'
    * $$
+   *
    * @param diff1
    * @param diff2
    * @param compare
-   * @return
    * @param <T>
+   * @return
    * @throws ConflictException
    */
   public static <T> ListDiff<T> merge(ListDiff<T> diff1, ListDiff<T> diff2, BiPredicate<T, T> compare) throws ConflictException {
