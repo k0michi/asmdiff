@@ -1,5 +1,7 @@
 package com.koyomiji.asmweaver.io;
 
+import com.koyomiji.asmweaver.ListHelper;
+
 import java.io.IOException;
 import java.util.Collection;
 
@@ -129,27 +131,27 @@ public class TextWriter implements CustomDataOutput {
   }
 
   @Override
-  public <T> void writeList(String name, Collection<T> collection, ElementWriter<T> writer) throws IOException {
+  public <T> void writeList(String name, Collection<T> collection, ListHelper.ElementWriter<T> writer) throws IOException {
     beginList(name);
     for (T element : collection) {
-      writer.write(element);
+      writer.write(element, this);
     }
     endList();
   }
 
   @Override
-  public <T> void writeNullable(T element, ElementWriter<T> writer) throws IOException {
+  public <T> void writeNullable(T element, ListHelper.ElementWriter<T> writer) throws IOException {
     if (element == null) {
       append("null");
     } else {
-      writer.write(element);
+      writer.write(element, this);
     }
   }
 
   @Override
-  public <T> void writeVariant(String name, int id, T element, ElementWriter<T> writer) throws IOException {
+  public <T> void writeVariant(String name, int id, T element, ListHelper.ElementWriter<T> writer) throws IOException {
     beginList(name);
-    writer.write(element);
+    writer.write(element, this);
     endList();
   }
 }

@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver.io;
 
+import com.koyomiji.asmweaver.ListHelper;
 import com.koyomiji.asmweaver.util.tuple.Triplet;
 
 import java.io.*;
@@ -76,7 +77,7 @@ public class TextReader implements CustomDataInput {
   }
 
   @Override
-  public <T> List<T> readList(String name, ElementReader<T> reader) throws IOException {
+  public <T> List<T> readList(String name, ListHelper.ElementReader<T> reader) throws IOException {
     consumeBeginList(name);
     List<T> list = new ArrayList<>();
     while (true) {
@@ -87,25 +88,25 @@ public class TextReader implements CustomDataInput {
       }
       // 閉じカッコではなかったので、トークンを一旦ストリームに戻して要素を読み込む
       tokenizer.pushBack();
-      list.add(reader.read());
+      list.add(reader.read(this));
     }
     return list;
   }
 
   @Override
-  public <T> T readNullable(ElementReader<T> reader) throws IOException {
+  public <T> T readNullable(ListHelper.ElementReader<T> reader) throws IOException {
     int token = tokenizer.nextToken();
     if (token == StreamTokenizer.TT_WORD && "null".equals(tokenizer.sval)) {
       return null; // "null" という単語が直接書かれていれば Java の null を返す
     }
     // null ではなかったので、トークンを戻して通常のデシリアライズを実行
     tokenizer.pushBack();
-    return reader.read();
+    return reader.read(this);
   }
 
   @SafeVarargs
   @Override
-  public final <T> T readVariant(Triplet<String, Integer, ElementReader<? extends T>>... cases) throws IOException {
+  public final <T> T readVariant(Triplet<String, Integer, ListHelper.ElementReader<? extends T>>... cases) throws IOException {
     int token = tokenizer.nextToken();
     if (token != '(') { // 構文チェック
       throw new IOException("Expected '(' for variant start at line " + tokenizer.lineno());
@@ -115,12 +116,12 @@ public class TextReader implements CustomDataInput {
 
     // 3. タグ名が一致するケースを探索
 //    for (VariantCase<? extends T> c : cases) {
-    for (Triplet<String, Integer, ElementReader<? extends T>> c : cases) {
+    for (Triplet<String, Integer, ListHelper.ElementReader<? extends T>> c : cases) {
 //      if (c.name.equals(actualName)) {
       if (Objects.equals(actualName, c.first)) {
         // 4. マッチしたラムダを実行して中身を復元
 //        T result = c.reader.read();
-        T result = c.third.read();
+        T result = c.third.read(this);
 
         // 5. ★ここでTextReaderが責任を持って閉じカッコ ')' を回収！
         consumeEndList();

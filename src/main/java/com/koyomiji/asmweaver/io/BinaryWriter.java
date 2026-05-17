@@ -1,5 +1,7 @@
 package com.koyomiji.asmweaver.io;
 
+import com.koyomiji.asmweaver.ListHelper;
+
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -98,31 +100,31 @@ public class BinaryWriter implements CustomDataOutput {
   }
 
   @Override
-  public <T> void writeList(String name, Collection<T> collection, ElementWriter<T> writer) throws IOException {
+  public <T> void writeList(String name, Collection<T> collection, ListHelper.ElementWriter<T> writer) throws IOException {
     // ★ テキストのカッコの代わりに、最初に「要素数」を埋め込む
     // クラスファイルの各配列カウント（interfaces_count, methods_count 等）は基本的に u2（2バイト）です。
     // ここでは汎用的に writeInt としていますが、ドメイン（JVM）に完全準拠させる場合は out.writeShort に変更してください。
     out.writeInt(collection.size());
     for (T element : collection) {
-      writer.write(element);
+      writer.write(element, this);
     }
   }
 
   @Override
-  public <T> void writeNullable(T element, ElementWriter<T> writer) throws IOException {
+  public <T> void writeNullable(T element, ListHelper.ElementWriter<T> writer) throws IOException {
     if (element == null) {
       // 存在しないことを示すフラグ（false）を落とす
       out.writeBoolean(false);
     } else {
       // 存在することを示すフラグ（true）を落としてから、中身を書き込む
       out.writeBoolean(true);
-      writer.write(element);
+      writer.write(element, this);
     }
   }
 
   @Override
-  public <T> void writeVariant(String name, int id, T element, ElementWriter<T> writer) throws IOException {
+  public <T> void writeVariant(String name, int id, T element, ListHelper.ElementWriter<T> writer) throws IOException {
     out.writeByte(id);
-    writer.write(element);
+    writer.write(element, this);
   }
 }

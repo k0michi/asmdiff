@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver.io;
 
+import com.koyomiji.asmweaver.ListHelper;
 import com.koyomiji.asmweaver.util.tuple.Triplet;
 
 import java.io.DataInputStream;
@@ -26,37 +27,37 @@ public class BinaryReader implements CustomDataInput {
   }
 
   @Override
-  public <T> List<T> readList(String name, ElementReader<T> reader) throws IOException {
+  public <T> List<T> readList(String name, ListHelper.ElementReader<T> reader) throws IOException {
     // BinaryWriter.writeList がストリームの先頭に刻印した「要素数」を回収
     int size = in.readInt();
     List<T> list = new ArrayList<>(size);
 
     // 確定したサイズ分だけ、渡されたデシリアライズロジック（ラムダ）をループで回す
     for (int i = 0; i < size; i++) {
-      list.add(reader.read());
+      list.add(reader.read(this));
     }
     return list;
   }
 
   @Override
-  public <T> T readNullable(ElementReader<T> reader) throws IOException {
+  public <T> T readNullable(ListHelper.ElementReader<T> reader) throws IOException {
     // BinaryWriter.writeNullable が落とした「存在フラグ（プレゼンスビット）」を読み出す
     boolean isPresent = in.readBoolean();
     if (isPresent) {
-      return reader.read(); // true なら中身のインスタンスを復元
+      return reader.read(this); // true なら中身のインスタンスを復元
     } else {
       return null;          // false なら要素は不在のため、そのまま Java の null を返す
     }
   }
 
   @Override
-  public <T> T readVariant(Triplet<String, Integer, ElementReader<? extends T>>... cases) throws IOException {
+  public <T> T readVariant(Triplet<String, Integer, ListHelper.ElementReader<? extends T>>... cases) throws IOException {
     int id = in.readUnsignedByte();
 
     // 2. IDが一致するケースを探索
-    for (Triplet<String, Integer, ElementReader<? extends T>> c : cases) {
+    for (Triplet<String, Integer, ListHelper.ElementReader<? extends T>> c : cases) {
       if (c.second == id) {
-        return c.third.read();
+        return c.third.read(this);
       }
     }
 
