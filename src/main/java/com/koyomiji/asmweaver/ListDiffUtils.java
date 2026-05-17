@@ -5,8 +5,6 @@ import com.koyomiji.asmweaver.io.CustomDataOutput;
 import com.koyomiji.asmweaver.util.PeekableIterator;
 import com.koyomiji.asmweaver.util.tuple.Pair;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -360,5 +358,24 @@ public class ListDiffUtils {
     }
 
     return new ListDiff<>(operations);
+  }
+
+  /**
+   * Merge diff1 and diff2.
+   * Concretely, this returns $AB'$ where
+   * $$
+   * AA^{-1}B\leftrightarrow AB'{A^{-1}}'
+   * $$
+   * @param diff1
+   * @param diff2
+   * @param compare
+   * @return
+   * @param <T>
+   * @throws ConflictException
+   */
+  public static <T> ListDiff<T> merge(ListDiff<T> diff1, ListDiff<T> diff2, BiPredicate<T, T> compare) throws ConflictException {
+    ListDiff<T> diff1Inv = ListDiffUtils.invert(diff1);
+    ListDiff<T> diff2Prime = ListDiffUtils.commute(diff1Inv, diff2, compare).first;
+    return ListDiffUtils.compose(diff1, diff2Prime, compare);
   }
 }
