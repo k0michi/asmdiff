@@ -1,5 +1,7 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -138,7 +140,7 @@ public class KeyedListDiffUtils {
   }
 
   public static <Key, Value, Diff extends IDiff> KeyedListDiff<Key, Value, Diff> read(
-          DataInputStream in,
+          CustomDataInput in,
           ListHelper.ElementReader<Key> keyReader,
           ListHelper.ElementReader<Value> valueReader,
           ListHelper.ElementReader<Diff> diffReader

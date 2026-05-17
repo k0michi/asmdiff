@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.BinaryReader;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.tree.InnerClassNode;
@@ -61,9 +62,8 @@ class InnerClassNodeHelperTest {
       out.close();
 
       ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-      DataInputStream in = new DataInputStream(bais);
+      BinaryReader in = new BinaryReader(bais);
       InnerClassNode read = InnerClassNodeHelper.read(in);
-      in.close();
 
       Assertions.assertTrue(InnerClassNodeHelper.equals(uniqueNodes.get(i), read));
     }

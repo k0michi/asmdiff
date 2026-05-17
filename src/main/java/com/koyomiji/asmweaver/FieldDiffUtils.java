@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.DataStreamHelper;
 import org.objectweb.asm.tree.FieldNode;
 
@@ -92,7 +93,7 @@ public class FieldDiffUtils {
     ListDiffUtils.write(diff.invisibleTypeAnnotations, out, AnnotationNodeHelper::write);
   }
 
-  public static FieldDiff read(DataInputStream in) throws IOException {
+  public static FieldDiff read(CustomDataInput in) throws IOException {
     FieldDiff diff = new FieldDiff();
     diff.access = ListDiffUtils.read(in, DataInput::readInt);
     diff.name = ListDiffUtils.read(in, DataInput::readUTF);

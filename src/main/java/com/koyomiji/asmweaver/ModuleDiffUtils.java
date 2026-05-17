@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
 import org.objectweb.asm.tree.ModuleNode;
 
 import java.io.DataInput;
@@ -109,10 +110,10 @@ public class ModuleDiffUtils {
     ListDiffUtils.write(diff.provides, out, ModuleProvideNodeHelper::write);
   }
 
-  public static ModuleDiff read(DataInputStream in) throws IOException {
+  public static ModuleDiff read(CustomDataInput in) throws IOException {
     ModuleDiff diff = new ModuleDiff();
     diff.name = ListDiffUtils.read(in, DataInput::readUTF);
-    diff.access = ListDiffUtils.read(in, DataInputStream::readInt);
+    diff.access = ListDiffUtils.read(in, CustomDataInput::readInt);
     diff.version = ListDiffUtils.read(in, DataInput::readUTF);
     diff.mainClass = ListDiffUtils.read(in, DataInput::readUTF);
     diff.packages = ListDiffUtils.read(in, DataInput::readUTF);

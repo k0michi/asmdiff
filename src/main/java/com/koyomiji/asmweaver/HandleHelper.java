@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
 import org.objectweb.asm.Handle;
 
 import java.io.DataInputStream;
@@ -15,7 +16,7 @@ public class HandleHelper {
     out.writeBoolean(handle.isInterface());
   }
 
-  public static Handle read(DataInputStream in) throws IOException {
+  public static Handle read(CustomDataInput in) throws IOException {
     int tag = in.readInt();
     String owner = in.readUTF();
     String name = in.readUTF();

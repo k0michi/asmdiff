@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.BinaryReader;
 import com.koyomiji.asmweaver.util.AutoIncrementBiHashMap;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -173,7 +174,7 @@ class AnnotationNodeHelperTest {
 
     byte[] data = baos.toByteArray();
     ByteArrayInputStream bais = new ByteArrayInputStream(data);
-    DataInputStream dis = new DataInputStream(bais);
+    BinaryReader dis = new BinaryReader(bais);
 
     if (node.getClass() == AnnotationNode.class) {
       AnnotationNode nodeRead = AnnotationNodeHelper.readAnnotationNode(dis);

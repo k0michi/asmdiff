@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.DataStreamHelper;
 import org.objectweb.asm.tree.ParameterNode;
 
@@ -44,7 +45,7 @@ public class ParameterNodeHelper {
     out.writeInt(node.access);
   }
 
-  public static ParameterNode read(DataInputStream in) throws IOException {
+  public static ParameterNode read(CustomDataInput in) throws IOException {
     String name = DataStreamHelper.readUTFNullable(in);
     int access = in.readInt();
     return new ParameterNode(name, access);

@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.DataStreamHelper;
 import org.objectweb.asm.tree.ModuleRequireNode;
 
@@ -41,7 +42,7 @@ public class ModuleRequireNodeHelper {
     DataStreamHelper.writeUTFNullable(out, node.version);
   }
 
-  public static ModuleRequireNode read(DataInputStream in) throws IOException {
+  public static ModuleRequireNode read(CustomDataInput in) throws IOException {
     String module = in.readUTF();
     int access = in.readInt();
     String version = DataStreamHelper.readUTFNullable(in);

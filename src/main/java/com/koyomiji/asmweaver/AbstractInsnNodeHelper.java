@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
 import org.objectweb.asm.tree.*;
 
 import java.io.DataInputStream;
@@ -458,7 +459,7 @@ public class AbstractInsnNodeHelper {
     }
   }
 
-  public static AbstractInsnNode read(DataInputStream in, Function<Integer, LabelNode> indexToLabel) throws IOException {
+  public static AbstractInsnNode read(CustomDataInput in, Function<Integer, LabelNode> indexToLabel) throws IOException {
     int opcode = in.readInt();
     int type = in.readInt();
     List<TypeAnnotationNode> visibleTypeAnnotations = ListHelper.read(in, AnnotationNodeHelper::readTypeAnnotationNode);
@@ -556,7 +557,7 @@ public class AbstractInsnNodeHelper {
     return insnNode;
   }
 
-  private static Object readFrameValue(DataInputStream in, Function<Integer, LabelNode> indexToLabel) throws IOException {
+  private static Object readFrameValue(CustomDataInput in, Function<Integer, LabelNode> indexToLabel) throws IOException {
     switch (in.readInt()) {
       case 0:
         return in.readInt();

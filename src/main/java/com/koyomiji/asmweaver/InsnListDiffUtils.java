@@ -608,6 +608,7 @@ public class InsnListDiffUtils {
           PersistentHashMap<Integer, Integer> newDuAToB = current.duAToB;
           PersistentHashMap<Integer, Integer> newDuBToA = current.duBToA;
 
+          // fixme
           if (insnA instanceof VarInsnNode && insnB instanceof VarInsnNode) {
             int varA = ((VarInsnNode) insnA).var;
             int varB = ((VarInsnNode) insnB).var;

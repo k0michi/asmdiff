@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Type;
 
@@ -35,7 +36,7 @@ public class ConstantHelper {
     }
   }
 
-  public static Object read(DataInputStream in) throws IOException {
+  public static Object read(CustomDataInput in) throws IOException {
     switch (in.readInt()) {
       case 0:
         return in.readInt();

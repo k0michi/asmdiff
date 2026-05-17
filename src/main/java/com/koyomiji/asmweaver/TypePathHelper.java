@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.DataStreamHelper;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.TypePath;
@@ -61,7 +62,7 @@ public class TypePathHelper {
     );
   }
 
-  public static TypePath read(DataInputStream stream) throws IOException {
+  public static TypePath read(CustomDataInput stream) throws IOException {
     return NullableHelper.map(
             DataStreamHelper.readUTFNullable(stream),
             TypePath::fromString

@@ -18,7 +18,7 @@ public class DataStreamHelperTest {
     DataStreamHelper.writeUTFNullable(dataOutputStream, null);
 
     ByteArrayInputStream byteArrayInputStream = new java.io.ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-    DataInputStream dataInputStream = new java.io.DataInputStream(byteArrayInputStream);
+    BinaryReader dataInputStream = new BinaryReader(byteArrayInputStream);
 
     String value1 = DataStreamHelper.readUTFNullable(dataInputStream);
     String value2 = DataStreamHelper.readUTFNullable(dataInputStream);

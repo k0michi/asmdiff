@@ -1,5 +1,7 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -23,7 +25,7 @@ public class NullableHelper {
     writer.write(value, out);
   }
 
-  public static <T> T read(DataInputStream in, ListHelper.ElementReader<T> reader) throws IOException {
+  public static <T> T read(CustomDataInput in, ListHelper.ElementReader<T> reader) throws IOException {
     if (in.readBoolean()) {
       return reader.read(in);
     }

@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.util.tuple.Triplet;
 import org.objectweb.asm.TypePath;
 import org.objectweb.asm.tree.AnnotationNode;
@@ -258,7 +259,7 @@ public class AnnotationNodeHelper {
     }
   }
 
-  public static AnnotationNode readAnnotationNode(DataInputStream in) throws IOException {
+  public static AnnotationNode readAnnotationNode(CustomDataInput in) throws IOException {
     String desc = in.readUTF();
     AnnotationNode node = new AnnotationNode(desc);
     int valuesSize = in.readInt();
@@ -275,7 +276,7 @@ public class AnnotationNodeHelper {
     return node;
   }
 
-  public static TypeAnnotationNode readTypeAnnotationNode(DataInputStream in) throws IOException {
+  public static TypeAnnotationNode readTypeAnnotationNode(CustomDataInput in) throws IOException {
     AnnotationNode node = readAnnotationNode(in);
 
     int typeRef = in.readInt();
@@ -285,7 +286,7 @@ public class AnnotationNodeHelper {
     return typeNode;
   }
 
-  public static LocalVariableAnnotationNode readLocalVariableAnnotationNode(DataInputStream in, Function<Integer, LabelNode> labelMapper) throws IOException {
+  public static LocalVariableAnnotationNode readLocalVariableAnnotationNode(CustomDataInput in, Function<Integer, LabelNode> labelMapper) throws IOException {
     TypeAnnotationNode typeNode = readTypeAnnotationNode(in);
 
     List<LabelNode> start = ListHelper.read(in, stream -> {
@@ -298,7 +299,7 @@ public class AnnotationNodeHelper {
       return labelMapper.apply(labelIndex);
     });
 
-    List<Integer> index = ListHelper.read(in, DataInputStream::readInt);
+    List<Integer> index = ListHelper.read(in, CustomDataInput::readInt);
 
     LocalVariableAnnotationNode localVarNode = new LocalVariableAnnotationNode(
             typeNode.typeRef,
@@ -313,7 +314,7 @@ public class AnnotationNodeHelper {
     return localVarNode;
   }
 
-  public static Object readValue(DataInputStream in) throws IOException {
+  public static Object readValue(CustomDataInput in) throws IOException {
     int typeOrdinal = in.readByte();
     ValueType type = ValueType.values()[typeOrdinal];
 

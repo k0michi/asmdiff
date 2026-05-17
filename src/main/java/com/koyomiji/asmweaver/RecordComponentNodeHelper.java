@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.DataStreamHelper;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.tree.RecordComponentNode;
@@ -86,7 +87,7 @@ public class RecordComponentNodeHelper {
     );
   }
 
-  public static RecordComponentNode read(DataInputStream in) throws IOException {
+  public static RecordComponentNode read(CustomDataInput in) throws IOException {
     String name = in.readUTF();
     String descriptor = in.readUTF();
     String signature = DataStreamHelper.readUTFNullable(in);

@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
 import org.objectweb.asm.tree.RecordComponentNode;
 
 import java.io.DataInput;
@@ -72,7 +73,7 @@ public class RecordComponentDiffUtils {
     ListDiffUtils.write(diff.invisibleTypeAnnotations, out, AnnotationNodeHelper::write);
   }
 
-  public static RecordComponentDiff read(DataInputStream in) throws IOException {
+  public static RecordComponentDiff read(CustomDataInput in) throws IOException {
     RecordComponentDiff diff = new RecordComponentDiff();
     diff.name = ListDiffUtils.read(in, DataInput::readUTF);
     diff.descriptor = ListDiffUtils.read(in, DataInput::readUTF);

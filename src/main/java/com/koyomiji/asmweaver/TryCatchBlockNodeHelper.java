@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.DataStreamHelper;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.tree.LabelNode;
@@ -68,7 +69,7 @@ public class TryCatchBlockNodeHelper {
     );
   }
 
-  public static TryCatchBlockNode read(DataInputStream in, Function<Integer, LabelNode> indexToLabel) throws IOException {
+  public static TryCatchBlockNode read(CustomDataInput in, Function<Integer, LabelNode> indexToLabel) throws IOException {
     LabelNode start = indexToLabel.apply(in.readInt());
     LabelNode end = indexToLabel.apply(in.readInt());
     LabelNode handler = indexToLabel.apply(in.readInt());

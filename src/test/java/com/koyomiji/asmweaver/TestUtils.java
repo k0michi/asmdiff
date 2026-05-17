@@ -1,10 +1,15 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.BinaryReader;
+import com.koyomiji.asmweaver.io.CustomDataInput;
 import org.junit.jupiter.api.Assertions;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.function.BiPredicate;
 import java.util.function.Supplier;
@@ -78,7 +83,7 @@ public class TestUtils {
 
   @FunctionalInterface
   public interface Reader<T> {
-    T read(DataInputStream in) throws IOException;
+    T read(CustomDataInput in) throws IOException;
   }
 
   public static <T> void verifyRoundTrip(Supplier<List<T>> nodesSupplier, Writer<T> writer, Reader<T> reader, BiPredicate<T, T> equals) throws IOException {
@@ -94,9 +99,7 @@ public class TestUtils {
 
       ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
       T restored;
-      try (DataInputStream in = new DataInputStream(bais)) {
-        restored = reader.read(in);
-      }
+      restored = reader.read(new BinaryReader(bais));
 
       Assertions.assertTrue(equals.test(original, restored), String.format("Round-trip should restore the original value for index %d", i));
     }

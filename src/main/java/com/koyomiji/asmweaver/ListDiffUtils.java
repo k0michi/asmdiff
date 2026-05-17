@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.util.PeekableIterator;
 import com.koyomiji.asmweaver.util.tuple.Pair;
 
@@ -374,7 +375,7 @@ public class ListDiffUtils {
     }
   }
 
-  public static <T> ListDiff<T> read(DataInputStream in, ListHelper.ElementReader<T> elementReader) throws IOException {
+  public static <T> ListDiff<T> read(CustomDataInput in, ListHelper.ElementReader<T> elementReader) throws IOException {
     ArrayList<ListDiff.Operation<T>> operations = new ArrayList<>();
     int size = in.readInt();
 

@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.BinaryReader;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -51,7 +52,7 @@ class FieldDiffUtilsTest {
           FieldDiffUtils.write(diff, dos);
 
           ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-          DataInputStream dis = new DataInputStream(bais);
+          BinaryReader dis = new BinaryReader(bais);
           FieldDiff readDiff = FieldDiffUtils.read(dis);
 
           Assertions.assertTrue(FieldNodeHelper.equals(

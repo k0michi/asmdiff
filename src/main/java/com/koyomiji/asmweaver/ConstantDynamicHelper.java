@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
 import org.objectweb.asm.ConstantDynamic;
 import org.objectweb.asm.Handle;
 
@@ -21,7 +22,7 @@ public class ConstantDynamicHelper {
     }
   }
 
-  public static ConstantDynamic read(DataInputStream in) throws IOException {
+  public static ConstantDynamic read(CustomDataInput in) throws IOException {
     String name = in.readUTF();
     String descriptor = in.readUTF();
     Handle bootstrapMethod = HandleHelper.read(in);

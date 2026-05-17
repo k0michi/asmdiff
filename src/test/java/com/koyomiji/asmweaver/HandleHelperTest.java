@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.BinaryReader;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.Handle;
@@ -15,7 +16,7 @@ class HandleHelperTest {
     HandleHelper.write(handle, dos);
 
     ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-    DataInputStream dis = new DataInputStream(bais);
+    BinaryReader dis = new BinaryReader(bais);
     Handle read = HandleHelper.read(dis);
 
     Assertions.assertEquals(handle, read);

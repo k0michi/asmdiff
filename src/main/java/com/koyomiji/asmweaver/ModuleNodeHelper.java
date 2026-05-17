@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.DataStreamHelper;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.tree.ModuleNode;
@@ -104,7 +105,7 @@ public class ModuleNodeHelper {
     );
   }
 
-  public static ModuleNode read(DataInputStream in) throws IOException {
+  public static ModuleNode read(CustomDataInput in) throws IOException {
     String name = in.readUTF();
     int access = in.readInt();
     String version = DataStreamHelper.readUTFNullable(in);

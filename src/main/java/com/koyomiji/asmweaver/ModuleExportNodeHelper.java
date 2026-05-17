@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.tree.ModuleExportNode;
 
@@ -54,7 +55,7 @@ public class ModuleExportNodeHelper {
     );
   }
 
-  public static ModuleExportNode read(DataInputStream in) throws IOException {
+  public static ModuleExportNode read(CustomDataInput in) throws IOException {
     String packaze = in.readUTF();
     int access = in.readInt();
     List<String> modules = ListHelper.read(

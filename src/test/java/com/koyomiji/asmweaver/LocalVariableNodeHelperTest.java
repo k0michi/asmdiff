@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.BinaryReader;
 import com.koyomiji.asmweaver.util.AutoIncrementBiHashMap;
 import com.koyomiji.asmweaver.util.tuple.Triplet;
 import org.junit.jupiter.api.Assertions;
@@ -117,7 +118,7 @@ class LocalVariableNodeHelperTest {
     LocalVariableNodeHelper.write(node1, dos, labelToIndex::get);
 
     ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-    DataInputStream dis = new DataInputStream(bais);
+    BinaryReader dis = new BinaryReader(bais);
     LocalVariableNode read = LocalVariableNodeHelper.read(dis, labelToIndex::getKey);
     Assertions.assertTrue(LocalVariableNodeHelper.equals(node1, read));
   }

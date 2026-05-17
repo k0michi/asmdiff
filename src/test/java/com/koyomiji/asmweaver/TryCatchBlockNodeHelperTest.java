@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.BinaryReader;
 import com.koyomiji.asmweaver.util.AutoIncrementBiHashMap;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -85,7 +86,7 @@ class TryCatchBlockNodeHelperTest {
     TryCatchBlockNodeHelper.write(node1, dos, labelToIndex::get);
 
     ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-    DataInputStream dis = new DataInputStream(bais);
+    BinaryReader dis = new BinaryReader(bais);
     TryCatchBlockNode read = TryCatchBlockNodeHelper.read(dis, labelToIndex::getKey);
     Assertions.assertTrue(TryCatchBlockNodeHelper.equals(node1, read));
   }

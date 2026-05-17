@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.DataStreamHelper;
 import com.koyomiji.asmweaver.util.tuple.Triplet;
 import org.objectweb.asm.tree.LabelNode;
@@ -55,7 +56,7 @@ public class LocalVariableNodeHelper {
     out.writeInt(node.index);
   }
 
-  public static LocalVariableNode read(DataInputStream in, Function<Integer, LabelNode> indexToLabel) throws IOException {
+  public static LocalVariableNode read(CustomDataInput in, Function<Integer, LabelNode> indexToLabel) throws IOException {
     String name = in.readUTF();
     String desc = in.readUTF();
     String signature = DataStreamHelper.readUTFNullable(in);

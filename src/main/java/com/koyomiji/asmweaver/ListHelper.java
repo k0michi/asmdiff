@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 
 import java.io.DataInputStream;
@@ -115,7 +116,7 @@ public class ListHelper {
   }
 
   public interface ElementReader<T> {
-    T read(DataInputStream stream) throws IOException;
+    T read(CustomDataInput stream) throws IOException;
   }
 
   public static <T> void write(List<T> list, DataOutputStream stream, ElementWriter<T> elementWriter) throws IOException {
@@ -125,7 +126,7 @@ public class ListHelper {
     }
   }
 
-  public static <T> List<T> read(DataInputStream stream, ElementReader<T> elementReader) throws IOException {
+  public static <T> List<T> read(CustomDataInput stream, ElementReader<T> elementReader) throws IOException {
     int size = stream.readInt();
     List<T> list = new ArrayList<>(size);
     for (int i = 0; i < size; i++) {

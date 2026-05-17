@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.DataStreamHelper;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.tree.LabelNode;
@@ -237,7 +238,7 @@ public class MethodNodeHelper {
     );
   }
 
-  public static MethodNode read(DataInputStream in, Function<Integer, LabelNode> indexToLabel) throws IOException {
+  public static MethodNode read(CustomDataInput in, Function<Integer, LabelNode> indexToLabel) throws IOException {
     int access = in.readInt();
     String name = in.readUTF();
     String desc = in.readUTF();

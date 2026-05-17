@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.BinaryReader;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ConstantDynamic;
@@ -16,7 +17,7 @@ class ConstantDynamicHelperTest {
     ConstantDynamicHelper.write(node, dos);
 
     ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-    DataInputStream dis = new DataInputStream(bais);
+    BinaryReader dis = new BinaryReader(bais);
     ConstantDynamic read = ConstantDynamicHelper.read(dis);
 
     Assertions.assertEquals(node, read);

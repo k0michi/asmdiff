@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.DataStreamHelper;
 import org.objectweb.asm.tree.InnerClassNode;
 
@@ -39,7 +40,7 @@ public class InnerClassNodeHelper {
     out.writeInt(node.access);
   }
 
-  public static InnerClassNode read(DataInputStream in) throws IOException {
+  public static InnerClassNode read(CustomDataInput in) throws IOException {
     String name = in.readUTF();
     String outerName = DataStreamHelper.readUTFNullable(in);
     String innerName = DataStreamHelper.readUTFNullable(in);

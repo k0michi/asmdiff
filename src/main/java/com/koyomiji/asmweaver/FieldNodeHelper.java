@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.DataStreamHelper;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.tree.FieldNode;
@@ -92,7 +93,7 @@ public class FieldNodeHelper {
     // TODO: attrs
   }
 
-  public static FieldNode read(DataInputStream in) throws IOException {
+  public static FieldNode read(CustomDataInput in) throws IOException {
     int access = in.readInt();
     String name = in.readUTF();
     String desc = in.readUTF();

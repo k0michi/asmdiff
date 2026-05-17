@@ -1,5 +1,6 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.tree.ModuleProvideNode;
 
@@ -52,7 +53,7 @@ public class ModuleProvideNodeHelper {
     );
   }
 
-  public static ModuleProvideNode read(DataInputStream in) throws IOException {
+  public static ModuleProvideNode read(CustomDataInput in) throws IOException {
     String service = in.readUTF();
     List<String> providers = ListHelper.read(
             in,

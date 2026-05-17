@@ -4,7 +4,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class DataStreamHelper {
-  public static String readUTFNullable(java.io.DataInputStream stream) throws java.io.IOException {
+  public static String readUTFNullable(CustomDataInput stream) throws java.io.IOException {
     boolean isNotNull = stream.readBoolean();
 
     if (isNotNull) {
