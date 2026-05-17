@@ -121,23 +121,23 @@ public class MethodDiffUtils {
             duChains2::get
     );
 
-    Map<LabelNode, Integer> labelIndices1 = new HashMap<>();
-
-    for (int i = 0; i < node1.instructions.size(); i++) {
-      AbstractInsnNode insn = node1.instructions.get(i);
-      if (insn instanceof LabelNode) {
-        labelIndices1.put((LabelNode) insn, i);
-      }
-    }
-
-    Map<LabelNode, Integer> labelIndices2 = new HashMap<>();
-
-    for (int i = 0; i < node2.instructions.size(); i++) {
-      AbstractInsnNode insn = node2.instructions.get(i);
-      if (insn instanceof LabelNode) {
-        labelIndices2.put((LabelNode) insn, i);
-      }
-    }
+//    Map<LabelNode, Integer> labelIndices1 = new HashMap<>();
+//
+//    for (int i = 0; i < node1.instructions.size(); i++) {
+//      AbstractInsnNode insn = node1.instructions.get(i);
+//      if (insn instanceof LabelNode) {
+//        labelIndices1.put((LabelNode) insn, i);
+//      }
+//    }
+//
+//    Map<LabelNode, Integer> labelIndices2 = new HashMap<>();
+//
+//    for (int i = 0; i < node2.instructions.size(); i++) {
+//      AbstractInsnNode insn = node2.instructions.get(i);
+//      if (insn instanceof LabelNode) {
+//        labelIndices2.put((LabelNode) insn, i);
+//      }
+//    }
 
     Map<LabelNode, LabelNode> labelMap = extractLabelMap(node1.instructions, node2.instructions, diff.instructions);
 //    List<Pair<Integer, Integer>> locals1 = new ArrayList<>();
