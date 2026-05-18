@@ -37,19 +37,19 @@ public class KeyedListDiff<Key, Value, Diff extends IDiff> implements IDiff {
       AFTER
     }
 
-    public Type type;
-    public Mode mode;
-    public Key operandKey;
+    public final Type type;
+    public final Mode mode;
+    public final Key operandKey;
     /**
      * For INSERT, operandValue is the value to insert into the original list.
      * Otherwise, operandValue is null.
      */
-    public Value operandValue;
+    public final Value operandValue;
     /**
      * For MATCH, operandDiff is the diff between the values in the original and modified lists.
      * Otherwise, operandDiff is null.
      */
-    public Diff operandDiff;
+    public final Diff operandDiff;
 
     public Operation(Type type, Mode mode, Key operandKey, Value operandValue, Diff operandDiff) {
       this.type = type;

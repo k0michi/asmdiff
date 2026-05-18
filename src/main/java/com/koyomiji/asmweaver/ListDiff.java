@@ -33,20 +33,20 @@ public class ListDiff<T> implements IDiff {
       AFTER
     }
 
-    public Type type;
-    public Mode mode;
+    public final Type type;
+    public final Mode mode;
     /**
      * For MATCH, operand1 is the element that matches in both lists.
      * For DELETE, operand1 is the element to delete from the original list.
      * Otherwise, operand1 is null.
      */
-    public T operand1;
+    public final T operand1;
     /**
      * For MATCH, operand2 is the element that matches in both lists.
      * For INSERT, operand2 is the element to insert into the original list.
      * Otherwise, operand2 is null.
      */
-    public T operand2;
+    public final T operand2;
 
     public Operation(Type type, Mode mode, T operand1, T operand2) {
       this.type = type;

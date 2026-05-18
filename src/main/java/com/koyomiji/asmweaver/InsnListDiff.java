@@ -38,14 +38,14 @@ public class InsnListDiff implements IDiff {
       AFTER
     }
 
-    public Type type;
-    public Mode mode;
+    public final Type type;
+    public final Mode mode;
     /**
      * For MATCH, operand is the instruction that matches in both lists.
      * For INSERT, operand is the instruction to insert into the original list.
      * For DELETE, operand is the instruction to delete from the original list.
      */
-    public AbstractInsnNode operand;
+    public final AbstractInsnNode operand;
 
     public Operation(Type type, Mode mode, AbstractInsnNode operand) {
       this.type = type;
