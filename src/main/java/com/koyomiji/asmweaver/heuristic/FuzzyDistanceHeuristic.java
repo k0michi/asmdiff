@@ -29,7 +29,7 @@ public class FuzzyDistanceHeuristic extends Heuristic {
 
         table[i][j] = 1 + Math.min(table[i + 1][j], table[i][j + 1]);
 
-        if (AbstractInsnNodeHelper.equalsIgnoreLabelsIgnoreLocals(a, b)) {
+        if (AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(a, b)) {
           table[i][j] = Math.min(table[i][j], table[i + 1][j + 1]);
         }
       }

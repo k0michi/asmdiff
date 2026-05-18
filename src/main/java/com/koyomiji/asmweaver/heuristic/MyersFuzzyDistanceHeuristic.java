@@ -108,7 +108,7 @@ public class MyersFuzzyDistanceHeuristic extends Heuristic {
 
         // スネーク（一致移動）を処理
         // 配列の後ろ（n-1, m-1）から前へ向かって比較する
-        while (u < n && w < m && AbstractInsnNodeHelper.equalsIgnoreLabelsIgnoreLocals(src.get(n - 1 - u), dst.get(m - 1 - w))) {
+        while (u < n && w < m && AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(src.get(n - 1 - u), dst.get(m - 1 - w))) {
           u++;
           w++;
         }
