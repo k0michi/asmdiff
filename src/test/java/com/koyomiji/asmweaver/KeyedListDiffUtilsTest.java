@@ -210,7 +210,7 @@ class KeyedListDiffUtilsTest {
             this::diffKeyedObject
     );
 
-    Assertions.assertEquals(0, diff.operations);
+    Assertions.assertEquals(0, diff.distance());
   }
 
   @Test
