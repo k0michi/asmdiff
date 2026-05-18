@@ -56,17 +56,11 @@ public class MethodDiffUtils {
               ListHelper.ofNullableArray(node2.visibleParameterAnnotations),
               ListHelper::nullToEmpty
       );
-      Map<List<AnnotationNode>, Integer> vpaIndexMap = new HashMap<>();
-
-      for (int i = 0; i < vpa1.size(); i++) {
-        vpaIndexMap.put(vpa1.get(i), i);
-      }
-
-      for (int i = 0; i < vpa2.size(); i++) {
-        vpaIndexMap.put(vpa2.get(i), i);
-      }
-
-      diff.visibleParameterAnnotations = KeyedListDiffUtils.diff(vpa1, vpa2, vpaIndexMap::get, (l1, l2) -> ListDiffUtils.diff(l1, l2, AnnotationNodeHelper::equals));
+      diff.visibleParameterAnnotations = KeyedListDiffUtils.diffIndexed(
+              vpa1,
+              vpa2,
+              (l1, l2) -> ListDiffUtils.diff(l1, l2, AnnotationNodeHelper::equals)
+      );
     }
 
     diff.invisibleAnnotableParameterCount = ListDiffUtils.diff(ListHelper.ofNullable(node1.invisibleAnnotableParameterCount), ListHelper.ofNullable(node2.invisibleAnnotableParameterCount), Integer::equals);
@@ -80,22 +74,11 @@ public class MethodDiffUtils {
               ListHelper.ofNullableArray(node2.invisibleParameterAnnotations),
               ListHelper::nullToEmpty
       );
-
-      Map<AnnotationNode, Integer> ipaIndexMap = new HashMap<>();
-
-      for (int i = 0; i < ipa1.size(); i++) {
-        for (AnnotationNode an : ipa1.get(i)) {
-          ipaIndexMap.put(an, i);
-        }
-      }
-
-      for (int i = 0; i < ipa2.size(); i++) {
-        for (AnnotationNode an : ipa2.get(i)) {
-          ipaIndexMap.put(an, i);
-        }
-      }
-
-      diff.invisibleParameterAnnotations = KeyedListDiffUtils.diff(ipa1, ipa2, ipaIndexMap::get, (l1, l2) -> ListDiffUtils.diff(l1, l2, AnnotationNodeHelper::equals));
+      diff.invisibleParameterAnnotations = KeyedListDiffUtils.diffIndexed(
+              ipa1,
+              ipa2,
+              (l1, l2) -> ListDiffUtils.diff(l1, l2, AnnotationNodeHelper::equals)
+      );
     }
 
     DefUseChainAnalyzer analyzer1 = new DefUseChainAnalyzer();

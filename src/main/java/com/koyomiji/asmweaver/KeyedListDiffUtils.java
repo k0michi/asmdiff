@@ -3,11 +3,11 @@ package com.koyomiji.asmweaver;
 import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.CustomDataOutput;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -90,6 +90,25 @@ public class KeyedListDiffUtils {
     }
 
     return new KeyedListDiff<>(reversedOperations);
+  }
+
+  public static <Value, Diff extends IDiff> KeyedListDiff<Integer, Value, Diff> diffIndexed(List<Value> list1, List<Value> list2, BiFunction<Value, Value, Diff> diffFunction) {
+    Map<Value, Integer> indexMap = new HashMap<>();
+
+    for (int i = 0; i < list1.size(); i++) {
+      indexMap.put(list1.get(i), i);
+    }
+
+    for  (int i = 0; i < list2.size(); i++) {
+      indexMap.put(list2.get(i), i);
+    }
+
+    return diff(
+            list1,
+            list2,
+            indexMap::get,
+            diffFunction
+    );
   }
 
   public static <Key, Value, Diff extends IDiff> List<Value> patch(List<Value> original, KeyedListDiff<Key, Value, Diff> diff, BiFunction<Value, Diff, Value> elementPatch) {
