@@ -3,10 +3,7 @@ package com.koyomiji.asmweaver;
 import com.koyomiji.asmweaver.analysis.DefUse;
 import com.koyomiji.asmweaver.analysis.DefUseChainAnalyzer;
 import com.koyomiji.asmweaver.util.UnionFind;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.AnnotationNode;
-import org.objectweb.asm.tree.LabelNode;
-import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.*;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
 
 import java.util.HashMap;
@@ -48,14 +45,8 @@ public class MethodDiffUtils {
     diff.visibleAnnotableParameterCount = ListDiffUtils.diff(ListHelper.ofNullable(node1.visibleAnnotableParameterCount), ListHelper.ofNullable(node2.visibleAnnotableParameterCount), Integer::equals);
 
     {
-      List<List<AnnotationNode>> vpa1 = ListHelper.map(
-              ListHelper.ofNullableArray(node1.visibleParameterAnnotations),
-              ListHelper::nullToEmpty
-      );
-      List<List<AnnotationNode>> vpa2 = ListHelper.map(
-              ListHelper.ofNullableArray(node2.visibleParameterAnnotations),
-              ListHelper::nullToEmpty
-      );
+      List<List<AnnotationNode>> vpa1 = normalizeAnnotations(node1.visibleParameterAnnotations);
+      List<List<AnnotationNode>> vpa2 = normalizeAnnotations(node2.visibleParameterAnnotations);
       diff.visibleParameterAnnotations = KeyedListDiffUtils.diffIndexed(
               vpa1,
               vpa2,
@@ -66,14 +57,8 @@ public class MethodDiffUtils {
     diff.invisibleAnnotableParameterCount = ListDiffUtils.diff(ListHelper.ofNullable(node1.invisibleAnnotableParameterCount), ListHelper.ofNullable(node2.invisibleAnnotableParameterCount), Integer::equals);
 
     {
-      List<List<AnnotationNode>> ipa1 = ListHelper.map(
-              ListHelper.ofNullableArray(node1.invisibleParameterAnnotations),
-              ListHelper::nullToEmpty
-      );
-      List<List<AnnotationNode>> ipa2 = ListHelper.map(
-              ListHelper.ofNullableArray(node2.invisibleParameterAnnotations),
-              ListHelper::nullToEmpty
-      );
+      List<List<AnnotationNode>> ipa1 = normalizeAnnotations(node1.invisibleParameterAnnotations);
+      List<List<AnnotationNode>> ipa2 = normalizeAnnotations(node2.invisibleParameterAnnotations);
       diff.invisibleParameterAnnotations = KeyedListDiffUtils.diffIndexed(
               ipa1,
               ipa2,
@@ -179,5 +164,121 @@ public class MethodDiffUtils {
     );
 
     return diff;
+  }
+
+  public static MethodNode patch(MethodNode node, MethodDiff diff) {
+    MethodNode patched = new MethodNode();
+    patched.access = ListDiffUtils.patchNonNullableValue(node.access, diff.access);
+    patched.name = ListDiffUtils.patchNonNullableValue(node.name, diff.name);
+    patched.desc = ListDiffUtils.patchNonNullableValue(node.desc, diff.desc);
+    patched.signature = ListDiffUtils.patchNullableValue(node.signature, diff.signature);
+    patched.exceptions = ListDiffUtils.patch(node.exceptions, diff.exceptions);
+    patched.parameters = ListDiffUtils.patch(ListHelper.nullToEmpty(node.parameters), diff.parameters);
+    patched.visibleAnnotations = ListDiffUtils.patch(
+            ListHelper.nullToEmpty(node.visibleAnnotations),
+            diff.visibleAnnotations
+    );
+    patched.invisibleAnnotations = ListDiffUtils.patch(
+            ListHelper.nullToEmpty(node.invisibleAnnotations),
+            diff.invisibleAnnotations
+    );
+    patched.visibleTypeAnnotations = ListDiffUtils.patch(
+            ListHelper.nullToEmpty(node.visibleTypeAnnotations),
+            diff.visibleTypeAnnotations
+    );
+    patched.invisibleTypeAnnotations = ListDiffUtils.patch(
+            ListHelper.nullToEmpty(node.invisibleTypeAnnotations),
+            diff.invisibleTypeAnnotations
+    );
+    // attrs
+    patched.annotationDefault = ListDiffUtils.patchNullableValue(node.annotationDefault, diff.annotationDefault);
+    patched.visibleAnnotableParameterCount = ListDiffUtils.patchNonNullableValue(node.visibleAnnotableParameterCount, diff.visibleAnnotableParameterCount);
+    patched.visibleParameterAnnotations = KeyedListDiffUtils.patch(
+            normalizeAnnotations(node.visibleParameterAnnotations),
+            diff.visibleParameterAnnotations,
+            ListDiffUtils::patch
+    ).toArray(new List[0]);
+    patched.invisibleAnnotableParameterCount = ListDiffUtils.patchNonNullableValue(node.invisibleAnnotableParameterCount, diff.invisibleAnnotableParameterCount);
+    patched.invisibleParameterAnnotations = KeyedListDiffUtils.patch(
+            normalizeAnnotations(node.invisibleParameterAnnotations),
+            diff.invisibleParameterAnnotations,
+            ListDiffUtils::patch
+    ).toArray(new List[0]);
+
+    HashMap<LabelNode, LabelNode> labelMap = new HashMap<>();
+    patched.instructions = InsnListHelper.fromList(InsnListDiffUtils.patch(
+            new InsnListListAdapter(node.instructions),
+            diff.instructions,
+            labelMap
+    ));
+
+    patched.tryCatchBlocks = ListDiffUtils.patch(
+            node.tryCatchBlocks,
+            diff.tryCatchBlocks
+    );
+
+    for (TryCatchBlockNode tryCatchBlock : node.tryCatchBlocks) {
+      labelMap.putIfAbsent(tryCatchBlock.start, new LabelNode());
+      tryCatchBlock.start = labelMap.get(tryCatchBlock.start);
+      labelMap.putIfAbsent(tryCatchBlock.end, new LabelNode());
+      tryCatchBlock.end = labelMap.get(tryCatchBlock.end);
+      labelMap.putIfAbsent(tryCatchBlock.handler, new LabelNode());
+      tryCatchBlock.handler = labelMap.get(tryCatchBlock.handler);
+    }
+
+    patched.localVariables = ListDiffUtils.patch(
+            node.localVariables,
+            diff.localVariables
+    );
+
+    for (LocalVariableNode localVariable : node.localVariables) {
+      labelMap.putIfAbsent(localVariable.start, new LabelNode());
+      localVariable.start = labelMap.get(localVariable.start);
+      labelMap.putIfAbsent(localVariable.end, new LabelNode());
+      localVariable.end = labelMap.get(localVariable.end);
+    }
+
+    patched.visibleLocalVariableAnnotations = ListDiffUtils.patch(
+            node.visibleLocalVariableAnnotations,
+            diff.visibleLocalVariableAnnotations
+    );
+
+    for (LocalVariableAnnotationNode localVarAnn : node.visibleLocalVariableAnnotations) {
+      for (int i = 0; i < localVarAnn.start.size(); i++) {
+        labelMap.putIfAbsent(localVarAnn.start.get(i), new LabelNode());
+        localVarAnn.start.set(i, labelMap.get(localVarAnn.start.get(i)));
+      }
+
+      for (int i = 0; i < localVarAnn.end.size(); i++) {
+        labelMap.putIfAbsent(localVarAnn.end.get(i), new LabelNode());
+        localVarAnn.end.set(i, labelMap.get(localVarAnn.end.get(i)));
+      }
+    }
+
+    patched.invisibleLocalVariableAnnotations = ListDiffUtils.patch(
+            node.invisibleLocalVariableAnnotations,
+            diff.invisibleLocalVariableAnnotations
+    );
+
+    for (LocalVariableAnnotationNode localVarAnn : node.invisibleLocalVariableAnnotations) {
+      for (int i = 0; i < localVarAnn.start.size(); i++) {
+        labelMap.putIfAbsent(localVarAnn.start.get(i), new LabelNode());
+        localVarAnn.start.set(i, labelMap.get(localVarAnn.start.get(i)));
+      }
+
+      for (int i = 0; i < localVarAnn.end.size(); i++) {
+        labelMap.putIfAbsent(localVarAnn.end.get(i), new LabelNode());
+        localVarAnn.end.set(i, labelMap.get(localVarAnn.end.get(i)));
+      }
+    }
+
+    return patched;
+  }
+
+  private static List<List<AnnotationNode>> normalizeAnnotations(List<AnnotationNode>[] annotations) {
+    return ListHelper.map(
+            ListHelper.ofNullableArray(annotations),
+            ListHelper::nullToEmpty
+    );
   }
 }

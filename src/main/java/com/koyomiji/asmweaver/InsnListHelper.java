@@ -1,7 +1,10 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
+import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnList;
+
+import java.util.List;
 
 public class InsnListHelper {
   public static boolean equals(InsnList list1, InsnList list2) {
@@ -42,5 +45,15 @@ public class InsnListHelper {
     }
 
     return builder.build();
+  }
+
+  public static InsnList fromList(List<AbstractInsnNode> insns) {
+    InsnList insnList = new InsnList();
+
+    for (AbstractInsnNode insn : insns) {
+      insnList.add(insn);
+    }
+
+    return insnList;
   }
 }

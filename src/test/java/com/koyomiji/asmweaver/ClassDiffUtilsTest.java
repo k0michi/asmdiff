@@ -119,4 +119,18 @@ class ClassDiffUtilsTest {
     Assertions.assertFalse(diff.isEmpty());
     Assertions.assertFalse(diff.methods.isEmpty());
   }
+
+  @Test
+  void test_patch_0() {
+    ClassNode node1 = base;
+    ClassNode node2 = new ClassNode();
+    node2.visit(Opcodes.V9, 0, "TestClass", null, "java/lang/Object", null);
+    node2.visitEnd();
+    ClassDiff diff = ClassDiffUtils.diff(node1, node2);
+
+    ClassNode patched = ClassDiffUtils.patch(node1, diff);
+
+    ClassDiff diff2 = ClassDiffUtils.diff(node1, patched);
+    Assertions.assertFalse(diff2.isEmpty());
+  }
 }

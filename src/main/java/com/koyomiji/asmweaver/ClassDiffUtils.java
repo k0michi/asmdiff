@@ -31,4 +31,108 @@ public class ClassDiffUtils {
     diff.methods = KeyedListDiffUtils.diff(class1.methods, class2.methods, (m) -> new MemberKey(m.name, m.desc), MethodDiffUtils::diff);
     return diff;
   }
+
+  public static ClassNode patch(ClassNode node, ClassDiff diff) {
+    ClassNode patched = new ClassNode();
+    patched.version = ListDiffUtils.patchNonNullableValue(
+            node.version,
+            diff.version
+    );
+    patched.access = ListDiffUtils.patchNonNullableValue(
+            node.access,
+            diff.access
+    );
+    patched.name = ListDiffUtils.patchNonNullableValue(
+            node.name,
+            diff.name
+    );
+    patched.signature = ListDiffUtils.patchNullableValue(
+            node.signature,
+            diff.signature
+    );
+    patched.superName = ListDiffUtils.patchNullableValue(
+            node.superName,
+            diff.superName
+    );
+    patched.interfaces = ListDiffUtils.patch(
+            node.interfaces,
+            diff.interfaces
+    );
+    patched.sourceFile = ListDiffUtils.patchNullableValue(
+            node.sourceFile,
+            diff.sourceFile
+    );
+    patched.sourceDebug = ListDiffUtils.patchNullableValue(
+            node.sourceDebug,
+            diff.sourceDebug
+    );
+    patched.module = ListHelper.getOrNull(
+            KeyedListDiffUtils.patch(
+                    ListHelper.ofNullable(node.module),
+                    diff.module,
+                    ModuleDiffUtils::patch
+            ), 0);
+    patched.outerClass = ListDiffUtils.patchNullableValue(
+            node.outerClass,
+            diff.outerClass
+    );
+    patched.outerMethod = ListDiffUtils.patchNullableValue(
+            node.outerMethod,
+            diff.outerMethod
+    );
+    patched.outerMethodDesc = ListDiffUtils.patchNullableValue(
+            node.outerMethodDesc,
+            diff.outerMethodDesc
+    );
+    patched.visibleAnnotations = ListDiffUtils.patch(
+            node.visibleAnnotations,
+            diff.visibleAnnotations
+    );
+    patched.invisibleAnnotations = ListDiffUtils.patch(
+            node.invisibleAnnotations,
+            diff.invisibleAnnotations
+    );
+    patched.visibleTypeAnnotations = ListDiffUtils.patch(
+            node.visibleTypeAnnotations,
+            diff.visibleTypeAnnotations
+    );
+    patched.invisibleTypeAnnotations = ListDiffUtils.patch(
+            node.invisibleTypeAnnotations,
+            diff.invisibleTypeAnnotations
+    );
+    // TODO: attrs
+    patched.innerClasses = ListDiffUtils.patch(
+            node.innerClasses,
+            diff.innerClasses
+    );
+    patched.nestHostClass = ListDiffUtils.patchNullableValue(
+            node.nestHostClass,
+            diff.nestHostClass
+    );
+    patched.nestMembers = ListDiffUtils.patch(
+            node.nestMembers,
+            diff.nestMembers
+    );
+    patched.permittedSubclasses = ListDiffUtils.patch(
+            node.permittedSubclasses,
+            diff.permittedSubclasses
+    );
+    patched.recordComponents = KeyedListDiffUtils.patch(
+            node.recordComponents,
+            diff.recordComponents,
+            RecordComponentDiffUtils::patch
+    );
+    patched.fields = KeyedListDiffUtils.patch(
+            node.fields,
+            diff.fields,
+            FieldDiffUtils::patch
+    );
+    patched.methods = KeyedListDiffUtils.patch(
+            node.methods,
+            diff.methods,
+            MethodDiffUtils::patch
+    );
+
+    return patched;
+  }
 }
