@@ -92,6 +92,7 @@ public class KeyedListDiffUtils {
     return new KeyedListDiff<>(reversedOperations);
   }
 
+  // FIXME: breaks if duplicate values
   public static <Value, Diff extends IDiff> KeyedListDiff<Integer, Value, Diff> diffIndexed(List<Value> list1, List<Value> list2, BiFunction<Value, Value, Diff> diffFunction) {
     Map<Value, Integer> indexMap = new HashMap<>();
 
