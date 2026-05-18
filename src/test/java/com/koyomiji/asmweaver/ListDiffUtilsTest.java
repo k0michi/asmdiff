@@ -240,6 +240,24 @@ class ListDiffUtilsTest {
   }
 
   @Test
+  void test_distance_0() {
+    var list1 = List.of(1, 2, 3);
+    var list2 = List.of(1, 2, 3);
+
+    var diff = ListDiffUtils.diff(list1, list2, Integer::equals);
+    Assertions.assertEquals(0, diff.distance());
+  }
+
+  @Test
+  void test_distance_1() {
+    var list1 = List.of(1, 2, 3);
+    var list2 = List.of(1, 4, 3);
+
+    var diff = ListDiffUtils.diff(list1, list2, Integer::equals);
+    Assertions.assertEquals(2, diff.distance());
+  }
+
+  @Test
   void test_compose_0() throws ConflictException {
     var list1 = List.of(1);
     var list2 = List.of(1, 2);

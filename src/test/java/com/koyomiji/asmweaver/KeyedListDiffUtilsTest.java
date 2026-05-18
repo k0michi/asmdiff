@@ -7,7 +7,10 @@ import com.koyomiji.asmweaver.io.CustomDataOutput;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
+import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 
@@ -186,6 +189,28 @@ class KeyedListDiffUtilsTest {
 
     Assertions.assertTrue(diff.isEmpty());
     Assertions.assertEquals(0, diff.operations.size());
+  }
+
+  @Test
+  void test_distance() {
+    var list1 = List.of(
+            new KeyedObject(1, "a"),
+            new KeyedObject(2, "b"),
+            new KeyedObject(3, "c")
+    );
+
+    var list2 = List.<KeyedObject>of(
+            new KeyedObject(1, "a"),
+            new KeyedObject(2, "b"),
+            new KeyedObject(3, "c")
+    );
+
+    var diff = KeyedListDiffUtils.diff(list1, list2,
+            KeyedObject::getKey,
+            this::diffKeyedObject
+    );
+
+    Assertions.assertEquals(0, diff.operations);
   }
 
   @Test

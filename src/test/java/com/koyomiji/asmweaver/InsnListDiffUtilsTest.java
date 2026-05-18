@@ -1,7 +1,5 @@
 package com.koyomiji.asmweaver;
 
-import com.koyomiji.asmweaver.analysis.DefUse;
-import com.koyomiji.asmweaver.analysis.DefUseChainAnalyzer;
 import com.koyomiji.asmweaver.util.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -9,8 +7,9 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.*;
-import org.objectweb.asm.tree.analysis.AnalyzerException;
+import org.objectweb.asm.tree.InsnList;
+import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.LabelNode;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -422,6 +421,21 @@ class InsnListDiffUtilsTest {
             new LabelNode(),
             new LabelNode()
     ));
+  }
+
+  @Test
+  void test_distance_0() {
+    InsnList list1 = new InsnList();
+    list1.add(new InsnNode(Opcodes.NOP));
+    InsnList list2 = new InsnList();
+    list2.add(new InsnNode(Opcodes.NOP));
+    InsnListDiff diff = InsnListDiffUtils.diff(
+            new InsnListListAdapter(list1),
+            (insn) -> -1,
+            new InsnListListAdapter(list2),
+            (insn) -> -1
+    );
+    Assertions.assertEquals(0, diff.distance());
   }
 
   private int distance(InsnListDiff diff) {
