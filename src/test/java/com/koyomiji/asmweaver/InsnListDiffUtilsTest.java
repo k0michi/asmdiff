@@ -7,10 +7,10 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.InsnNode;
-import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.*;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -528,7 +528,8 @@ class InsnListDiffUtilsTest {
 //              return result.find(new DefUse(methodNode.instructions.indexOf(insn), insn, varInsn.var)).hashCode();
 //            },
 //            new InsnListListAdapter(methodNode2.instructions),
-////            map2::get
+
+  /// /            map2::get
 //            (insn) -> {
 //              VarInsnNode varInsn = (VarInsnNode) insn;
 //              return result2.find(new DefUse(methodNode2.instructions.indexOf(insn), insn, varInsn.var)).hashCode();
@@ -537,4 +538,30 @@ class InsnListDiffUtilsTest {
 //
 //    Assertions.assertEquals(0, distance(diff));
 //  }
+  @Test
+  void test_patch_0() {
+    List<AbstractInsnNode> list1 = new ArrayList<>();
+    list1.add(LabelNodes.l0);
+    List<AbstractInsnNode> list2 = new ArrayList<>();
+    list2.add(LabelNodes.l1);
+    list2.add(new JumpInsnNode(Opcodes.GOTO, LabelNodes.l1));
+    InsnListDiff diff = InsnListDiffUtils.diff(
+            list1,
+            (insn) -> -1,
+            list2,
+            (insn) -> -1
+    );
+
+    List<AbstractInsnNode> list3 = new ArrayList<>();
+    list3.add(LabelNodes.l2);
+    HashMap<LabelNode, LabelNode> labelMap = new HashMap<>();
+    List<AbstractInsnNode> patched = InsnListDiffUtils.patch(
+            list3,
+            diff,
+            labelMap
+    );
+
+    Assertions.assertEquals(LabelNodes.l2, ((JumpInsnNode) patched.get(1)).label);
+    Assertions.assertEquals(LabelNodes.l2, patched.get(0));
+  }
 }

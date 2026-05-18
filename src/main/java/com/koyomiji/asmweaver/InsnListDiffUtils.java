@@ -652,4 +652,63 @@ public class InsnListDiffUtils {
     visited.put(newStateKey, newState.g());
     pq.add(newState);
   }
+
+  public static List<AbstractInsnNode> patch(List<AbstractInsnNode> insns, InsnListDiff diff, Map<LabelNode, LabelNode> labelMap) {
+
+    // labels in diff to labels in insns
+    // For labels that match at least once, keep the original label.
+    // Otherwise, create a new label.
+    List<AbstractInsnNode> patched = new ArrayList<>();
+    int i = 0;
+    int j = 0;
+
+    for (InsnListDiff.Operation op : diff.operations) {
+      switch (op.type) {
+        case MATCH:
+          List<LabelNode> extracted1 = AbstractInsnNodeHelper.getLabelTargets(insns.get(i));
+          List<LabelNode> extracted2 = AbstractInsnNodeHelper.getLabelTargets(op.operand2);
+
+          for (int k = 0; k < extracted1.size(); k++) {
+            labelMap.put(extracted2.get(k), extracted1.get(k));
+          }
+
+          i++;
+          j++;
+          break;
+        case INSERT:
+          j++;
+          break;
+        case DELETE:
+          i++;
+          break;
+      }
+    }
+
+    i = j = 0;
+
+    for (InsnListDiff.Operation op : diff.operations) {
+      switch (op.type) {
+        case MATCH:
+          patched.add(insns.get(i));
+          i++;
+          j++;
+          break;
+        case INSERT:
+          List<LabelNode> extracted2 = AbstractInsnNodeHelper.getLabelTargets(op.operand2);
+
+          for (int k = 0; k < extracted2.size(); k++) {
+            labelMap.putIfAbsent(extracted2.get(k), new LabelNode());
+          }
+
+          patched.add(op.operand2.clone(labelMap));
+          j++;
+          break;
+        case DELETE:
+          i++;
+          break;
+      }
+    }
+
+    return patched;
+  }
 }
