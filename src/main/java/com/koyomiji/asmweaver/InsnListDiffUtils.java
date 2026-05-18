@@ -22,13 +22,13 @@ public class InsnListDiffUtils {
 
       switch (op.type) {
         case MATCH:
-          invertedOp = new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, op.operand);
+          invertedOp = new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, op.operand2, op.operand1);
           break;
         case INSERT:
-          invertedOp = new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, op.mode, op.operand);
+          invertedOp = new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, op.mode, op.operand2, op.operand1);
           break;
         case DELETE:
-          invertedOp = new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, op.mode, op.operand);
+          invertedOp = new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, op.mode, op.operand2, op.operand1);
           break;
         default:
           throw new IllegalStateException("Unexpected operation type: " + op.type);
@@ -60,8 +60,8 @@ public class InsnListDiffUtils {
       InsnListDiff.Operation opP = itP.next();
 
       if (opP.type == InsnListDiff.Operation.Type.DELETE) {
-        qPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opP.mode, opP.operand));
-        pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, opP.mode, opP.operand));
+        qPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opP.mode, opP.operand1, opP.operand1));
+        pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, opP.mode, opP.operand1, null));
       } else if (opP.type == InsnListDiff.Operation.Type.MATCH || isInsert(opP)) {
         while (itQ.hasNext() && isInsert(itQ.peek())) {
           InsnListDiff.Operation opQIns = itQ.next();
@@ -69,31 +69,32 @@ public class InsnListDiffUtils {
 //          verifyNoInternalDependency(opQIns.operand, pInsertedNodes);
 
           qPrimeOps.add(opQIns);
-          pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opQIns.mode, opQIns.operand));
+          pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opQIns.mode, opQIns.operand2, opQIns.operand2));
         }
 
         if (!itQ.hasNext()) {
           throw new IllegalDiffException("p has remaining operations after q is exhausted");
         }
+        AbstractInsnNode valP = (opP.type == InsnListDiff.Operation.Type.INSERT) ? opP.operand2 : opP.operand1;
         InsnListDiff.Operation opQBase = itQ.next();
 
         // FIXME
 //        if (!compareInsns(opP.operand, opQBase.operand, Function.identity())) {
-        if (!AbstractInsnNodeHelper.equalsIgnoreLabelsIgnoreLocals(opP.operand, opQBase.operand)) {
+        if (!AbstractInsnNodeHelper.equalsIgnoreLabelsIgnoreLocals(valP, opQBase.operand1)) {
           throw new IllegalDiffException("p and q disagree on node identity");
         }
 
         if (opP.type == InsnListDiff.Operation.Type.MATCH) {
           qPrimeOps.add(opQBase);
           if (opQBase.type == InsnListDiff.Operation.Type.MATCH) {
-            pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opP.mode, opP.operand));
+            pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opP.mode, opP.operand1, opP.operand1));
           }
         } else {
           if (opQBase.type == InsnListDiff.Operation.Type.DELETE) {
             throw new ConflictException("p inserts a node that q deletes");
           }
 
-          pPrimeOps.add(new InsnListDiff.Operation(opP.type, opP.mode, opP.operand));
+          pPrimeOps.add(new InsnListDiff.Operation(opP.type, opP.mode, null, opP.operand2));
         }
       }
     }
@@ -103,7 +104,7 @@ public class InsnListDiffUtils {
 
       if (isInsert(opQ)) {
         qPrimeOps.add(opQ);
-        pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opQ.mode, opQ.operand));
+        pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opQ.mode, opQ.operand2, opQ.operand2));
       } else {
         throw new IllegalDiffException("q has remaining operations after p is exhausted");
       }
@@ -121,7 +122,7 @@ public class InsnListDiffUtils {
 
     for (InsnListDiff.Operation op : diff.operations) {
       if (isInsert(op)) {
-        inserted.add(op.operand);
+        inserted.add(op.operand2);
       }
     }
 
@@ -166,7 +167,7 @@ public class InsnListDiffUtils {
         InsnListDiff.Operation opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
 
         // FIXME: should not ignore
-        if (!AbstractInsnNodeHelper.equalsIgnoreLabelsIgnoreLocals(opP.operand, opQ.operand)) {
+        if (!AbstractInsnNodeHelper.equalsIgnoreLabelsIgnoreLocals(opP.operand2, opQ.operand1)) {
           throw new IllegalDiffException("Composition Error: Operand mismatch at B.");
         }
 
@@ -174,40 +175,40 @@ public class InsnListDiffUtils {
           ins1.add(opP);
         }
       } else if (opP.type == InsnListDiff.Operation.Type.DELETE) {
-        List<InsnListDiff.Operation> qInsertions = collectInsertions(itQ);
-
-        int matchIndex = -1;
-        for (int i = 0; i < qInsertions.size(); i++) {
-          // FIXME: should not ignore
-          if (AbstractInsnNodeHelper.equalsIgnoreLabelsIgnoreLocals(qInsertions.get(i).operand, opP.operand)) {
-            matchIndex = i;
-            break;
-          }
-        }
-
-        if (matchIndex != -1) {
-          InsnListDiff.Operation matchingInsert = qInsertions.remove(matchIndex);
-          ins2.addAll(qInsertions);
-
-          result.addAll(mergeInsertionSlot(ins1, ins2));
-          ins1.clear();
-          ins2.clear();
-
-          result.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, matchingInsert.mode, opP.operand));
-        } else {
-          ins2.addAll(qInsertions);
-          result.addAll(mergeInsertionSlot(ins1, ins2));
-          ins1.clear();
-          ins2.clear();
-          result.add(opP);
-        }
+//        List<InsnListDiff.Operation> qInsertions = collectInsertions(itQ);
+//
+//        int matchIndex = -1;
+//        for (int i = 0; i < qInsertions.size(); i++) {
+//          // FIXME: should not ignore
+//          if (AbstractInsnNodeHelper.equalsIgnoreLabelsIgnoreLocals(qInsertions.get(i).operand, opP.operand)) {
+//            matchIndex = i;
+//            break;
+//          }
+//        }
+//
+//        if (matchIndex != -1) {
+//          InsnListDiff.Operation matchingInsert = qInsertions.remove(matchIndex);
+//          ins2.addAll(qInsertions);
+//
+//          result.addAll(mergeInsertionSlot(ins1, ins2));
+//          ins1.clear();
+//          ins2.clear();
+//
+//          result.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, matchingInsert.mode, opP.operand));
+//        } else {
+//          ins2.addAll(qInsertions);
+        result.addAll(mergeInsertionSlot(ins1, ins2));
+        ins1.clear();
+        ins2.clear();
+        result.add(opP);
+//        }
       } else { // MATCH
         ins2.addAll(collectInsertions(itQ));
 
         InsnListDiff.Operation opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
 
         // FIXME: should not ignore
-        if (!AbstractInsnNodeHelper.equalsIgnoreLabelsIgnoreLocals(opP.operand, opQ.operand)) {
+        if (!AbstractInsnNodeHelper.equalsIgnoreLabelsIgnoreLocals(opP.operand2, opQ.operand1)) {
           throw new IllegalDiffException("Composition Error: Operand mismatch at C.");
         }
 
@@ -215,7 +216,7 @@ public class InsnListDiffUtils {
         ins1.clear();
         ins2.clear();
 
-        result.add(new InsnListDiff.Operation(opQ.type, opQ.mode, opP.operand));
+        result.add(new InsnListDiff.Operation(opQ.type, opQ.mode, opP.operand1, opQ.operand2));
       }
     }
 
@@ -486,7 +487,7 @@ public class InsnListDiffUtils {
         continue;
       }
 
-      if (j++ % 10000 == 0) {
+      if (1 == 0) {
 //        Logger.getInstance().log(
         System.out.println(
                 String.format("State: idxA=%d, idxB=%d, g=%d, h=%d, f=%d",
@@ -521,7 +522,7 @@ public class InsnListDiffUtils {
 //                        new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, InsnListDiff.Operation.Mode.BETWEEN, insnsA[current.idxA])
 //                ),
                 current,
-                new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, InsnListDiff.Operation.Mode.BETWEEN, insnsA[current.idxA]),
+                new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, InsnListDiff.Operation.Mode.BETWEEN, insnsA[current.idxA], null),
                 heuristicProvider
         );
         removeDeadLabels(state, lastOccurrenceA, lastOccurrenceB, listA, listB);
@@ -542,7 +543,7 @@ public class InsnListDiffUtils {
 //
 //                ),
                 current,
-                new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, InsnListDiff.Operation.Mode.BETWEEN, insnsB[current.idxB]),
+                new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, InsnListDiff.Operation.Mode.BETWEEN, null, insnsB[current.idxB]),
                 heuristicProvider
         );
         removeDeadLabels(state, lastOccurrenceA, lastOccurrenceB, listA, listB);
@@ -627,7 +628,7 @@ public class InsnListDiffUtils {
 //                          new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, insnA)
 //                  ),
                   current,
-                  new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, insnA),
+                  new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, insnA, insnB),
                   heuristicProvider
           );
           removeDeadLabels(state, lastOccurrenceA, lastOccurrenceB, listA, listB);
