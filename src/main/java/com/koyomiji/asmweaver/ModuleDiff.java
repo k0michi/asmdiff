@@ -30,4 +30,17 @@ public class ModuleDiff implements IDiff {
             && uses.isEmpty()
             && provides.isEmpty();
   }
+
+  @Override
+  public int distance() {
+    return name.distance()
+            + access.distance()
+            + version.distance()
+            + mainClass.distance()
+            + packages.distance()
+            + requires.distance()
+            + exports.distance()
+            + opens.distance()
+            + provides.distance();
+  }
 }

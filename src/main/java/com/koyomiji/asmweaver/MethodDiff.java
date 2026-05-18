@@ -50,4 +50,28 @@ public class MethodDiff implements IDiff {
             && visibleLocalVariableAnnotations.isEmpty()
             && invisibleLocalVariableAnnotations.isEmpty();
   }
+
+  @Override
+  public int distance() {
+    return access.distance()
+            + name.distance()
+            + desc.distance()
+            + signature.distance()
+            + exceptions.distance()
+            + parameters.distance()
+            + visibleAnnotations.distance()
+            + invisibleAnnotations.distance()
+            + visibleTypeAnnotations.distance()
+            + invisibleTypeAnnotations.distance()
+            + annotationDefault.distance()
+            + visibleAnnotableParameterCount.distance()
+            + visibleParameterAnnotations.distance()
+            + invisibleAnnotableParameterCount.distance()
+            + invisibleParameterAnnotations.distance()
+            + instructions.distance()
+            + tryCatchBlocks.distance()
+            + localVariables.distance()
+            + visibleLocalVariableAnnotations.distance()
+            + invisibleLocalVariableAnnotations.distance();
+  }
 }

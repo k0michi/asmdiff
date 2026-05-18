@@ -22,6 +22,20 @@ public class InsnListDiff implements IDiff {
     return true;
   }
 
+  @Override
+  public int distance() {
+    int distance = 0;
+
+    for (Operation op : operations) {
+      // TODO: insn annotation
+      if (op.type != Operation.Type.MATCH) {
+        distance++;
+      }
+    }
+
+    return distance;
+  }
+
   public static class Operation {
     public enum Type {
       MATCH,

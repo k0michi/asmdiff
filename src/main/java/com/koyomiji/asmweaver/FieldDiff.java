@@ -27,4 +27,18 @@ public class FieldDiff implements IDiff {
             && visibleTypeAnnotations.isEmpty()
             && invisibleTypeAnnotations.isEmpty();
   }
+
+  @Override
+  public int distance() {
+    return access.distance()
+            + name.distance()
+            + desc.distance()
+            + signature.distance()
+            + value.distance()
+            + visibleAnnotations.distance()
+            + visibleTypeAnnotations.distance()
+            + invisibleAnnotations.distance()
+            + visibleAnnotations.distance()
+            + invisibleTypeAnnotations.distance();
+  }
 }

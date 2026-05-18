@@ -20,6 +20,19 @@ public class ListDiff<T> implements IDiff {
     return true;
   }
 
+  @Override
+  public int distance() {
+    int distance = 0;
+
+    for  (Operation<T> op : operations) {
+      if (op.type != Operation.Type.MATCH) {
+        distance++;
+      }
+    }
+
+    return distance;
+  }
+
   public static class Operation<T> {
     public enum Type {
       MATCH,

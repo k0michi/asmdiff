@@ -50,6 +50,11 @@ class KeyedListDiffUtilsTest {
     public boolean isEmpty() {
       return value.isEmpty();
     }
+
+    @Override
+    public int distance() {
+      return value.distance();
+    }
   }
 
   private KeyedObjectDiff diffKeyedObject(KeyedObject o1, KeyedObject o2) {

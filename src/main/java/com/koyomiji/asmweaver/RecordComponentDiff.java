@@ -23,4 +23,15 @@ public class RecordComponentDiff implements IDiff {
             && visibleTypeAnnotations.isEmpty()
             && invisibleTypeAnnotations.isEmpty();
   }
+
+  @Override
+  public int distance() {
+    return name.distance()
+            + descriptor.distance()
+            + signature.distance()
+            + visibleAnnotations.distance()
+            + invisibleAnnotations.distance()
+            + visibleTypeAnnotations.distance()
+            + invisibleTypeAnnotations.distance();
+  }
 }

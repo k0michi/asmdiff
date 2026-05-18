@@ -53,4 +53,30 @@ public class ClassDiff implements IDiff {
             && fields.isEmpty()
             && methods.isEmpty();
   }
+
+  @Override
+  public int distance() {
+    return version.distance()
+            + access.distance()
+            + name.distance()
+            + signature.distance()
+            + superName.distance()
+            + interfaces.distance()
+            + sourceFile.distance()
+            + sourceDebug.distance()
+            + outerClass.distance()
+            + outerMethod.distance()
+            + outerMethodDesc.distance()
+            + visibleAnnotations.distance()
+            + visibleTypeAnnotations.distance()
+            + invisibleAnnotations.distance()
+            + visibleTypeAnnotations.distance()
+            + innerClasses.distance()
+            + nestHostClass.distance()
+            + nestMembers.distance()
+            + permittedSubclasses.distance()
+            + recordComponents.distance()
+            + fields.distance()
+            + methods.distance();
+  }
 }
