@@ -62,6 +62,8 @@ class MethodNodeHelperTest {
 
   @Test
   void test_equals_labelMap_1() throws IOException {
+    LabelNodes.reset();
+
     MethodNode node1 = new MethodNode(0, "method", "()V", null, null);
     node1.instructions.add(LabelNodes.l0);
     node1.instructions.add(new InsnNode(Opcodes.NOP));
@@ -83,6 +85,8 @@ class MethodNodeHelperTest {
 
   @Test
   void test_hashCode_labelMap_0() throws IOException {
+    LabelNodes.reset();
+
     MethodNode node1 = new MethodNode(0, "method", "()V", null, null);
     node1.instructions.add(LabelNodes.l0);
     node1.instructions.add(new InsnNode(Opcodes.NOP));
