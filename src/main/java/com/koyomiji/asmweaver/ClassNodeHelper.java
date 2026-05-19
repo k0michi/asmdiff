@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
 public class ClassNodeHelper {
   public static boolean equals(ClassNode node1, ClassNode node2) {
@@ -58,6 +59,10 @@ public class ClassNodeHelper {
   }
 
   public static int hashCode(ClassNode node) {
+    return hashCode(node, Objects::hashCode);
+  }
+
+  public static int hashCode(ClassNode node, ToIntFunction<LabelNode> labelHashCode) {
     if (node == null) {
       return 0;
     }
@@ -86,7 +91,7 @@ public class ClassNodeHelper {
             .append(node.permittedSubclasses, l -> ListHelper.hashCodeNullToEmpty(l, Objects::hash))
             .append(node.recordComponents, l -> ListHelper.hashCodeNullToEmpty(l, RecordComponentNodeHelper::hashCode))
             .append(node.fields, l -> ListHelper.hashCode(l, FieldNodeHelper::hashCode))
-            .append(node.methods, l -> ListHelper.hashCode(l, MethodNodeHelper::hashCode))
+            .append(node.methods, l -> ListHelper.hashCode(l, m -> MethodNodeHelper.hashCode(m, labelHashCode)))
             .build();
   }
 

@@ -3,6 +3,7 @@ package com.koyomiji.asmweaver;
 import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.CustomDataOutput;
 import com.koyomiji.asmweaver.io.DataStreamHelper;
+import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import com.koyomiji.asmweaver.util.tuple.Triplet;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LocalVariableNode;
@@ -11,6 +12,7 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
 public class LocalVariableNodeHelper {
   public static boolean equals(LocalVariableNode a, LocalVariableNode b, BiPredicate<LabelNode, LabelNode> labelEquals, BiPredicate<Triplet<LabelNode, LabelNode, Integer>, Triplet<LabelNode, LabelNode, Integer>> localEquals) {
@@ -42,12 +44,19 @@ public class LocalVariableNodeHelper {
     return equals(a, b, labelEquals, (t1, t2) -> Objects.equals(t1.third, t2.third));
   }
 
-  public static int hashCode(LocalVariableNode node) {
+  public static int hashCode(LocalVariableNode node, ToIntFunction<LabelNode> labelHashCode) {
     if (node == null) {
       return 0;
     }
 
-    return Objects.hash(node.name, node.desc, node.signature, node.start, node.end, node.index);
+    return new HashCodeBuilder()
+            .append(node.name)
+            .append(node.desc)
+            .append(node.signature)
+            .append(node.start, labelHashCode)
+            .append(node.end, labelHashCode)
+            .append(node.index)
+            .build();
   }
 
   public static void write(LocalVariableNode node, CustomDataOutput out, Function<LabelNode, Integer> labelToIndex) throws IOException {

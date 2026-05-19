@@ -80,4 +80,23 @@ class MethodNodeHelperTest {
             MethodNodeHelper.equals(node1, node2, (l1, l2) -> MapHelper.putIfAbsentAndTest(map, l1, l2))
     );
   }
+
+  @Test
+  void test_hashCode_labelMap_0() throws IOException {
+    MethodNode node1 = new MethodNode(0, "method", "()V", null, null);
+    node1.instructions.add(LabelNodes.l0);
+    node1.instructions.add(new InsnNode(Opcodes.NOP));
+    node1.instructions.add(LabelNodes.l1);
+    node1.localVariables.add(new LocalVariableNode("name", "desc", "signature", LabelNodes.l0, LabelNodes.l1, 0));
+    MethodNode node2 = new MethodNode(0, "method", "()V", null, null);
+    node2.instructions.add(LabelNodes.l2);
+    node2.instructions.add(new InsnNode(Opcodes.NOP));
+    node2.instructions.add(LabelNodes.l3);
+    node2.localVariables.add(new LocalVariableNode("name", "desc", "signature", LabelNodes.l2, LabelNodes.l3, 0));
+
+    Assertions.assertEquals(
+            MethodNodeHelper.hashCode(node1, (new AutoIncrementBiHashMap<>())::get),
+            MethodNodeHelper.hashCode(node2, (new AutoIncrementBiHashMap<>())::get)
+    );
+  }
 }

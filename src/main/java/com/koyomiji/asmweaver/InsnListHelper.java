@@ -8,6 +8,8 @@ import org.objectweb.asm.tree.LabelNode;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
 public class InsnListHelper {
   public static boolean equals(InsnList list1, InsnList list2) {
@@ -41,6 +43,10 @@ public class InsnListHelper {
   }
 
   public static int hashCode(InsnList list) {
+    return hashCode(list, Objects::hashCode);
+  }
+
+  public static int hashCode(InsnList list, ToIntFunction<LabelNode> labelHashCode) {
     if (list == null) {
       return 0;
     }
@@ -48,7 +54,7 @@ public class InsnListHelper {
     HashCodeBuilder builder = new HashCodeBuilder();
 
     for (int i = 0; i < list.size(); i++) {
-      builder.append(list.get(i), AbstractInsnNodeHelper::hashCode);
+      builder.append(list.get(i), insn-> AbstractInsnNodeHelper.hashCode(insn, labelHashCode));
     }
 
     return builder.build();

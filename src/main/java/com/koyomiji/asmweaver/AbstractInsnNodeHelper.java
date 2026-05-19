@@ -4,8 +4,6 @@ import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.CustomDataOutput;
 import org.objectweb.asm.tree.*;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,6 +11,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
 public class AbstractInsnNodeHelper {
   public static boolean equals(AbstractInsnNode node1, AbstractInsnNode node2) {
@@ -180,6 +179,10 @@ public class AbstractInsnNodeHelper {
   }
 
   public static int hashCode(AbstractInsnNode node) {
+    return hashCode(node, Objects::hashCode);
+  }
+
+  public static int hashCode(AbstractInsnNode node, ToIntFunction<LabelNode> labelHashCode) {
     if (node == null) {
       return 0;
     }
@@ -260,7 +263,16 @@ public class AbstractInsnNodeHelper {
               node.getType(),
               ListHelper.hashCode(node.visibleTypeAnnotations, AnnotationNodeHelper::hashCode),
               ListHelper.hashCode(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode),
-              jumpNode.label
+              labelHashCode.applyAsInt(jumpNode.label)
+      );
+    } else if (node.getClass() == LabelNode.class) {
+      LabelNode labelNode = (LabelNode) node;
+      return Objects.hash(
+              node.getOpcode(),
+              node.getType(),
+              ListHelper.hashCode(node.visibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              ListHelper.hashCode(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode),
+              labelHashCode.applyAsInt(labelNode)
       );
     } else if (node.getClass() == LdcInsnNode.class) {
       LdcInsnNode ldcNode = (LdcInsnNode) node;
@@ -290,8 +302,8 @@ public class AbstractInsnNodeHelper {
               ListHelper.hashCode(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode),
               tableSwitchNode.min,
               tableSwitchNode.max,
-              tableSwitchNode.dflt,
-              ListHelper.hashCode(tableSwitchNode.labels, Objects::hashCode)
+              labelHashCode.applyAsInt(tableSwitchNode.dflt),
+              ListHelper.hashCode(tableSwitchNode.labels, labelHashCode)
       );
     } else if (node.getClass() == LookupSwitchInsnNode.class) {
       LookupSwitchInsnNode lookupSwitchNode = (LookupSwitchInsnNode) node;
@@ -300,8 +312,8 @@ public class AbstractInsnNodeHelper {
               node.getType(),
               ListHelper.hashCode(node.visibleTypeAnnotations, AnnotationNodeHelper::hashCode),
               ListHelper.hashCode(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode),
-              lookupSwitchNode.dflt,
-              ListHelper.hashCode(lookupSwitchNode.labels, Objects::hashCode),
+              labelHashCode.applyAsInt(lookupSwitchNode.dflt),
+              ListHelper.hashCode(lookupSwitchNode.labels, labelHashCode),
               ListHelper.hashCode(lookupSwitchNode.keys, Objects::hashCode)
       );
     } else if (node.getClass() == MultiANewArrayInsnNode.class) {
@@ -333,7 +345,7 @@ public class AbstractInsnNodeHelper {
               ListHelper.hashCode(node.visibleTypeAnnotations, AnnotationNodeHelper::hashCode),
               ListHelper.hashCode(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode),
               lineNumberNode.line,
-              lineNumberNode.start
+              labelHashCode.applyAsInt(lineNumberNode.start)
       );
     }
 

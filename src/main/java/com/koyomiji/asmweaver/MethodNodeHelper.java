@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
 public class MethodNodeHelper {
   public static boolean equals(MethodNode node1, MethodNode node2) {
@@ -66,6 +67,10 @@ public class MethodNodeHelper {
   }
 
   public static int hashCode(MethodNode node) {
+    return hashCode(node, Objects::hashCode);
+  }
+
+  public static int hashCode(MethodNode node, ToIntFunction<LabelNode> labelHashCode) {
     if (node == null) {
       return 0;
     }
@@ -109,13 +114,12 @@ public class MethodNodeHelper {
                             l, al -> ListHelper.hashCode(al, AnnotationNodeHelper::hashCode)
                     )
             )
-            .append(node.instructions, InsnListHelper::hashCode)
-            .append(node.tryCatchBlocks, l -> ListHelper.hashCodeNullToEmpty(l, TryCatchBlockNodeHelper::hashCode))
+            .append(node.instructions, (list) -> InsnListHelper.hashCode(list, labelHashCode))
             .append(node.maxStack)
             .append(node.maxLocals)
-            .append(node.localVariables, l -> ListHelper.hashCodeNullToEmpty(l, LocalVariableNodeHelper::hashCode))
-            .append(node.visibleLocalVariableAnnotations, l -> ListHelper.hashCodeNullToEmpty(l, AnnotationNodeHelper::hashCode))
-            .append(node.invisibleLocalVariableAnnotations, l -> ListHelper.hashCodeNullToEmpty(l, AnnotationNodeHelper::hashCode))
+            .append(node.localVariables, l -> ListHelper.hashCodeNullToEmpty(l, lv -> LocalVariableNodeHelper.hashCode(lv, labelHashCode)))
+            .append(node.visibleLocalVariableAnnotations, l -> ListHelper.hashCodeNullToEmpty(l, a -> AnnotationNodeHelper.hashCode(a, labelHashCode)))
+            .append(node.invisibleLocalVariableAnnotations, l -> ListHelper.hashCodeNullToEmpty(l, a -> AnnotationNodeHelper.hashCode(a, labelHashCode)))
             .build();
   }
 

@@ -2,6 +2,7 @@ package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.CustomDataOutput;
+import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import com.koyomiji.asmweaver.util.tuple.Triplet;
 import org.objectweb.asm.TypePath;
 import org.objectweb.asm.tree.AnnotationNode;
@@ -9,8 +10,6 @@ import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LocalVariableAnnotationNode;
 import org.objectweb.asm.tree.TypeAnnotationNode;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,6 +17,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
 public class AnnotationNodeHelper {
   public static boolean equals(AnnotationNode a, AnnotationNode b) {
@@ -113,18 +113,38 @@ public class AnnotationNodeHelper {
   }
 
   public static int hashCode(AnnotationNode node) {
+    return hashCode(node, Objects::hashCode);
+  }
+
+  public static int hashCode(AnnotationNode node, ToIntFunction<LabelNode> labelHashCode) {
     if (node == null) {
       return 0;
     }
 
     if (node.getClass() == AnnotationNode.class) {
-      return Objects.hash(node.desc, ListHelper.hashCode(node.values, AnnotationNodeHelper::annotationValueHashCode));
+      return new HashCodeBuilder()
+              .append(node.desc)
+              .append(node.values, l -> ListHelper.hashCode(l, AnnotationNodeHelper::annotationValueHashCode))
+              .build();
     } else if (node.getClass() == TypeAnnotationNode.class) {
       TypeAnnotationNode typeNode = (TypeAnnotationNode) node;
-      return Objects.hash(node.desc, ListHelper.hashCode(node.values, AnnotationNodeHelper::annotationValueHashCode), typeNode.typeRef, TypePathHelper.hashCode(typeNode.typePath));
+      return new HashCodeBuilder()
+              .append(typeNode.desc)
+              .append(typeNode.values, l -> ListHelper.hashCode(l, AnnotationNodeHelper::annotationValueHashCode))
+              .append(typeNode.typeRef)
+              .append(typeNode.typePath, TypePathHelper::hashCode)
+              .build();
     } else if (node.getClass() == LocalVariableAnnotationNode.class) {
       LocalVariableAnnotationNode localVarNode = (LocalVariableAnnotationNode) node;
-      return Objects.hash(node.desc, ListHelper.hashCode(node.values, AnnotationNodeHelper::annotationValueHashCode), ListHelper.hashCode(localVarNode.start, Objects::hashCode), ListHelper.hashCode(localVarNode.end, Objects::hashCode), ListHelper.hashCode(localVarNode.index, Objects::hashCode));
+      return new HashCodeBuilder()
+              .append(localVarNode.desc)
+              .append(localVarNode.values, l -> ListHelper.hashCode(l, AnnotationNodeHelper::annotationValueHashCode))
+              .append(localVarNode.typeRef)
+              .append(localVarNode.typePath, TypePathHelper::hashCode)
+              .append(localVarNode.start, l -> ListHelper.hashCode(l, labelHashCode))
+              .append(localVarNode.end, l -> ListHelper.hashCode(l, labelHashCode))
+              .append(localVarNode.index, ListHelper::hashCode)
+              .build();
     }
 
     return Objects.hash(node);
