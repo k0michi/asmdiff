@@ -8,14 +8,17 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.LabelNode;
 
 import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Objects;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
 
 public class ClassNodeHelper {
   public static boolean equals(ClassNode node1, ClassNode node2) {
+    return equals(node1, node2, Objects::equals);
+  }
+
+  public static boolean equals(ClassNode node1, ClassNode node2, BiPredicate<LabelNode, LabelNode> labelEquals) {
     if (node1 == node2) {
       return true;
     }
@@ -51,7 +54,7 @@ public class ClassNodeHelper {
             && ListHelper.equalsNullToEmpty(node1.permittedSubclasses, node2.permittedSubclasses)
             && ListHelper.equalsNullToEmpty(node1.recordComponents, node2.recordComponents, RecordComponentNodeHelper::equals)
             && ListHelper.equals(node1.fields, node2.fields, FieldNodeHelper::equals)
-            && ListHelper.equals(node1.methods, node2.methods, MethodNodeHelper::equals);
+            && ListHelper.equals(node1.methods, node2.methods, (m1, m2) -> MethodNodeHelper.equals(m1, m2, labelEquals));
   }
 
   public static int hashCode(ClassNode node) {

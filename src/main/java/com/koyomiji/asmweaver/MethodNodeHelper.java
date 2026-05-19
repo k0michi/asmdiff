@@ -8,15 +8,18 @@ import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodNode;
 
 import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
 
 public class MethodNodeHelper {
   public static boolean equals(MethodNode node1, MethodNode node2) {
+    return equals(node1, node2, Objects::equals);
+  }
+
+  public static boolean equals(MethodNode node1, MethodNode node2, BiPredicate<LabelNode, LabelNode> labelEquals) {
     if (node1 == node2) {
       return true;
     }
@@ -53,7 +56,7 @@ public class MethodNodeHelper {
             ListHelper.ofNullableArray(node2.invisibleParameterAnnotations),
             (a, b) -> ListHelper.equals(a, b, AnnotationNodeHelper::equals)
     )
-            && InsnListHelper.equals(node1.instructions, node2.instructions)
+            && InsnListHelper.equals(node1.instructions, node2.instructions, labelEquals)
             && ListHelper.equalsNullToEmpty(node1.tryCatchBlocks, node2.tryCatchBlocks, TryCatchBlockNodeHelper::equals)
             && node1.maxStack == node2.maxStack
             && node1.maxLocals == node2.maxLocals

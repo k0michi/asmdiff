@@ -3,11 +3,18 @@ package com.koyomiji.asmweaver;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnList;
+import org.objectweb.asm.tree.LabelNode;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.function.BiPredicate;
 
 public class InsnListHelper {
   public static boolean equals(InsnList list1, InsnList list2) {
+    return equals(list1, list2, Objects::equals);
+  }
+
+  public static boolean equals(InsnList list1, InsnList list2, BiPredicate<LabelNode, LabelNode> labelEquals) {
     if (list1 == list2) {
       return true;
     }
@@ -25,7 +32,7 @@ public class InsnListHelper {
     }
 
     for (int i = 0; i < list1.size(); i++) {
-      if (!AbstractInsnNodeHelper.equals(list1.get(i), list2.get(i))) {
+      if (!AbstractInsnNodeHelper.equals(list1.get(i), list2.get(i), labelEquals)) {
         return false;
       }
     }

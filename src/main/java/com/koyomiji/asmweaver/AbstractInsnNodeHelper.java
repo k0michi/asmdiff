@@ -19,6 +19,10 @@ public class AbstractInsnNodeHelper {
     return equals(node1, node2, Objects::equals, Objects::equals);
   }
 
+  public static boolean equals(AbstractInsnNode node1, AbstractInsnNode node2, BiPredicate<LabelNode, LabelNode> labelEquals) {
+    return equals(node1, node2, labelEquals, Objects::equals);
+  }
+
   public static boolean equals(AbstractInsnNode node1, AbstractInsnNode node2, BiPredicate<LabelNode, LabelNode> labelEquals, BiPredicate<Integer, Integer> localEquals) {
     if (node1 == node2) {
       return true;

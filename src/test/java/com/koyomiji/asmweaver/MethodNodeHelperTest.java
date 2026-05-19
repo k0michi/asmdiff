@@ -1,12 +1,14 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.util.AutoIncrementBiHashMap;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.ParameterNode;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 
 class MethodNodeHelperTest {
@@ -42,5 +44,18 @@ class MethodNodeHelperTest {
             (in) -> MethodNodeHelper.read(in, labels::getKey),
             MethodNodeHelper::equals
     );
+  }
+
+  @Test
+  void test_equals_labelMap() throws IOException {
+    MethodNode node1 = new MethodNode(0, "method", "()V", null, null);
+    node1.instructions.add(new LabelNode());
+    MethodNode node2 = new MethodNode(0, "method", "()V", null, null);
+    node2.instructions.add(new LabelNode());
+
+    Assertions.assertFalse(InsnListHelper.equals(node1.instructions, node2.instructions));
+
+    HashMap<LabelNode, LabelNode> map = new HashMap<>();
+    Assertions.assertTrue(InsnListHelper.equals(node1.instructions, node2.instructions, (l1, l2) -> MapHelper.putIfAbsentAndTest(map, l1, l2)));
   }
 }
