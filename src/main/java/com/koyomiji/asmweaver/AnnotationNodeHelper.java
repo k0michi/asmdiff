@@ -21,11 +21,11 @@ import java.util.function.Function;
 
 public class AnnotationNodeHelper {
   public static boolean equals(AnnotationNode a, AnnotationNode b) {
-    return equals(a, b, Objects::equals, Objects::equals);
+    return equals(a, b, Objects::equals);
   }
 
   public static boolean equals(AnnotationNode a, AnnotationNode b, BiPredicate<LabelNode, LabelNode> labelEquals) {
-    return equals(a, b, labelEquals, Objects::equals);
+    return equals(a, b, labelEquals, (t1, t2) -> Objects.equals(t1.third, t2.third));
   }
 
   public static boolean equals(AnnotationNode a, AnnotationNode b, BiPredicate<LabelNode, LabelNode> labelEquals, BiPredicate<Triplet<LabelNode, LabelNode, Integer>, Triplet<LabelNode, LabelNode, Integer>> localEquals) {

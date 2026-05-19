@@ -35,11 +35,11 @@ public class LocalVariableNodeHelper {
   }
 
   public static boolean equals(LocalVariableNode a, LocalVariableNode b) {
-    return equals(a, b, Objects::equals, Objects::equals);
+    return equals(a, b, Objects::equals);
   }
 
   public static boolean equals(LocalVariableNode a, LocalVariableNode b, BiPredicate<LabelNode, LabelNode> labelEquals) {
-    return equals(a, b, labelEquals, Objects::equals);
+    return equals(a, b, labelEquals, (t1, t2) -> Objects.equals(t1.third, t2.third));
   }
 
   public static int hashCode(LocalVariableNode node) {
