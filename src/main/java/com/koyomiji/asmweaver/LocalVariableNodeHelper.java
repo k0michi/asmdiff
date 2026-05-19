@@ -7,8 +7,6 @@ import com.koyomiji.asmweaver.util.tuple.Triplet;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LocalVariableNode;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.function.BiPredicate;
@@ -38,6 +36,10 @@ public class LocalVariableNodeHelper {
 
   public static boolean equals(LocalVariableNode a, LocalVariableNode b) {
     return equals(a, b, Objects::equals, Objects::equals);
+  }
+
+  public static boolean equals(LocalVariableNode a, LocalVariableNode b, BiPredicate<LabelNode, LabelNode> labelEquals) {
+    return equals(a, b, labelEquals, Objects::equals);
   }
 
   public static int hashCode(LocalVariableNode node) {

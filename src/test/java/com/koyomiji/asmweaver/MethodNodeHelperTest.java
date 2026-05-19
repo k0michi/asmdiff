@@ -3,9 +3,8 @@ package com.koyomiji.asmweaver;
 import com.koyomiji.asmweaver.util.AutoIncrementBiHashMap;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.objectweb.asm.tree.LabelNode;
-import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.tree.ParameterNode;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.*;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -47,11 +46,30 @@ class MethodNodeHelperTest {
   }
 
   @Test
-  void test_equals_labelMap() throws IOException {
+  void test_equals_labelMap_0() throws IOException {
     MethodNode node1 = new MethodNode(0, "method", "()V", null, null);
-    node1.instructions.add(new LabelNode());
+    node1.instructions.add(LabelNodes.l0);
     MethodNode node2 = new MethodNode(0, "method", "()V", null, null);
-    node2.instructions.add(new LabelNode());
+    node2.instructions.add(LabelNodes.l1);
+
+    Assertions.assertFalse(InsnListHelper.equals(node1.instructions, node2.instructions));
+
+    HashMap<LabelNode, LabelNode> map = new HashMap<>();
+    Assertions.assertTrue(InsnListHelper.equals(node1.instructions, node2.instructions, (l1, l2) -> MapHelper.putIfAbsentAndTest(map, l1, l2)));
+  }
+
+  @Test
+  void test_equals_labelMap_1() throws IOException {
+    MethodNode node1 = new MethodNode(0, "method", "()V", null, null);
+    node1.instructions.add(LabelNodes.l0);
+    node1.instructions.add(new InsnNode(Opcodes.NOP));
+    node1.instructions.add(LabelNodes.l1);
+    node1.localVariables.add(new LocalVariableNode("name", "desc", "signature", LabelNodes.l0, LabelNodes.l1, 0));
+    MethodNode node2 = new MethodNode(0, "method", "()V", null, null);
+    node2.instructions.add(LabelNodes.l2);
+    node2.instructions.add(new InsnNode(Opcodes.NOP));
+    node2.instructions.add(LabelNodes.l3);
+    node2.localVariables.add(new LocalVariableNode("name", "desc", "signature", LabelNodes.l2, LabelNodes.l3, 0));
 
     Assertions.assertFalse(InsnListHelper.equals(node1.instructions, node2.instructions));
 

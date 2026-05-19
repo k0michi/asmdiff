@@ -57,12 +57,12 @@ public class MethodNodeHelper {
             (a, b) -> ListHelper.equals(a, b, AnnotationNodeHelper::equals)
     )
             && InsnListHelper.equals(node1.instructions, node2.instructions, labelEquals)
-            && ListHelper.equalsNullToEmpty(node1.tryCatchBlocks, node2.tryCatchBlocks, TryCatchBlockNodeHelper::equals)
+            && ListHelper.equalsNullToEmpty(node1.tryCatchBlocks, node2.tryCatchBlocks, (tcb1, tcb2) -> TryCatchBlockNodeHelper.equals(tcb1, tcb2, labelEquals))
             && node1.maxStack == node2.maxStack
             && node1.maxLocals == node2.maxLocals
-            && ListHelper.equalsNullToEmpty(node1.localVariables, node2.localVariables, LocalVariableNodeHelper::equals)
-            && ListHelper.equalsNullToEmpty(node1.visibleLocalVariableAnnotations, node2.visibleLocalVariableAnnotations, AnnotationNodeHelper::equals)
-            && ListHelper.equalsNullToEmpty(node1.invisibleLocalVariableAnnotations, node2.invisibleLocalVariableAnnotations, AnnotationNodeHelper::equals);
+            && ListHelper.equalsNullToEmpty(node1.localVariables, node2.localVariables, (lv1, lv2) -> LocalVariableNodeHelper.equals(lv1, lv2, labelEquals))
+            && ListHelper.equalsNullToEmpty(node1.visibleLocalVariableAnnotations, node2.visibleLocalVariableAnnotations, (a, b) -> AnnotationNodeHelper.equals(a, b, labelEquals))
+            && ListHelper.equalsNullToEmpty(node1.invisibleLocalVariableAnnotations, node2.invisibleLocalVariableAnnotations, (a, b) -> AnnotationNodeHelper.equals(a, b, labelEquals));
   }
 
   public static int hashCode(MethodNode node) {
