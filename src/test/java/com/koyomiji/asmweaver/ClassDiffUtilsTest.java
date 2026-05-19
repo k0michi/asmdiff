@@ -121,16 +121,21 @@ class ClassDiffUtilsTest {
   }
 
   @Test
-  void test_patch_0() {
-    ClassNode node1 = base;
-    ClassNode node2 = new ClassNode();
-    node2.visit(Opcodes.V9, 0, "TestClass", null, "java/lang/Object", null);
-    node2.visitEnd();
-    ClassDiff diff = ClassDiffUtils.diff(node1, node2);
+  void test_patch() {
+    var unique1 = ClassNodeHelperTest.generateUnique();
+    var unique2 = ClassNodeHelperTest.generateUnique();
 
-    ClassNode patched = ClassDiffUtils.patch(node1, diff);
+    for (int i = 0; i < unique1.size(); i++) {
+      for (int j = 0; j < unique2.size(); j++) {
+        ClassNode node1 = unique1.get(i);
+        ClassNode node2 = unique2.get(j);
+        ClassDiff diff = ClassDiffUtils.diff(node1, node2);
 
-    ClassDiff diff2 = ClassDiffUtils.diff(node1, patched);
-    Assertions.assertFalse(diff2.isEmpty());
+        ClassNode patched = ClassDiffUtils.patch(node1, diff);
+
+        ClassDiff diff2 = ClassDiffUtils.diff(node2, patched);
+        Assertions.assertTrue(diff2.isEmpty(), "i=" + i + ", j=" + j);
+      }
+    }
   }
 }

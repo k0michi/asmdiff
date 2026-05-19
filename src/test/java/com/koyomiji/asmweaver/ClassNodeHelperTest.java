@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 class ClassNodeHelperTest {
-  List<ClassNode> generateUnique() {
+  static List<ClassNode> generateUnique() {
     List<ClassNode> list = new ArrayList<>();
     ClassNode temp = new ClassNode();
     temp.visit(0, 0, "A", null, "java/lang/Object", null);
@@ -155,12 +155,12 @@ class ClassNodeHelperTest {
 
   @Test
   void test_equals() {
-    TestUtils.verifyEquals(this::generateUnique, ClassNodeHelper::equals);
+    TestUtils.verifyEquals(ClassNodeHelperTest::generateUnique, ClassNodeHelper::equals);
   }
 
   @Test
   void test_hashCode() {
-    TestUtils.verifyHashCode(this::generateUnique, ClassNodeHelper::hashCode);
+    TestUtils.verifyHashCode(ClassNodeHelperTest::generateUnique, ClassNodeHelper::hashCode);
   }
 
   @Test
@@ -168,7 +168,7 @@ class ClassNodeHelperTest {
     AutoIncrementBiHashMap<LabelNode> labels = new AutoIncrementBiHashMap<>();
 
     TestUtils.verifyRoundTrip(
-            this::generateUnique,
+            ClassNodeHelperTest::generateUnique,
             (node, stream) -> ClassNodeHelper.write(node, stream, labels::get),
             stream -> ClassNodeHelper.read(stream, labels::getKey),
             ClassNodeHelper::equals

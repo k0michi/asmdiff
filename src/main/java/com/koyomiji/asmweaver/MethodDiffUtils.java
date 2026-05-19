@@ -217,7 +217,7 @@ public class MethodDiffUtils {
             diff.tryCatchBlocks
     );
 
-    for (TryCatchBlockNode tryCatchBlock : node.tryCatchBlocks) {
+    for (TryCatchBlockNode tryCatchBlock : patched.tryCatchBlocks) {
       labelMap.putIfAbsent(tryCatchBlock.start, new LabelNode());
       tryCatchBlock.start = labelMap.get(tryCatchBlock.start);
       labelMap.putIfAbsent(tryCatchBlock.end, new LabelNode());
@@ -231,7 +231,7 @@ public class MethodDiffUtils {
             diff.localVariables
     );
 
-    for (LocalVariableNode localVariable : node.localVariables) {
+    for (LocalVariableNode localVariable : patched.localVariables) {
       labelMap.putIfAbsent(localVariable.start, new LabelNode());
       localVariable.start = labelMap.get(localVariable.start);
       labelMap.putIfAbsent(localVariable.end, new LabelNode());
@@ -243,7 +243,7 @@ public class MethodDiffUtils {
             diff.visibleLocalVariableAnnotations
     );
 
-    for (LocalVariableAnnotationNode localVarAnn : node.visibleLocalVariableAnnotations) {
+    for (LocalVariableAnnotationNode localVarAnn : patched.visibleLocalVariableAnnotations) {
       for (int i = 0; i < localVarAnn.start.size(); i++) {
         labelMap.putIfAbsent(localVarAnn.start.get(i), new LabelNode());
         localVarAnn.start.set(i, labelMap.get(localVarAnn.start.get(i)));
@@ -260,7 +260,7 @@ public class MethodDiffUtils {
             diff.invisibleLocalVariableAnnotations
     );
 
-    for (LocalVariableAnnotationNode localVarAnn : node.invisibleLocalVariableAnnotations) {
+    for (LocalVariableAnnotationNode localVarAnn : patched.invisibleLocalVariableAnnotations) {
       for (int i = 0; i < localVarAnn.start.size(); i++) {
         labelMap.putIfAbsent(localVarAnn.start.get(i), new LabelNode());
         localVarAnn.start.set(i, labelMap.get(localVarAnn.start.get(i)));
