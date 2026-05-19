@@ -47,6 +47,8 @@ class MethodNodeHelperTest {
 
   @Test
   void test_equals_labelMap_0() throws IOException {
+    LabelNodes.reset();
+
     MethodNode node1 = new MethodNode(0, "method", "()V", null, null);
     node1.instructions.add(LabelNodes.l0);
     MethodNode node2 = new MethodNode(0, "method", "()V", null, null);
