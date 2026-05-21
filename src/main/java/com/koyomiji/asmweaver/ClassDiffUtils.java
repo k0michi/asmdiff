@@ -1,8 +1,16 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.LabelNode;
+
+import java.io.DataInput;
+import java.io.IOException;
+import java.util.function.Function;
 
 public class ClassDiffUtils {
+
   public static ClassDiff diff(ClassNode class1, ClassNode class2) {
     ClassDiff diff = new ClassDiff();
     diff.version = ListDiffUtils.diff(ListHelper.ofNullable(class1.version), ListHelper.ofNullable(class2.version), Integer::equals);
@@ -134,5 +142,90 @@ public class ClassDiffUtils {
     );
 
     return patched;
+  }
+
+  public static void write(ClassDiff diff, CustomDataOutput out, Function<LabelNode, Integer> labelToIndex) throws IOException {
+    ListDiffUtils.write(diff.version, out, (element, stream) -> stream.writeInt(element));
+    ListDiffUtils.write(diff.access, out, (element, stream) -> stream.writeInt(element));
+    ListDiffUtils.write(diff.name, out, (element, stream) -> stream.writeUTF(element));
+    ListDiffUtils.write(diff.signature, out, (element, stream) -> stream.writeUTF(element));
+    ListDiffUtils.write(diff.superName, out, (element, stream) -> stream.writeUTF(element));
+    ListDiffUtils.write(diff.interfaces, out, (element, stream) -> stream.writeUTF(element));
+    ListDiffUtils.write(diff.sourceFile, out, (element, stream) -> stream.writeUTF(element));
+    ListDiffUtils.write(diff.sourceDebug, out, (element, stream) -> stream.writeUTF(element));
+    KeyedListDiffUtils.write(diff.module, out,
+            (element, stream) -> stream.writeInt(element),
+            ModuleNodeHelper::write,
+            ModuleDiffUtils::write
+    );
+    ListDiffUtils.write(diff.outerClass, out, (element, stream) -> stream.writeUTF(element));
+    ListDiffUtils.write(diff.outerMethod, out, (element, stream) -> stream.writeUTF(element));
+    ListDiffUtils.write(diff.outerMethodDesc, out, (element, stream) -> stream.writeUTF(element));
+    ListDiffUtils.write(diff.visibleAnnotations, out, AnnotationNodeHelper::write);
+    ListDiffUtils.write(diff.invisibleAnnotations, out, AnnotationNodeHelper::write);
+    ListDiffUtils.write(diff.visibleTypeAnnotations, out, AnnotationNodeHelper::write);
+    ListDiffUtils.write(diff.invisibleTypeAnnotations, out, AnnotationNodeHelper::write);
+    ListDiffUtils.write(diff.innerClasses, out, InnerClassNodeHelper::write);
+    ListDiffUtils.write(diff.nestHostClass, out, ((element, stream) -> stream.writeUTF(element)));
+    ListDiffUtils.write(diff.nestMembers, out, ((element, stream) -> stream.writeUTF(element)));
+    ListDiffUtils.write(diff.permittedSubclasses, out, ((element, stream) -> stream.writeUTF(element)));
+    KeyedListDiffUtils.write(diff.recordComponents, out,
+            MemberKeyUtils::write,
+            RecordComponentNodeHelper::write,
+            RecordComponentDiffUtils::write
+    );
+    KeyedListDiffUtils.write(diff.fields, out,
+            MemberKeyUtils::write,
+            FieldNodeHelper::write,
+            FieldDiffUtils::write
+    );
+    KeyedListDiffUtils.write(diff.methods, out,
+            MemberKeyUtils::write,
+            (element, stream) -> MethodNodeHelper.write(element, stream, labelToIndex),
+            (element, stream) -> MethodDiffUtils.write(element, stream, labelToIndex)
+    );
+  }
+
+  public static ClassDiff read(CustomDataInput in, Function<Integer, LabelNode> indexToLabel) throws IOException {
+    ClassDiff diff = new ClassDiff();
+    diff.version = ListDiffUtils.read(in, DataInput::readInt);
+    diff.access = ListDiffUtils.read(in, DataInput::readInt);
+    diff.name = ListDiffUtils.read(in, DataInput::readUTF);
+    diff.signature = ListDiffUtils.read(in, DataInput::readUTF);
+    diff.superName = ListDiffUtils.read(in, DataInput::readUTF);
+    diff.interfaces = ListDiffUtils.read(in, DataInput::readUTF);
+    diff.sourceFile = ListDiffUtils.read(in, DataInput::readUTF);
+    diff.sourceDebug = ListDiffUtils.read(in, DataInput::readUTF);
+    diff.module = KeyedListDiffUtils.read(in, DataInput::readInt, ModuleNodeHelper::read, ModuleDiffUtils::read);
+    diff.outerClass = ListDiffUtils.read(in, DataInput::readUTF);
+    diff.outerMethod = ListDiffUtils.read(in, DataInput::readUTF);
+    diff.outerMethodDesc = ListDiffUtils.read(in, DataInput::readUTF);
+    diff.visibleAnnotations = ListDiffUtils.read(in, AnnotationNodeHelper::readAnnotationNode);
+    diff.invisibleAnnotations = ListDiffUtils.read(in, AnnotationNodeHelper::readAnnotationNode);
+    diff.visibleTypeAnnotations = ListDiffUtils.read(in, AnnotationNodeHelper::readTypeAnnotationNode);
+    diff.invisibleTypeAnnotations = ListDiffUtils.read(in, AnnotationNodeHelper::readTypeAnnotationNode);
+    diff.innerClasses = ListDiffUtils.read(in, InnerClassNodeHelper::read);
+    diff.nestHostClass = ListDiffUtils.read(in, DataInput::readUTF);
+    diff.nestMembers = ListDiffUtils.read(in, DataInput::readUTF);
+    diff.permittedSubclasses = ListDiffUtils.read(in, DataInput::readUTF);
+    diff.recordComponents = KeyedListDiffUtils.read(
+            in,
+            MemberKeyUtils::read,
+            RecordComponentNodeHelper::read,
+            RecordComponentDiffUtils::read
+    );
+    diff.fields = KeyedListDiffUtils.read(
+            in,
+            MemberKeyUtils::read,
+            FieldNodeHelper::read,
+            FieldDiffUtils::read
+    );
+    diff.methods = KeyedListDiffUtils.read(
+            in,
+            MemberKeyUtils::read,
+            stream -> MethodNodeHelper.read(in, indexToLabel),
+            stream -> MethodDiffUtils.read(in, indexToLabel)
+    );
+    return diff;
   }
 }

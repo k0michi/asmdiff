@@ -2,14 +2,19 @@ package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.analysis.DefUse;
 import com.koyomiji.asmweaver.analysis.DefUseChainAnalyzer;
+import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 import com.koyomiji.asmweaver.util.UnionFind;
 import org.objectweb.asm.tree.*;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
 
+import java.io.DataInput;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 
 public class MethodDiffUtils {
   public static MethodDiff diff(MethodNode node1, MethodNode node2) {
@@ -296,5 +301,108 @@ public class MethodDiffUtils {
             ListHelper.ofNullableArray(annotations),
             ListHelper::nullToEmpty
     );
+  }
+
+  public static void write(MethodDiff diff, CustomDataOutput out, Function<LabelNode, Integer> labelToIndex) throws IOException {
+    ListDiffUtils.write(diff.access, out, (element, stream) -> stream.writeInt(element));
+    ListDiffUtils.write(diff.name, out, (element, stream) -> stream.writeUTF(element));
+    ListDiffUtils.write(diff.desc, out, (element, stream) -> stream.writeUTF(element));
+    ListDiffUtils.write(diff.signature, out, (element, stream) -> stream.writeUTF(element));
+    ListDiffUtils.write(diff.exceptions, out, (element, stream) -> stream.writeUTF(element));
+    ListDiffUtils.write(diff.parameters, out, ParameterNodeHelper::write);
+    ListDiffUtils.write(diff.visibleAnnotations, out, AnnotationNodeHelper::write);
+    ListDiffUtils.write(diff.invisibleAnnotations, out, AnnotationNodeHelper::write);
+    ListDiffUtils.write(diff.visibleTypeAnnotations, out, AnnotationNodeHelper::write);
+    ListDiffUtils.write(diff.invisibleTypeAnnotations, out, AnnotationNodeHelper::write);
+    ListDiffUtils.write(diff.annotationDefault, out, AnnotationNodeHelper::writeValue);
+    ListDiffUtils.write(diff.visibleAnnotableParameterCount, out, (element, stream) -> stream.writeInt(element));
+    KeyedListDiffUtils.write(
+            diff.visibleParameterAnnotations,
+            out,
+            (element, stream) -> stream.writeInt(element),
+            (element, stream) -> ListHelper.write(element, stream, AnnotationNodeHelper::write),
+            (element, stream) -> ListDiffUtils.write(element, stream, AnnotationNodeHelper::write)
+    );
+    ListDiffUtils.write(diff.invisibleAnnotableParameterCount, out, (element, stream) -> stream.writeInt(element));
+    KeyedListDiffUtils.write(
+            diff.invisibleParameterAnnotations,
+            out,
+            (element, stream) -> stream.writeInt(element),
+            (element, stream) -> ListHelper.write(element, stream, AnnotationNodeHelper::write),
+            (element, stream) -> ListDiffUtils.write(element, stream, AnnotationNodeHelper::write)
+    );
+    InsnListDiffUtils.write(
+            diff.instructions,
+            out,
+            labelToIndex
+    );
+    ListDiffUtils.write(
+            diff.tryCatchBlocks,
+            out,
+            (element, stream) -> TryCatchBlockNodeHelper.write(element, stream, labelToIndex)
+    );
+    ListDiffUtils.write(
+            diff.maxStack,
+            out,
+            (element, stream) -> stream.writeInt(element)
+    );
+    ListDiffUtils.write(
+            diff.maxLocals,
+            out,
+            (element, stream) -> stream.writeInt(element)
+    );
+    ListDiffUtils.write(
+            diff.localVariables,
+            out,
+            (element, stream) -> LocalVariableNodeHelper.write(element, stream, labelToIndex)
+    );
+    ListDiffUtils.write(
+            diff.visibleLocalVariableAnnotations,
+            out,
+            AnnotationNodeHelper::write
+    );
+    ListDiffUtils.write(
+            diff.invisibleLocalVariableAnnotations,
+            out,
+            AnnotationNodeHelper::write
+    );
+  }
+
+  public static MethodDiff read(CustomDataInput in, Function<Integer, LabelNode> labelToIndex) throws IOException {
+    MethodDiff diff = new MethodDiff();
+    diff.access = ListDiffUtils.read(in, DataInput::readInt);
+    diff.name = ListDiffUtils.read(in, DataInput::readUTF);
+    diff.desc = ListDiffUtils.read(in, DataInput::readUTF);
+    diff.signature = ListDiffUtils.read(in, DataInput::readUTF);
+    diff.exceptions = ListDiffUtils.read(in, DataInput::readUTF);
+    diff.parameters = ListDiffUtils.read(in, ParameterNodeHelper::read);
+    diff.visibleAnnotations = ListDiffUtils.read(in, AnnotationNodeHelper::readAnnotationNode);
+    diff.invisibleAnnotations = ListDiffUtils.read(in, AnnotationNodeHelper::readAnnotationNode);
+    diff.visibleTypeAnnotations = ListDiffUtils.read(in, AnnotationNodeHelper::readTypeAnnotationNode);
+    diff.invisibleTypeAnnotations = ListDiffUtils.read(in, AnnotationNodeHelper::readTypeAnnotationNode);
+    diff.annotationDefault = ListDiffUtils.read(in, AnnotationNodeHelper::readValue);
+    diff.visibleAnnotableParameterCount = ListDiffUtils.read(in, DataInput::readInt);
+    diff.visibleParameterAnnotations = KeyedListDiffUtils.read(
+            in,
+            DataInput::readInt,
+            stream -> ListHelper.read(stream, AnnotationNodeHelper::readAnnotationNode),
+            stream -> ListDiffUtils.read(stream, AnnotationNodeHelper::readAnnotationNode)
+    );
+    diff.invisibleAnnotableParameterCount = ListDiffUtils.read(in, DataInput::readInt);
+    diff.invisibleParameterAnnotations = KeyedListDiffUtils.read(
+            in,
+            DataInput::readInt,
+            stream -> ListHelper.read(stream, AnnotationNodeHelper::readAnnotationNode),
+            stream -> ListDiffUtils.read(stream, AnnotationNodeHelper::readAnnotationNode)
+    );
+    diff.instructions = InsnListDiffUtils.read(in, labelToIndex);
+    diff.tryCatchBlocks = ListDiffUtils.read(in, stream -> TryCatchBlockNodeHelper.read(stream, labelToIndex));
+    diff.maxStack = ListDiffUtils.read(in, DataInput::readInt);
+    diff.maxLocals = ListDiffUtils.read(in, DataInput::readInt);
+    diff.localVariables = ListDiffUtils.read(in, stream -> LocalVariableNodeHelper.read(stream, labelToIndex));
+    diff.visibleLocalVariableAnnotations = ListDiffUtils.read(in, stream -> AnnotationNodeHelper.readLocalVariableAnnotationNode(stream, labelToIndex));
+    diff.invisibleLocalVariableAnnotations = ListDiffUtils.read(in, stream -> AnnotationNodeHelper.readLocalVariableAnnotationNode(stream, labelToIndex));
+
+    return diff;
   }
 }

@@ -1,9 +1,17 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.BinaryReader;
+import com.koyomiji.asmweaver.io.BinaryWriter;
+import com.koyomiji.asmweaver.util.AutoIncrementBiHashMap;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.LabelNode;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 class ClassDiffUtilsTest {
   static ClassNode base;
@@ -133,8 +141,31 @@ class ClassDiffUtilsTest {
 
         ClassNode patched = ClassDiffUtils.patch(node1, diff);
 
-        ClassDiff diff2 = ClassDiffUtils.diff(node2, patched);
-        Assertions.assertTrue(diff2.isEmpty(), "i=" + i + ", j=" + j);
+        Assertions.assertTrue(ClassNodeHelper.equalsNormalizeLabels(node2, patched), "i=" + i + ", j=" + j);
+      }
+    }
+  }
+
+  @Test
+  void test_diff_readWrite() throws IOException {
+    var unique1 = ClassNodeHelperTest.generateUnique();
+    var unique2 = ClassNodeHelperTest.generateUnique();
+
+    for (int i = 0; i < unique1.size(); i++) {
+      for (int j = 0; j < unique2.size(); j++) {
+        ClassNode node1 = unique1.get(i);
+        ClassNode node2 = unique2.get(j);
+        ClassDiff diff = ClassDiffUtils.diff(node1, node2);
+
+        AutoIncrementBiHashMap<LabelNode> labelMap = new AutoIncrementBiHashMap<>();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ClassDiffUtils.write(diff, new BinaryWriter(baos), labelMap::get);
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        ClassDiff read = ClassDiffUtils.read(new BinaryReader(bais), labelMap::getKey);
+
+        ClassNode patched = ClassDiffUtils.patch(node1, read);
+
+        Assertions.assertTrue(ClassNodeHelper.equalsNormalizeLabels(node2, patched), "i=" + i + ", j=" + j);
       }
     }
   }
