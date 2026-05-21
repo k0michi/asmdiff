@@ -155,12 +155,12 @@ class ClassNodeHelperTest {
 
   @Test
   void test_equals() {
-    TestUtils.verifyEquals(ClassNodeHelperTest::generateUnique, ClassNodeHelper::equals);
+    TestUtils.verifyEquals(ClassNodeHelperTest::generateUnique, ClassNodeHelper::equalsNormalizeLabels);
   }
 
   @Test
   void test_hashCode() {
-    TestUtils.verifyHashCode(ClassNodeHelperTest::generateUnique, ClassNodeHelper::hashCode);
+    TestUtils.verifyHashCode(ClassNodeHelperTest::generateUnique, ClassNodeHelper::hashCodeNormalizeLabels);
   }
 
   @Test
@@ -171,7 +171,7 @@ class ClassNodeHelperTest {
             ClassNodeHelperTest::generateUnique,
             (node, stream) -> ClassNodeHelper.write(node, stream, labels::get),
             stream -> ClassNodeHelper.read(stream, labels::getKey),
-            ClassNodeHelper::equals
+            ClassNodeHelper::equalsNormalizeLabels
     );
   }
 }

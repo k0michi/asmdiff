@@ -1,19 +1,22 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.util.AutoIncrementBiHashMap;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.LabelNode;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiPredicate;
-import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
 public class InsnListHelper {
-  public static boolean equals(InsnList list1, InsnList list2) {
-    return equals(list1, list2, Objects::equals);
+  public static boolean equalsNormalizeLabels(InsnList list1, InsnList list2) {
+    Map<LabelNode, LabelNode> labelMap = new HashMap<>();
+    return equals(list1, list2, (l1, l2) -> MapHelper.putIfAbsentAndTest(labelMap, l1, l2));
   }
 
   public static boolean equals(InsnList list1, InsnList list2, BiPredicate<LabelNode, LabelNode> labelEquals) {
@@ -42,8 +45,8 @@ public class InsnListHelper {
     return true;
   }
 
-  public static int hashCode(InsnList list) {
-    return hashCode(list, Objects::hashCode);
+  public static int hashCodeNormalizeLabels(InsnList list) {
+    return hashCode(list, (new AutoIncrementBiHashMap<>())::get);
   }
 
   public static int hashCode(InsnList list, ToIntFunction<LabelNode> labelHashCode) {
@@ -54,7 +57,7 @@ public class InsnListHelper {
     HashCodeBuilder builder = new HashCodeBuilder();
 
     for (int i = 0; i < list.size(); i++) {
-      builder.append(list.get(i), insn-> AbstractInsnNodeHelper.hashCode(insn, labelHashCode));
+      builder.append(list.get(i), insn -> AbstractInsnNodeHelper.hashCode(insn, labelHashCode));
     }
 
     return builder.build();

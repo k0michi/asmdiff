@@ -9,6 +9,7 @@ import org.objectweb.asm.tree.*;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 class MethodNodeHelperTest {
   static List<MethodNode> generateUnique() {
@@ -25,12 +26,12 @@ class MethodNodeHelperTest {
 
   @Test
   void test_equals() {
-    TestUtils.verifyEquals(MethodNodeHelperTest::generateUnique, MethodNodeHelper::equals);
+    TestUtils.verifyEquals(MethodNodeHelperTest::generateUnique, MethodNodeHelper::equalsNormalizeLabels);
   }
 
   @Test
   void test_hashCode() {
-    TestUtils.verifyHashCode(MethodNodeHelperTest::generateUnique, MethodNodeHelper::hashCode);
+    TestUtils.verifyHashCode(MethodNodeHelperTest::generateUnique, MethodNodeHelper::hashCodeNormalizeLabels);
   }
 
   @Test
@@ -41,7 +42,7 @@ class MethodNodeHelperTest {
             MethodNodeHelperTest::generateUnique,
             (value, out) -> MethodNodeHelper.write(value, out, labels::get),
             (in) -> MethodNodeHelper.read(in, labels::getKey),
-            MethodNodeHelper::equals
+            MethodNodeHelper::equalsNormalizeLabels
     );
   }
 
@@ -54,7 +55,7 @@ class MethodNodeHelperTest {
     MethodNode node2 = new MethodNode(0, "method", "()V", null, null);
     node2.instructions.add(LabelNodes.l1);
 
-    Assertions.assertFalse(MethodNodeHelper.equals(node1, node2));
+    Assertions.assertFalse(MethodNodeHelper.equals(node1, node2, Objects::equals));
 
     HashMap<LabelNode, LabelNode> map = new HashMap<>();
     Assertions.assertTrue(
@@ -77,7 +78,7 @@ class MethodNodeHelperTest {
     node2.instructions.add(LabelNodes.l3);
     node2.localVariables.add(new LocalVariableNode("name", "desc", "signature", LabelNodes.l2, LabelNodes.l3, 0));
 
-    Assertions.assertFalse(MethodNodeHelper.equals(node1, node2));
+    Assertions.assertFalse(MethodNodeHelper.equals(node1, node2, Objects::equals));
 
     HashMap<LabelNode, LabelNode> map = new HashMap<>();
     Assertions.assertTrue(

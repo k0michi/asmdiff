@@ -3,20 +3,24 @@ package com.koyomiji.asmweaver;
 import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.CustomDataOutput;
 import com.koyomiji.asmweaver.io.DataStreamHelper;
+import com.koyomiji.asmweaver.util.AutoIncrementBiHashMap;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.LabelNode;
 
 import java.io.DataInput;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
 public class ClassNodeHelper {
-  public static boolean equals(ClassNode node1, ClassNode node2) {
-    return equals(node1, node2, Objects::equals);
+  public static boolean equalsNormalizeLabels(ClassNode node1, ClassNode node2) {
+    Map<LabelNode, LabelNode> labelMap = new HashMap<>();
+    return equals(node1, node2, (l1, l2) -> MapHelper.putIfAbsentAndTest(labelMap, l1, l2));
   }
 
   public static boolean equals(ClassNode node1, ClassNode node2, BiPredicate<LabelNode, LabelNode> labelEquals) {
@@ -58,8 +62,8 @@ public class ClassNodeHelper {
             && ListHelper.equals(node1.methods, node2.methods, (m1, m2) -> MethodNodeHelper.equals(m1, m2, labelEquals));
   }
 
-  public static int hashCode(ClassNode node) {
-    return hashCode(node, Objects::hashCode);
+  public static int hashCodeNormalizeLabels(ClassNode node) {
+    return hashCode(node, (new AutoIncrementBiHashMap<>())::get);
   }
 
   public static int hashCode(ClassNode node, ToIntFunction<LabelNode> labelHashCode) {

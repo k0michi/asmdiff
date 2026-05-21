@@ -26,9 +26,9 @@ class InsnListHelperTest {
     for (int i = 0; i < uniqueList1.size(); i++) {
       for (int j = 0; j < uniqueList2.size(); j++) {
         if (i == j) {
-          Assertions.assertTrue(InsnListHelper.equals(uniqueList1.get(i), uniqueList2.get(j)));
+          Assertions.assertTrue(InsnListHelper.equalsNormalizeLabels(uniqueList1.get(i), uniqueList2.get(j)));
         } else {
-          Assertions.assertFalse(InsnListHelper.equals(uniqueList1.get(i), uniqueList2.get(j)));
+          Assertions.assertFalse(InsnListHelper.equalsNormalizeLabels(uniqueList1.get(i), uniqueList2.get(j)));
         }
       }
     }
@@ -39,7 +39,7 @@ class InsnListHelperTest {
     var uniqueList = generateUnique();
 
     for (int i = 0; i < uniqueList.size(); i++) {
-      Assertions.assertEquals(InsnListHelper.hashCode(uniqueList.get(i)), InsnListHelper.hashCode(uniqueList.get(i)));
+      Assertions.assertEquals(InsnListHelper.hashCodeNormalizeLabels(uniqueList.get(i)), InsnListHelper.hashCodeNormalizeLabels(uniqueList.get(i)));
     }
   }
 }

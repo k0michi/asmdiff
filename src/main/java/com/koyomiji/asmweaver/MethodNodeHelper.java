@@ -3,21 +3,25 @@ package com.koyomiji.asmweaver;
 import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.CustomDataOutput;
 import com.koyomiji.asmweaver.io.DataStreamHelper;
+import com.koyomiji.asmweaver.util.AutoIncrementBiHashMap;
 import com.koyomiji.asmweaver.util.HashCodeBuilder;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodNode;
 
 import java.io.DataInput;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
 public class MethodNodeHelper {
-  public static boolean equals(MethodNode node1, MethodNode node2) {
-    return equals(node1, node2, Objects::equals);
+  public static boolean equalsNormalizeLabels(MethodNode node1, MethodNode node2) {
+    Map<LabelNode, LabelNode> labelMap = new HashMap<>();
+    return equals(node1, node2, (l1, l2) -> MapHelper.putIfAbsentAndTest(labelMap, l1, l2));
   }
 
   public static boolean equals(MethodNode node1, MethodNode node2, BiPredicate<LabelNode, LabelNode> labelEquals) {
@@ -66,8 +70,8 @@ public class MethodNodeHelper {
             && ListHelper.equalsNullToEmpty(node1.invisibleLocalVariableAnnotations, node2.invisibleLocalVariableAnnotations, (a, b) -> AnnotationNodeHelper.equals(a, b, labelEquals));
   }
 
-  public static int hashCode(MethodNode node) {
-    return hashCode(node, Objects::hashCode);
+  public static int hashCodeNormalizeLabels(MethodNode node) {
+    return hashCode(node, (new AutoIncrementBiHashMap<LabelNode>())::get);
   }
 
   public static int hashCode(MethodNode node, ToIntFunction<LabelNode> labelHashCode) {
