@@ -23,6 +23,8 @@ public class MethodDiff implements IDiff {
   public KeyedListDiff<Integer, List<AnnotationNode>, ListDiff<AnnotationNode>> invisibleParameterAnnotations;
   public InsnListDiff instructions;
   public ListDiff<TryCatchBlockNode> tryCatchBlocks;
+  public ListDiff<Integer> maxStack;
+  public ListDiff<Integer> maxLocals;
   public ListDiff<LocalVariableNode> localVariables;
   public ListDiff<LocalVariableAnnotationNode> visibleLocalVariableAnnotations;
   public ListDiff<LocalVariableAnnotationNode> invisibleLocalVariableAnnotations;
@@ -44,8 +46,10 @@ public class MethodDiff implements IDiff {
             && visibleParameterAnnotations.isEmpty()
             && invisibleAnnotableParameterCount.isEmpty()
             && invisibleParameterAnnotations.isEmpty()
-            && instructions.operations.isEmpty()
+            && instructions.isEmpty()
             && tryCatchBlocks.isEmpty()
+            && maxStack.isEmpty()
+            && maxLocals.isEmpty()
             && localVariables.isEmpty()
             && visibleLocalVariableAnnotations.isEmpty()
             && invisibleLocalVariableAnnotations.isEmpty();
@@ -70,6 +74,8 @@ public class MethodDiff implements IDiff {
             + invisibleParameterAnnotations.distance()
             + instructions.distance()
             + tryCatchBlocks.distance()
+            + maxStack.distance()
+            + maxLocals.distance()
             + localVariables.distance()
             + visibleLocalVariableAnnotations.distance()
             + invisibleLocalVariableAnnotations.distance();

@@ -130,6 +130,18 @@ public class MethodDiffUtils {
             (a, b) -> TryCatchBlockNodeHelper.equals(a, b, (lA, lB) -> labelMap.get(lA) == lB)
     );
 
+    diff.maxStack = ListDiffUtils.diffNonNullableValue(
+            node1.maxStack,
+            node2.maxStack,
+            Integer::equals
+    );
+
+    diff.maxLocals =  ListDiffUtils.diffNonNullableValue(
+            node1.maxLocals,
+            node2.maxLocals,
+            Integer::equals
+    );
+
     diff.localVariables = ListDiffUtils.diff(
             ListHelper.nullToEmpty(node1.localVariables),
             ListHelper.nullToEmpty(node2.localVariables),
