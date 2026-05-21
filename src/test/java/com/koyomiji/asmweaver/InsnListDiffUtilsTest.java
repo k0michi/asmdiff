@@ -1,5 +1,8 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.io.BinaryReader;
+import com.koyomiji.asmweaver.io.BinaryWriter;
+import com.koyomiji.asmweaver.util.AutoIncrementBiHashMap;
 import com.koyomiji.asmweaver.util.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -9,6 +12,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -581,5 +587,34 @@ class InsnListDiffUtilsTest {
 
     Map<LabelNode, LabelNode> labelMap = InsnListDiffUtils.extractLabelMap(list1, list2, diff);
     Assertions.assertEquals(LabelNodes.l1, labelMap.get(LabelNodes.l0));
+  }
+
+  @Test
+  void test_readWrite_roundTrip_0() throws IOException {
+    List<AbstractInsnNode> list1 = new ArrayList<>();
+    list1.add(new InsnNode(Opcodes.NOP));
+    List<AbstractInsnNode> list2 = new ArrayList<>();
+    list2.add(new InsnNode(Opcodes.NOP));
+
+    AutoIncrementBiHashMap<LabelNode> labelMap = new AutoIncrementBiHashMap<>();
+    InsnListDiff diff = InsnListDiffUtils.diff(
+            list1,
+            (insn) -> -1,
+            list2,
+            (insn) -> -1
+    );
+
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    InsnListDiffUtils.write(diff, new BinaryWriter(baos), labelMap::get);
+
+    ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+    InsnListDiff read = InsnListDiffUtils.read(new BinaryReader(bais), labelMap::getKey);
+
+    List<AbstractInsnNode> patched = InsnListDiffUtils.patch(
+            list1,
+            read,
+            new HashMap<>()
+    );
+    Assertions.assertTrue(InsnListHelper.equalsNormalizeLabels(list1, patched));
   }
 }
