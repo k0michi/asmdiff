@@ -1,4 +1,4 @@
-package com.koyomiji.asmweaver;
+ package com.koyomiji.asmweaver;
 
 import org.objectweb.asm.tree.AbstractInsnNode;
 
@@ -59,6 +59,14 @@ public class InsnListDiff implements IDiff {
     public final AbstractInsnNode operand2;
 
     public Operation(Type type, Mode mode, AbstractInsnNode operand1, AbstractInsnNode operand2) {
+      if (type == null) {
+        throw new IllegalArgumentException("type cannot be null");
+      }
+
+      if (mode == null) {
+        throw new IllegalArgumentException("mode cannot be null");
+      }
+
       this.type = type;
       this.mode = mode;
       this.operand1 = operand1;

@@ -24,7 +24,7 @@ public class ListDiff<T> implements IDiff {
   public int distance() {
     int distance = 0;
 
-    for  (Operation<T> op : operations) {
+    for (Operation<T> op : operations) {
       if (op.type != Operation.Type.MATCH) {
         distance++;
       }
@@ -62,6 +62,14 @@ public class ListDiff<T> implements IDiff {
     public final T operand2;
 
     public Operation(Type type, Mode mode, T operand1, T operand2) {
+      if (type == null) {
+        throw new IllegalArgumentException("type cannot be null");
+      }
+
+      if (mode == null) {
+        throw new IllegalArgumentException("mode cannot be null");
+      }
+
       this.type = type;
       this.mode = mode;
       this.operand1 = operand1;

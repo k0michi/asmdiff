@@ -67,6 +67,14 @@ public class KeyedListDiff<Key, Value, Diff extends IDiff> implements IDiff {
     public final Diff operandDiff;
 
     public Operation(Type type, Mode mode, Key operandKey, Value operandValue, Diff operandDiff) {
+      if (type == null) {
+        throw new IllegalArgumentException("type cannot be null");
+      }
+
+      if (mode == null) {
+        throw new IllegalArgumentException("mode cannot be null");
+      }
+
       this.type = type;
       this.mode = mode;
       this.operandKey = operandKey;

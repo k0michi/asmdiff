@@ -22,7 +22,7 @@ public class InsnListDiffUtils {
 
       switch (op.type) {
         case MATCH:
-          invertedOp = new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, op.operand2, op.operand1);
+          invertedOp = new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, InsnListDiff.Operation.Mode.BETWEEN, op.operand2, op.operand1);
           break;
         case INSERT:
           invertedOp = new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, op.mode, op.operand2, op.operand1);
@@ -628,7 +628,7 @@ public class InsnListDiffUtils {
 //                          new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, insnA)
 //                  ),
                   current,
-                  new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, insnA, insnB),
+                  new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, InsnListDiff.Operation.Mode.BETWEEN, insnA, insnB),
                   heuristicProvider
           );
           removeDeadLabels(state, lastOccurrenceA, lastOccurrenceB, listA, listB);
