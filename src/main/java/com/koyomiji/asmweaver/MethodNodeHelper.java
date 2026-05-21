@@ -180,6 +180,7 @@ public class MethodNodeHelper {
               );
             }
     );
+    out.writeInt(node.invisibleAnnotableParameterCount);
     ListHelper.write(
             ListHelper.ofNullableArray(node.invisibleParameterAnnotations),
             out,
@@ -287,6 +288,24 @@ public class MethodNodeHelper {
             in,
             AnnotationNodeHelper::readValue
     );
+    node.visibleAnnotableParameterCount = in.readInt();
+    node.visibleParameterAnnotations = ListHelper.read(
+            in,
+            stream -> ListHelper.read(
+                    stream,
+                    AnnotationNodeHelper::readAnnotationNode
+            )).toArray(new List[0]);
+    node.invisibleAnnotableParameterCount = in.readInt();
+    node.invisibleParameterAnnotations = ListHelper.read(
+            in,
+            stream -> ListHelper.read(
+                    stream,
+                    AnnotationNodeHelper::readAnnotationNode
+            )).toArray(new List[0]);
+    node.instructions = InsnListHelper.fromList(ListHelper.read(
+            in,
+            stream -> AbstractInsnNodeHelper.read(stream, indexToLabel)
+    ));
     node.tryCatchBlocks = ListHelper.read(
             in,
             stream -> TryCatchBlockNodeHelper.read(stream, indexToLabel)
