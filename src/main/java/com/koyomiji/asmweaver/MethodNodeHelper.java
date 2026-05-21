@@ -61,7 +61,11 @@ public class MethodNodeHelper {
             ListHelper.ofNullableArray(node2.invisibleParameterAnnotations),
             (a, b) -> ListHelper.equals(a, b, AnnotationNodeHelper::equals)
     )
-            && InsnListHelper.equals(node1.instructions, node2.instructions, labelEquals)
+             && InsnListHelper.equals(
+            new InsnListListAdapter(node1.instructions),
+            new InsnListListAdapter(node2.instructions),
+            labelEquals
+    )
             && ListHelper.equalsNullToEmpty(node1.tryCatchBlocks, node2.tryCatchBlocks, (tcb1, tcb2) -> TryCatchBlockNodeHelper.equals(tcb1, tcb2, labelEquals))
             && node1.maxStack == node2.maxStack
             && node1.maxLocals == node2.maxLocals
@@ -118,7 +122,7 @@ public class MethodNodeHelper {
                             l, al -> ListHelper.hashCode(al, AnnotationNodeHelper::hashCode)
                     )
             )
-            .append(node.instructions, (list) -> InsnListHelper.hashCode(list, labelHashCode))
+            .append(node.instructions, (list) -> InsnListHelper.hashCode(new InsnListListAdapter(list), labelHashCode))
             .append(node.maxStack)
             .append(node.maxLocals)
             .append(node.localVariables, l -> ListHelper.hashCodeNullToEmpty(l, lv -> LocalVariableNodeHelper.hashCode(lv, labelHashCode)))

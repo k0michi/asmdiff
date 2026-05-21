@@ -3,16 +3,17 @@ package com.koyomiji.asmweaver;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.InsnList;
+import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 
+import java.util.ArrayList;
 import java.util.List;
 
 class InsnListHelperTest {
-  List<InsnList> generateUnique() {
-    InsnList list1 = new InsnList();
+  List<List<AbstractInsnNode>> generateUnique() {
+    List<AbstractInsnNode> list1 = new ArrayList<>();
 
-    InsnList list2 = new InsnList();
+    List<AbstractInsnNode> list2 = new ArrayList<>();
     list2.add(new InsnNode(Opcodes.NOP));
 
     return List.of(list1, list2);
