@@ -7,7 +7,6 @@ import com.koyomiji.asmweaver.util.PeekableIterator;
 import com.koyomiji.asmweaver.util.PersistentHashMap;
 import com.koyomiji.asmweaver.util.tuple.Pair;
 import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.LabelNode;
 
 import java.util.*;
@@ -228,7 +227,7 @@ public class InsnListDiffUtils {
     return new InsnListDiff(result);
   }
 
-  public static Map<LabelNode, LabelNode> extractLabelMap(InsnList list1, InsnList list2, InsnListDiff diff) {
+  public static Map<LabelNode, LabelNode> extractLabelMap(List<AbstractInsnNode> list1, List<AbstractInsnNode> list2, InsnListDiff diff) {
     int i = 0, j = 0;
     Map<LabelNode, LabelNode> labelMap = new HashMap<>();
 

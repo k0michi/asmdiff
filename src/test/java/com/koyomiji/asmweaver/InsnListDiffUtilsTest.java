@@ -12,6 +12,7 @@ import org.objectweb.asm.tree.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 class InsnListDiffUtilsTest {
@@ -563,5 +564,22 @@ class InsnListDiffUtilsTest {
 
     Assertions.assertEquals(LabelNodes.l2, ((JumpInsnNode) patched.get(1)).label);
     Assertions.assertEquals(LabelNodes.l2, patched.get(0));
+  }
+
+  @Test
+  void test_extractLabels_0() {
+    List<AbstractInsnNode> list1 = new ArrayList<>();
+    list1.add(LabelNodes.l0);
+    List<AbstractInsnNode> list2 = new ArrayList<>();
+    list2.add(LabelNodes.l1);
+    InsnListDiff diff = InsnListDiffUtils.diff(
+            list1,
+            (insn) -> -1,
+            list2,
+            (insn) -> -1
+    );
+
+    Map<LabelNode, LabelNode> labelMap = InsnListDiffUtils.extractLabelMap(list1, list2, diff);
+    Assertions.assertEquals(LabelNodes.l1, labelMap.get(LabelNodes.l0));
   }
 }

@@ -120,7 +120,11 @@ public class MethodDiffUtils {
 //      }
 //    }
 
-    Map<LabelNode, LabelNode> labelMap = InsnListDiffUtils.extractLabelMap(node1.instructions, node2.instructions, diff.instructions);
+    Map<LabelNode, LabelNode> labelMap = InsnListDiffUtils.extractLabelMap(
+            new InsnListListAdapter(node1.instructions),
+            new InsnListListAdapter(node2.instructions),
+            diff.instructions
+    );
 //    List<Pair<Integer, Integer>> locals1 = new ArrayList<>();
 //    List<Pair<Integer, Integer>> locals2 = new ArrayList<>();
 
@@ -136,7 +140,7 @@ public class MethodDiffUtils {
             Integer::equals
     );
 
-    diff.maxLocals =  ListDiffUtils.diffNonNullableValue(
+    diff.maxLocals = ListDiffUtils.diffNonNullableValue(
             node1.maxLocals,
             node2.maxLocals,
             Integer::equals
