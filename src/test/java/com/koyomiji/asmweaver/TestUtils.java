@@ -12,6 +12,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
@@ -74,6 +75,23 @@ public class TestUtils {
       T node = nodes.get(i);
       int expectedHashCode = hashCode.applyAsInt(node);
       Assertions.assertEquals(expectedHashCode, hashCode.applyAsInt(node), "Hash code should be consistent for index " + i);
+    }
+  }
+
+  public static <T, U extends IDiff> void verifyDiffEmpty(Supplier<List<T>> nodesSupplier, BiFunction<T, T, U> diff) {
+    List<T> nodes1 = nodesSupplier.get();
+    List<T> nodes2 = nodesSupplier.get();
+
+    for (int i = 0; i < nodes1.size(); i++) {
+      for (int j = 0; j < nodes2.size(); j++) {
+        U d = diff.apply(nodes1.get(i), nodes2.get(j));
+
+        if (i == j) {
+          Assertions.assertTrue(d.isEmpty(), String.format("i=%d, j=%d", i, j));
+        } else {
+          Assertions.assertFalse(d.isEmpty(), String.format("i=%d, j=%d", i, j));
+        }
+      }
     }
   }
 
