@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 
 class MethodNodeHelperTest {
-  List<MethodNode> generateUnique() {
+  static List<MethodNode> generateUnique() {
     MethodNode node1 = new MethodNode(0, "method", "()V", null, null);
     MethodNode node2 = new MethodNode(0, "method_", "()V", null, null);
     MethodNode node3 = new MethodNode(0, "method", "(I)V", null, null);
@@ -25,12 +25,12 @@ class MethodNodeHelperTest {
 
   @Test
   void test_equals() {
-    TestUtils.verifyEquals(this::generateUnique, MethodNodeHelper::equals);
+    TestUtils.verifyEquals(MethodNodeHelperTest::generateUnique, MethodNodeHelper::equals);
   }
 
   @Test
   void test_hashCode() {
-    TestUtils.verifyHashCode(this::generateUnique, MethodNodeHelper::hashCode);
+    TestUtils.verifyHashCode(MethodNodeHelperTest::generateUnique, MethodNodeHelper::hashCode);
   }
 
   @Test
@@ -38,7 +38,7 @@ class MethodNodeHelperTest {
     AutoIncrementBiHashMap<LabelNode> labels = new AutoIncrementBiHashMap<>();
 
     TestUtils.verifyRoundTrip(
-            this::generateUnique,
+            MethodNodeHelperTest::generateUnique,
             (value, out) -> MethodNodeHelper.write(value, out, labels::get),
             (in) -> MethodNodeHelper.read(in, labels::getKey),
             MethodNodeHelper::equals
