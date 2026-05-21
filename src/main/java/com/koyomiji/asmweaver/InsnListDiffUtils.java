@@ -2,6 +2,8 @@ package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.heuristic.Heuristic;
 import com.koyomiji.asmweaver.heuristic.MyersFuzzyDistanceHeuristic;
+import com.koyomiji.asmweaver.io.CustomDataInput;
+import com.koyomiji.asmweaver.io.CustomDataOutput;
 import com.koyomiji.asmweaver.util.BiPersistentHashMap;
 import com.koyomiji.asmweaver.util.PeekableIterator;
 import com.koyomiji.asmweaver.util.PersistentHashMap;
@@ -9,6 +11,7 @@ import com.koyomiji.asmweaver.util.tuple.Pair;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
 
@@ -709,5 +712,37 @@ public class InsnListDiffUtils {
     }
 
     return patched;
+  }
+
+  public static void write(InsnListDiff diff, CustomDataOutput out, Function<LabelNode, Integer> labelToIndex) throws IOException {
+    out.writeInt(diff.operations.size());
+
+    for (InsnListDiff.Operation op : diff.operations) {
+      out.writeByte(op.type.ordinal());
+      out.writeByte(op.mode.ordinal());
+
+      if (op.operand1 != null) {
+        NullableHelper.write(op.operand1, out, (o, outStream) -> AbstractInsnNodeHelper.write(o, outStream, labelToIndex));
+      }
+
+      if (op.operand2 != null) {
+        NullableHelper.write(op.operand2, out, (o, outStream) -> AbstractInsnNodeHelper.write(o, outStream, labelToIndex));
+      }
+    }
+  }
+
+  public static InsnListDiff read(CustomDataInput in, Function<Integer, LabelNode> indexToLabel) throws IOException {
+    List<InsnListDiff.Operation> operations = new ArrayList<>();
+    int size = in.readInt();
+
+    for (int i = 0; i < size; i++) {
+      InsnListDiff.Operation.Type type = InsnListDiff.Operation.Type.values()[in.readByte()];
+      InsnListDiff.Operation.Mode mode = InsnListDiff.Operation.Mode.values()[in.readByte()];
+      AbstractInsnNode operand1 = NullableHelper.read(in, (inStream) -> AbstractInsnNodeHelper.read(inStream, indexToLabel));
+      AbstractInsnNode operand2 = NullableHelper.read(in, (inStream) -> AbstractInsnNodeHelper.read(inStream, indexToLabel));
+      operations.add(new InsnListDiff.Operation(type, mode, operand1, operand2));
+    }
+
+    return new InsnListDiff(operations);
   }
 }
