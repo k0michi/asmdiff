@@ -12,19 +12,7 @@ import java.util.List;
 public class ModuleDiffUtilsTest {
   @Test
   void test_diff() {
-    List<ModuleNode> unique = ModuleNodeHelperTest.generateUnique();
-
-    for (int i = 0; i < unique.size(); i++) {
-      for (int j = 0; j < unique.size(); j++) {
-        var diff = ModuleDiffUtils.diff(unique.get(i), unique.get(j));
-
-        if (i != j) {
-          Assertions.assertFalse(diff.isEmpty(), "i=" + i + ", j=" + j);
-        } else {
-          Assertions.assertTrue(diff.isEmpty(), "i=" + i + ", j=" + j);
-        }
-      }
-    }
+    TestUtils.verifyDiffEmpty(ModuleNodeHelperTest::generateUnique, ModuleDiffUtils::diff);
   }
 
   @Test
