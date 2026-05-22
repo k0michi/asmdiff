@@ -27,7 +27,6 @@ public class InsnListDiff implements IDiff {
     int distance = 0;
 
     for (Operation op : operations) {
-      // TODO: insn annotation
       if (op.type != Operation.Type.MATCH) {
         distance++;
       }
