@@ -296,6 +296,15 @@ public class KeyedListDiffUtils {
     return merged;
   }
 
+  private static <Key, Value, Diff extends IDiff> void validateKey(
+          KeyedListDiff.Operation<Key, Value, Diff> opP,
+          KeyedListDiff.Operation<Key, Value, Diff> opQ
+  ) {
+    if (!opP.operandKey.equals(opQ.operandKey)) {
+      throw new IllegalDiffException("Composition Error: Operand key mismatch at intermediate B.");
+    }
+  }
+
   public static <Key, Value, Diff extends IDiff> KeyedListDiff<Key, Value, Diff> compose(
           KeyedListDiff<Key, Value, Diff> p,
           KeyedListDiff<Key, Value, Diff> q,
@@ -322,10 +331,7 @@ public class KeyedListDiffUtils {
                 () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B.")
         );
 
-
-        if (!opP.operandKey.equals(opQ.operandKey)) {
-          throw new IllegalDiffException("Composition Error: Operand key mismatch at intermediate B.");
-        }
+        validateKey(opP, opQ);
 
         if (opQ.type == KeyedListDiff.Operation.Type.MATCH) {
           // insert -> match のパターン
@@ -356,9 +362,7 @@ public class KeyedListDiffUtils {
                 () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B.")
         );
 
-        if (!opP.operandKey.equals(opQ.operandKey)) {
-          throw new IllegalDiffException("Composition Error: Operand key mismatch at intermediate B.");
-        }
+        validateKey(opP, opQ);
 
         result.addAll(mergeInsertionSlot(ins1, ins2));
         ins1.clear();
