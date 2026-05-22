@@ -132,6 +132,18 @@ public class KeyedListDiffUtils {
     return new KeyedListDiff<>(unwrappedOps);
   }
 
+  public static <Value, Diff extends IDiff> KeyedListDiff<Integer, Value, Diff> diffNullableValue(
+          Value value1,
+          Value value2,
+          BiFunction<Value, Value, Diff> diffFunction
+  ) {
+    return diffIndexed(
+            ListHelper.ofNullable(value1),
+            ListHelper.ofNullable(value2),
+            diffFunction
+    );
+  }
+
   public static <Key, Value, Diff extends IDiff> List<Value> patch(List<Value> original, KeyedListDiff<Key, Value, Diff> diff, BiFunction<Value, Diff, Value> elementPatch) {
     List<Value> result = new ArrayList<>();
     int i = 0;
@@ -152,6 +164,15 @@ public class KeyedListDiffUtils {
     }
 
     return result;
+  }
+
+  public static <Value, Diff extends IDiff> Value patchNullableValue(Value original, KeyedListDiff<Integer, Value, Diff> diff, BiFunction<Value, Diff, Value> elementPatch) {
+    return ListHelper.getOrNull(
+            patch(
+                    ListHelper.ofNullable(original),
+                    diff,
+                    elementPatch
+            ), 0);
   }
 
   public static <Key, Value, Diff extends IDiff> void write(
