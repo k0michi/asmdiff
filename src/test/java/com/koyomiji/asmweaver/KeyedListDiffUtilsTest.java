@@ -78,6 +78,10 @@ class KeyedListDiffUtilsTest {
     return new Pair<>(new KeyedObjectDiff(commuted.first), new KeyedObjectDiff(commuted.second));
   }
 
+  private KeyedObjectDiff composeKeyedObjectDiffs(KeyedObjectDiff diff1, KeyedObjectDiff diff2) {
+    return new KeyedObjectDiff(ListDiffUtils.compose(diff1.value, diff2.value, Objects::equals));
+  }
+
   private void writeDiff(KeyedObjectDiff diff, CustomDataOutput out) throws IOException {
     ListDiffUtils.write(diff.value, out, (v, s) -> s.writeUTF(v));
   }
@@ -355,5 +359,43 @@ class KeyedListDiffUtilsTest {
     Assertions.assertEquals(KeyedListDiff.Operation.Type.MATCH, commuted.second.operations.get(0).type);
     Assertions.assertEquals(KeyedListDiff.Operation.Type.INSERT, commuted.second.operations.get(1).type);
     Assertions.assertEquals(KeyedListDiff.Operation.Type.MATCH, commuted.second.operations.get(2).type);
+  }
+
+  @Test
+  void test_compose_0() {
+    var list1 = List.of(
+            new KeyedObject(1, "a")
+    );
+    var list2 = List.of(
+            new KeyedObject(1, "a"),
+            new KeyedObject(2, "b")
+    );
+    var list3 = List.of(
+            new KeyedObject(1, "a"),
+            new KeyedObject(2, "b"),
+            new KeyedObject(3, "c")
+    );
+
+    var diff12 = KeyedListDiffUtils.diff(list1, list2,
+            KeyedObject::getKey,
+            this::diffKeyedObject
+    );
+    var diff23 = KeyedListDiffUtils.diff(list2, list3,
+            KeyedObject::getKey,
+            this::diffKeyedObject
+    );
+
+    var computed = KeyedListDiffUtils.compose(
+            diff12,
+            diff23,
+            this::composeKeyedObjectDiffs,
+            this::patchKeyedObject,
+            this::invertKeyedObjectDiff
+    );
+
+    Assertions.assertEquals(3, computed.operations.size());
+    Assertions.assertEquals(KeyedListDiff.Operation.Type.MATCH, computed.operations.get(0).type);
+    Assertions.assertEquals(KeyedListDiff.Operation.Type.INSERT, computed.operations.get(1).type);
+    Assertions.assertEquals(KeyedListDiff.Operation.Type.INSERT, computed.operations.get(2).type);
   }
 }

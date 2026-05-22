@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class KeyedListDiffUtils {
   public static <Key, Value, Diff extends IDiff> KeyedListDiff<Key, Value, Diff> invert(KeyedListDiff<Key, Value, Diff> diff, Function<Diff, Diff> invert) {
@@ -100,7 +99,7 @@ public class KeyedListDiffUtils {
       indexMap.put(list1.get(i), i);
     }
 
-    for  (int i = 0; i < list2.size(); i++) {
+    for (int i = 0; i < list2.size(); i++) {
       indexMap.put(list2.get(i), i);
     }
 
@@ -276,5 +275,136 @@ public class KeyedListDiffUtils {
     }
 
     return new Pair<>(new KeyedListDiff<>(qPrimeOps), new KeyedListDiff<>(pPrimeOps));
+  }
+
+  private static <Key, Value, Diff extends IDiff> List<KeyedListDiff.Operation<Key, Value, Diff>> collectInsertions(PeekableIterator<KeyedListDiff.Operation<Key, Value, Diff>> it) {
+    List<KeyedListDiff.Operation<Key, Value, Diff>> insertions = new ArrayList<>();
+
+    while (it.hasNext() && it.peek().type == KeyedListDiff.Operation.Type.INSERT) {
+      insertions.add(it.next());
+    }
+
+    return insertions;
+  }
+
+  private static <Key, Value, Diff extends IDiff> List<KeyedListDiff.Operation<Key, Value, Diff>> mergeInsertionSlot(
+          List<KeyedListDiff.Operation<Key, Value, Diff>> ins1,
+          List<KeyedListDiff.Operation<Key, Value, Diff>> ins2
+  ) {
+    List<KeyedListDiff.Operation<Key, Value, Diff>> merged = new ArrayList<>(ins1);
+    merged.addAll(ins2);
+    return merged;
+  }
+
+  public static <Key, Value, Diff extends IDiff> KeyedListDiff<Key, Value, Diff> compose(
+          KeyedListDiff<Key, Value, Diff> p,
+          KeyedListDiff<Key, Value, Diff> q,
+          BiFunction<Diff, Diff, Diff> composeDiff,
+          BiFunction<Value, Diff, Value> applyDiff,
+          Function<Diff, Diff> invertDiff
+  ) {
+    List<KeyedListDiff.Operation<Key, Value, Diff>> result = new ArrayList<>();
+
+    PeekableIterator<KeyedListDiff.Operation<Key, Value, Diff>> itP = new PeekableIterator<>(p.operations.iterator());
+    PeekableIterator<KeyedListDiff.Operation<Key, Value, Diff>> itQ = new PeekableIterator<>(q.operations.iterator());
+
+    List<KeyedListDiff.Operation<Key, Value, Diff>> ins1 = new ArrayList<>();
+    List<KeyedListDiff.Operation<Key, Value, Diff>> ins2 = new ArrayList<>();
+
+    while (itP.hasNext()) {
+      KeyedListDiff.Operation<Key, Value, Diff> opP = itP.next();
+
+      if (opP.type == KeyedListDiff.Operation.Type.INSERT) {
+        ins2.addAll(collectInsertions(itQ));
+
+        if (!itQ.hasNext()) {
+          throw new IllegalDiffException("Composition Error: q is shorter than intermediate B.");
+        }
+        KeyedListDiff.Operation<Key, Value, Diff> opQ = itQ.next();
+
+        if (!opP.operandKey.equals(opQ.operandKey)) {
+          throw new IllegalDiffException("Composition Error: Operand key mismatch at intermediate B.");
+        }
+
+        if (opQ.type == KeyedListDiff.Operation.Type.MATCH) {
+          // insert -> match のパターン
+          Value newValue = applyDiff.apply(opP.operandValue, opQ.operandDiff);
+
+          ins1.add(new KeyedListDiff.Operation<>(
+                  KeyedListDiff.Operation.Type.INSERT,
+                  opP.mode,
+                  opP.operandKey,
+                  newValue,
+                  null
+          ));
+        }
+        // opQ.type == DELETE の場合は消滅
+
+      } else if (opP.type == KeyedListDiff.Operation.Type.DELETE) {
+        result.addAll(mergeInsertionSlot(ins1, ins2));
+        ins1.clear();
+        ins2.clear();
+
+        result.add(opP);
+
+      } else { // MATCH
+        ins2.addAll(collectInsertions(itQ));
+
+        if (!itQ.hasNext()) {
+          throw new IllegalDiffException("Composition Error: q is shorter than intermediate B.");
+        }
+        KeyedListDiff.Operation<Key, Value, Diff> opQ = itQ.next();
+
+        if (!opP.operandKey.equals(opQ.operandKey)) {
+          throw new IllegalDiffException("Composition Error: Operand key mismatch at intermediate B.");
+        }
+
+        result.addAll(mergeInsertionSlot(ins1, ins2));
+        ins1.clear();
+        ins2.clear();
+
+        if (opQ.type == KeyedListDiff.Operation.Type.MATCH) {
+          // match -> match のパターン
+          Diff combinedDiff;
+          if (opP.operandDiff == null) {
+            combinedDiff = opQ.operandDiff;
+          } else if (opQ.operandDiff == null) {
+            combinedDiff = opP.operandDiff;
+          } else {
+            combinedDiff = composeDiff.apply(opP.operandDiff, opQ.operandDiff);
+          }
+
+          result.add(new KeyedListDiff.Operation<>(
+                  KeyedListDiff.Operation.Type.MATCH,
+                  opQ.mode,
+                  opP.operandKey,
+                  null,
+                  combinedDiff
+          ));
+        } else if (opQ.type == KeyedListDiff.Operation.Type.DELETE) {
+          // 【リファクタリング箇所：match -> delete のパターン】
+          // 状態 B の値 (opQ.operandValue) に対し、
+          // 先行パッチの差分 (opP.operandDiff) を invert して適用することで、状態 A の値を復元。
+          Value valueA = applyDiff.apply(opQ.operandValue, invertDiff.apply(opP.operandDiff));
+
+          result.add(new KeyedListDiff.Operation<>(
+                  KeyedListDiff.Operation.Type.DELETE,
+                  opQ.mode,
+                  opP.operandKey,
+                  valueA,
+                  null
+          ));
+        }
+      }
+    }
+
+    ins2.addAll(collectInsertions(itQ));
+    result.addAll(mergeInsertionSlot(ins1, ins2));
+
+    if (itQ.hasNext()) {
+      throw new IllegalDiffException("Composition Error: q has remaining operations after p is exhausted.");
+    }
+
+    return new KeyedListDiff<>(result);
   }
 }
