@@ -240,6 +240,7 @@ public class ListDiffUtils {
   }
 
   /**
+   * Compose two diffs.
    *
    * @param p        Diff from list 1 to list 2.
    * @param q        Diff from list 2 to list 3.
@@ -334,7 +335,7 @@ public class ListDiffUtils {
 
   /**
    * Merge diff1 and diff2.
-   * Concretely, this returns $AB'$ where
+   * That is, this computes $AB'$ where
    * $$
    * AA^{-1}B\leftrightarrow AB'{A^{-1}}'
    * $$
