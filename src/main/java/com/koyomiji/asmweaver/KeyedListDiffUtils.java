@@ -317,10 +317,12 @@ public class KeyedListDiffUtils {
       if (opP.type == KeyedListDiff.Operation.Type.INSERT) {
         ins2.addAll(collectInsertions(itQ));
 
-        if (!itQ.hasNext()) {
-          throw new IllegalDiffException("Composition Error: q is shorter than intermediate B.");
-        }
-        KeyedListDiff.Operation<Key, Value, Diff> opQ = itQ.next();
+        KeyedListDiff.Operation<Key, Value, Diff> opQ =
+                IteratorHelper.nextOrThrow(
+                        itQ,
+                        () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B.")
+                );
+
 
         if (!opP.operandKey.equals(opQ.operandKey)) {
           throw new IllegalDiffException("Composition Error: Operand key mismatch at intermediate B.");
@@ -394,10 +396,7 @@ public class KeyedListDiffUtils {
     ins2.addAll(collectInsertions(itQ));
     result.addAll(mergeInsertionSlot(ins1, ins2));
 
-    if (itQ.hasNext()) {
-      throw new IllegalDiffException("Composition Error: q has remaining operations after p is exhausted.");
-    }
-
+    IteratorHelper.throwIfNext(itQ, () -> new IllegalDiffException("Composition Error: q has remaining operations after p is exhausted."));
     return new KeyedListDiff<>(result);
   }
 }
