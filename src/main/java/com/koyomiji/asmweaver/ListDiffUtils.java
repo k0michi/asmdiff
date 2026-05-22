@@ -222,7 +222,7 @@ public class ListDiffUtils {
     return patched.get(0);
   }
 
-  private static <T> List<ListDiff.Operation<T>> mergeInsertionSlot(List<ListDiff.Operation<T>> ins1, List<ListDiff.Operation<T>> ins2) throws ConflictException {
+  private static <T> List<ListDiff.Operation<T>> mergeInsertionSlot(List<ListDiff.Operation<T>> ins1, List<ListDiff.Operation<T>> ins2) {
     List<ListDiff.Operation<T>> result = new ArrayList<>();
     result.addAll(ins1);
     result.addAll(ins2);
@@ -249,7 +249,7 @@ public class ListDiffUtils {
    * @return
    * @throws ConflictException
    */
-  public static <T> ListDiff<T> compose(ListDiff<T> p, ListDiff<T> q, BiPredicate<T, T> compare2) throws ConflictException {
+  public static <T> ListDiff<T> compose(ListDiff<T> p, ListDiff<T> q, BiPredicate<T, T> compare2) {
     List<ListDiff.Operation<T>> result = new ArrayList<>();
 
     PeekableIterator<ListDiff.Operation<T>> itP = new PeekableIterator<>(p.operations.iterator());
