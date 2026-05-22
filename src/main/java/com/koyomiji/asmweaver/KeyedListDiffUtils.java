@@ -6,7 +6,9 @@ import com.koyomiji.asmweaver.util.PeekableIterator;
 import com.koyomiji.asmweaver.util.tuple.Pair;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -91,24 +93,43 @@ public class KeyedListDiffUtils {
     return new KeyedListDiff<>(reversedOperations);
   }
 
-  // FIXME: breaks if duplicate values
-  public static <Value, Diff extends IDiff> KeyedListDiff<Integer, Value, Diff> diffIndexed(List<Value> list1, List<Value> list2, BiFunction<Value, Value, Diff> diffFunction) {
-    Map<Value, Integer> indexMap = new HashMap<>();
+  public static <Value, Diff extends IDiff> KeyedListDiff<Integer, Value, Diff> diffIndexed(
+          List<Value> list1,
+          List<Value> list2,
+          BiFunction<Value, Value, Diff> diffFunction
+  ) {
+    List<Pair<Integer, Value>> wrapped1 = new ArrayList<>();
 
     for (int i = 0; i < list1.size(); i++) {
-      indexMap.put(list1.get(i), i);
+      wrapped1.add(new Pair<>(i, list1.get(i)));
     }
+
+    List<Pair<Integer, Value>> wrapped2 = new ArrayList<>();
 
     for (int i = 0; i < list2.size(); i++) {
-      indexMap.put(list2.get(i), i);
+      wrapped2.add(new Pair<>(i, list2.get(i)));
     }
 
-    return diff(
-            list1,
-            list2,
-            indexMap::get,
-            diffFunction
+    KeyedListDiff<Integer, Pair<Integer, Value>, Diff> pairedDiff = diff(
+            wrapped1,
+            wrapped2,
+            p -> p.first,
+            (p1, p2) -> diffFunction.apply(p1.second, p2.second)
     );
+
+    List<KeyedListDiff.Operation<Integer, Value, Diff>> unwrappedOps = new ArrayList<>();
+
+    for (KeyedListDiff.Operation<Integer, Pair<Integer, Value>, Diff> op : pairedDiff.operations) {
+      unwrappedOps.add(new KeyedListDiff.Operation<>(
+              op.type,
+              op.mode,
+              op.operandKey,
+              op.operandValue != null ? op.operandValue.second : null,
+              op.operandDiff
+      ));
+    }
+
+    return new KeyedListDiff<>(unwrappedOps);
   }
 
   public static <Key, Value, Diff extends IDiff> List<Value> patch(List<Value> original, KeyedListDiff<Key, Value, Diff> diff, BiFunction<Value, Diff, Value> elementPatch) {

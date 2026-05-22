@@ -398,4 +398,40 @@ class KeyedListDiffUtilsTest {
     Assertions.assertEquals(KeyedListDiff.Operation.Type.INSERT, computed.operations.get(1).type);
     Assertions.assertEquals(KeyedListDiff.Operation.Type.INSERT, computed.operations.get(2).type);
   }
+
+  @Test
+  void test_diffIndexed_0() {
+    var list1 = List.of("a");
+    var list2 = List.of("b");
+
+    var diff = KeyedListDiffUtils.diffIndexed(
+            list1,
+            list2,
+            (v1, v2) -> ListDiffUtils.diffNonNullableValue(v1, v2, String::equals)
+    );
+
+    Assertions.assertEquals(1, diff.operations.size());
+    Assertions.assertEquals(KeyedListDiff.Operation.Type.MATCH, diff.operations.get(0).type);
+
+    Assertions.assertEquals(2, diff.operations.get(0).operandDiff.operations.size());
+  }
+
+  @Test
+  void test_diffIndexed_1() {
+    var list1 = List.of("a", "a");
+    var list2 = List.of("a", "b");
+
+    var diff = KeyedListDiffUtils.diffIndexed(
+            list1,
+            list2,
+            (v1, v2) -> ListDiffUtils.diffNonNullableValue(v1, v2, String::equals)
+    );
+
+    Assertions.assertEquals(2, diff.operations.size());
+    Assertions.assertEquals(KeyedListDiff.Operation.Type.MATCH, diff.operations.get(0).type);
+    Assertions.assertEquals(KeyedListDiff.Operation.Type.MATCH, diff.operations.get(1).type);
+
+    Assertions.assertEquals(1, diff.operations.get(0).operandDiff.operations.size());
+    Assertions.assertEquals(2, diff.operations.get(1).operandDiff.operations.size());
+  }
 }
