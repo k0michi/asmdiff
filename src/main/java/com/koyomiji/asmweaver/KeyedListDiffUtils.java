@@ -365,14 +365,7 @@ public class KeyedListDiffUtils {
 
         if (opQ.type == KeyedListDiff.Operation.Type.MATCH) {
           // match -> match のパターン
-          Diff combinedDiff;
-          if (opP.operandDiff == null) {
-            combinedDiff = opQ.operandDiff;
-          } else if (opQ.operandDiff == null) {
-            combinedDiff = opP.operandDiff;
-          } else {
-            combinedDiff = composeDiff.apply(opP.operandDiff, opQ.operandDiff);
-          }
+          Diff combinedDiff = composeDiff.apply(opP.operandDiff, opQ.operandDiff);
 
           result.add(new KeyedListDiff.Operation<>(
                   KeyedListDiff.Operation.Type.MATCH,
