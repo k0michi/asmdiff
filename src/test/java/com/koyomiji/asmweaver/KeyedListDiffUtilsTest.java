@@ -4,6 +4,7 @@ import com.koyomiji.asmweaver.io.BinaryReader;
 import com.koyomiji.asmweaver.io.BinaryWriter;
 import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.CustomDataOutput;
+import com.koyomiji.asmweaver.util.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -70,6 +71,11 @@ class KeyedListDiffUtilsTest {
 
   private KeyedObjectDiff invertKeyedObjectDiff(KeyedObjectDiff diff) {
     return new KeyedObjectDiff(ListDiffUtils.invert(diff.value));
+  }
+
+  private Pair<KeyedObjectDiff, KeyedObjectDiff> commuteKeyedObjectDiffs(KeyedObjectDiff diff1, KeyedObjectDiff diff2) throws ConflictException {
+    var commuted = ListDiffUtils.commute(diff1.value, diff2.value, Objects::equals);
+    return new Pair<>(new KeyedObjectDiff(commuted.first), new KeyedObjectDiff(commuted.second));
   }
 
   private void writeDiff(KeyedObjectDiff diff, CustomDataOutput out) throws IOException {
@@ -306,5 +312,48 @@ class KeyedListDiffUtilsTest {
     );
 
     Assertions.assertEquals(newList, patched);
+  }
+
+  @Test
+  void test_commute_0() throws ConflictException {
+    var list1 = List.of(
+            new KeyedObject(1, "a")
+    );
+    var list2 = List.of(
+            new KeyedObject(1, "a"),
+            new KeyedObject(2, "b")
+    );
+    var list3 = List.of(
+            new KeyedObject(1, "a"),
+            new KeyedObject(2, "b"),
+            new KeyedObject(3, "c")
+    );
+
+    var diff12 = KeyedListDiffUtils.diff(list1, list2,
+            KeyedObject::getKey,
+            this::diffKeyedObject
+    );
+    var diff23 = KeyedListDiffUtils.diff(list2, list3,
+            KeyedObject::getKey,
+            this::diffKeyedObject
+    );
+
+    var commuted = KeyedListDiffUtils.commute(
+            diff12,
+            diff23,
+            this::commuteKeyedObjectDiffs,
+            this::diffKeyedObject
+    );
+
+    // 1 -> 1 3
+    Assertions.assertEquals(2, commuted.first.operations.size());
+    Assertions.assertEquals(KeyedListDiff.Operation.Type.MATCH, commuted.first.operations.get(0).type);
+    Assertions.assertEquals(KeyedListDiff.Operation.Type.INSERT, commuted.first.operations.get(1).type);
+
+    // 1 3 -> 1 2 3
+    Assertions.assertEquals(3, commuted.second.operations.size());
+    Assertions.assertEquals(KeyedListDiff.Operation.Type.MATCH, commuted.second.operations.get(0).type);
+    Assertions.assertEquals(KeyedListDiff.Operation.Type.INSERT, commuted.second.operations.get(1).type);
+    Assertions.assertEquals(KeyedListDiff.Operation.Type.MATCH, commuted.second.operations.get(2).type);
   }
 }

@@ -2,14 +2,14 @@ package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.CustomDataOutput;
+import com.koyomiji.asmweaver.util.PeekableIterator;
+import com.koyomiji.asmweaver.util.tuple.Pair;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class KeyedListDiffUtils {
   public static <Key, Value, Diff extends IDiff> KeyedListDiff<Key, Value, Diff> invert(KeyedListDiff<Key, Value, Diff> diff, Function<Diff, Diff> invert) {
@@ -187,5 +187,94 @@ public class KeyedListDiffUtils {
     }
 
     return new KeyedListDiff<>(operations);
+  }
+
+  public static <Key, Value, Diff extends IDiff> Pair<KeyedListDiff<Key, Value, Diff>, KeyedListDiff<Key, Value, Diff>> commute(
+          KeyedListDiff<Key, Value, Diff> p,
+          KeyedListDiff<Key, Value, Diff> q,
+          CommuteFunction<Diff> commuteDiff,
+          BiFunction<Value, Value, Diff> diffFunction
+  ) throws ConflictException {
+    List<KeyedListDiff.Operation<Key, Value, Diff>> qPrimeOps = new ArrayList<>();
+    List<KeyedListDiff.Operation<Key, Value, Diff>> pPrimeOps = new ArrayList<>();
+
+    Iterator<KeyedListDiff.Operation<Key, Value, Diff>> itP = p.operations.iterator();
+    PeekableIterator<KeyedListDiff.Operation<Key, Value, Diff>> itQ = new PeekableIterator<>(q.operations.iterator());
+
+    while (itP.hasNext()) {
+      KeyedListDiff.Operation<Key, Value, Diff> opP = itP.next();
+
+      if (opP.type == KeyedListDiff.Operation.Type.DELETE) {
+        // p が DELETE の場合：
+        // 後行 q 側にはこの要素への操作はないため、q' 側では空の MATCH を生成し、p' 側で DELETE を引き継ぐ
+        Diff emptyDiff = diffFunction.apply(opP.operandValue, opP.operandValue);
+        qPrimeOps.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.MATCH, opP.mode, opP.operandKey, null, emptyDiff));
+        pPrimeOps.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.DELETE, opP.mode, opP.operandKey, opP.operandValue, null));
+      } else {
+        // opP が MATCH または INSERT の場合
+
+        // q 側で新規に挿入される要素(INSERT)を優先して回収
+        while (itQ.hasNext() && itQ.peek().type == KeyedListDiff.Operation.Type.INSERT) {
+          KeyedListDiff.Operation<Key, Value, Diff> opQIns = itQ.next();
+          qPrimeOps.add(opQIns);
+
+          Diff emptyDiff = diffFunction.apply(opQIns.operandValue, opQIns.operandValue);
+          pPrimeOps.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.MATCH, opQIns.mode, opQIns.operandKey, null, emptyDiff));
+        }
+
+        if (!itQ.hasNext()) {
+          throw new IllegalDiffException("p has remaining operations after q is exhausted");
+        }
+        KeyedListDiff.Operation<Key, Value, Diff> opQBase = itQ.next();
+
+        // キーによるノードの同一性検証
+        if (!opP.operandKey.equals(opQBase.operandKey)) {
+          throw new IllegalDiffException("p and q disagree on node identity");
+        }
+
+        if (opP.type == KeyedListDiff.Operation.Type.MATCH) {
+          if (opQBase.type == KeyedListDiff.Operation.Type.MATCH) {
+            // MATCH -> MATCH のパターン：双方の内部変更を交換
+            Pair<Diff, Diff> commuted = commuteDiff.commute(opP.operandDiff, opQBase.operandDiff);
+            qPrimeOps.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.MATCH, opQBase.mode, opQBase.operandKey, null, commuted.first));
+            pPrimeOps.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.MATCH, opP.mode, opP.operandKey, null, commuted.second));
+          } else if (opQBase.type == KeyedListDiff.Operation.Type.DELETE) {
+            // change -> delete のパターン：交換不可（Conflict）
+            throw new ConflictException("Conflict: p modifies a node that q subsequently deletes (Key: " + opP.operandKey + ")");
+          }
+        } else {
+          // opP.type == INSERT のパターン
+          if (opQBase.type == KeyedListDiff.Operation.Type.DELETE) {
+            // insert -> delete のパターン：交換不可（Conflict）
+            throw new ConflictException("Conflict: p inserts a node that q subsequently deletes (Key: " + opP.operandKey + ")");
+          }
+
+          // 【方針適用】：insert -> match/change のパターン切り分け
+          // q の持っている変更（operandDiff）が空でない（実質的なchangeである）場合は、依存関係があるため交換不可
+          if (!opQBase.operandDiff.isEmpty()) {
+            throw new ConflictException("Conflict: p inserts a node that q subsequently modifies (Key: " + opP.operandKey + ")");
+          }
+
+          // insert -> match（空の差分）のパターン：
+          // 依存関係がないため安全に交換可能。q' 側には何も追加せず、p' 側で元の値をそのまま INSERT する。
+          pPrimeOps.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.INSERT, opP.mode, opP.operandKey, opP.operandValue, null));
+        }
+      }
+    }
+
+    // q 側に残った末尾の INSERT 操作をすべて回収
+    while (itQ.hasNext()) {
+      KeyedListDiff.Operation<Key, Value, Diff> opQ = itQ.next();
+      if (opQ.type == KeyedListDiff.Operation.Type.INSERT) {
+        qPrimeOps.add(opQ);
+
+        Diff emptyDiff = diffFunction.apply(opQ.operandValue, opQ.operandValue);
+        pPrimeOps.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.MATCH, opQ.mode, opQ.operandKey, null, emptyDiff));
+      } else {
+        throw new IllegalDiffException("q has remaining operations after p is exhausted");
+      }
+    }
+
+    return new Pair<>(new KeyedListDiff<>(qPrimeOps), new KeyedListDiff<>(pPrimeOps));
   }
 }
