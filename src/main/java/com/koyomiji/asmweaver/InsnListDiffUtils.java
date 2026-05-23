@@ -5,7 +5,6 @@ import com.koyomiji.asmweaver.heuristic.MyersFuzzyDistanceHeuristic;
 import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.CustomDataOutput;
 import com.koyomiji.asmweaver.util.BiPersistentHashMap;
-import com.koyomiji.asmweaver.util.PeekableIterator;
 import com.koyomiji.asmweaver.util.PersistentHashMap;
 import com.koyomiji.asmweaver.util.UnionFind;
 import com.koyomiji.asmweaver.util.tuple.Pair;
@@ -118,76 +117,42 @@ public class InsnListDiffUtils {
     return inserted;
   }
 
-  private static List<InsnListDiff.Operation> mergeInsertionSlot(
-          List<InsnListDiff.Operation> ins1,
-          List<InsnListDiff.Operation> ins2) throws ConflictException {
-
-    List<InsnListDiff.Operation> result = new ArrayList<>();
-    result.addAll(ins1);
-    result.addAll(ins2);
-    return result;
-  }
-
-  private static List<InsnListDiff.Operation> collectInsertions(PeekableIterator<InsnListDiff.Operation> it) {
-    List<InsnListDiff.Operation> insertions = new ArrayList<>();
-
-    while (it.hasNext() && isInsert(it.peek())) {
-      insertions.add(it.next());
-    }
-
-    return insertions;
-  }
-
-  public static InsnListDiff compose(InsnListDiff p, InsnListDiff q) throws ConflictException {
+  public static InsnListDiff compose(InsnListDiff p, InsnListDiff q) {
     List<InsnListDiff.Operation> result = new ArrayList<>();
 
-    PeekableIterator<InsnListDiff.Operation> itP = new PeekableIterator<>(p.operations.iterator());
-    PeekableIterator<InsnListDiff.Operation> itQ = new PeekableIterator<>(q.operations.iterator());
+    InsnListDiffPairIterator it = new InsnListDiffPairIterator(p.operations.iterator(), q.operations.iterator());
 
-    List<InsnListDiff.Operation> ins1 = new ArrayList<>();
-    List<InsnListDiff.Operation> ins2 = new ArrayList<>();
+    while (it.hasNext()) {
+      Pair<InsnListDiff.Operation, InsnListDiff.Operation> pair = it.next();
+      InsnListDiff.Operation opP = pair.first;
+      InsnListDiff.Operation opQ = pair.second;
 
-    while (itP.hasNext()) {
-      InsnListDiff.Operation opP = itP.next();
-
-      if (opP.type == InsnListDiff.Operation.Type.INSERT) {
-        ins2.addAll(collectInsertions(itQ));
-
-        InsnListDiff.Operation opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
-
-        if (!AbstractInsnNodeHelper.equals(opP.operand2, opQ.operand1)) {
-          throw new IllegalDiffException("Composition Error: Operand mismatch at B.");
-        }
-
-        if (opQ.type == InsnListDiff.Operation.Type.MATCH) {
-          ins1.add(opP);
-        }
-      } else if (opP.type == InsnListDiff.Operation.Type.DELETE) {
-        result.addAll(mergeInsertionSlot(ins1, ins2));
-        ins1.clear();
-        ins2.clear();
+      // パターン1: P が単独で DELETE
+      if (opP != null && opQ == null) {
         result.add(opP);
-      } else { // MATCH
-        ins2.addAll(collectInsertions(itQ));
-
-        InsnListDiff.Operation opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
-
+      }
+      // パターン2: Q が単独で INSERT
+      else if (opP == null && opQ != null) {
+        result.add(opQ);
+      }
+      // パターン3: 両方のタイムラインが揃った
+      else if (opP != null && opQ != null) {
         if (!AbstractInsnNodeHelper.equals(opP.operand2, opQ.operand1)) {
-          throw new IllegalDiffException("Composition Error: Operand mismatch at C.");
+          throw new IllegalDiffException("Composition Error: Operand mismatch at intermediate state B.");
         }
 
-        result.addAll(mergeInsertionSlot(ins1, ins2));
-        ins1.clear();
-        ins2.clear();
-
-        result.add(new InsnListDiff.Operation(opQ.type, opQ.mode, opP.operand1, opQ.operand2));
+        if (opP.type == InsnListDiff.Operation.Type.INSERT) {
+          // PのINSERTをQがMATCHで通したなら、ここでPのINSERT（X）がresultに積まれる
+          if (opQ.type == InsnListDiff.Operation.Type.MATCH) {
+            result.add(opP);
+          }
+          // QがDELETEなら相殺されてresultには何も入らない
+        } else { // opP.type == MATCH
+          // ベース操作同士の合成
+          result.add(new InsnListDiff.Operation(opQ.type, opQ.mode, opP.operand1, opQ.operand2));
+        }
       }
     }
-
-    ins2.addAll(collectInsertions(itQ));
-    result.addAll(mergeInsertionSlot(ins1, ins2));
-
-    IteratorHelper.throwIfNext(itQ, () -> new IllegalDiffException("Composition Error: q has remaining operations after p is exhausted."));
 
     return new InsnListDiff(result);
   }
