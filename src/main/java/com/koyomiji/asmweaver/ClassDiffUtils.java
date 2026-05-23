@@ -269,7 +269,7 @@ public class ClassDiffUtils {
 
     Pair<ListDiff<String>, ListDiff<String>> sourceFile = ListDiffUtils.commute(diff1.sourceFile, diff2.sourceFile, String::equals);
     diffPrime2.sourceFile = sourceFile.first;
-    diffPrime1.sourceDebug = sourceFile.second;
+    diffPrime1.sourceFile = sourceFile.second;
 
     Pair<ListDiff<String>, ListDiff<String>> sourceDebug = ListDiffUtils.commute(diff1.sourceDebug, diff2.sourceDebug, String::equals);
     diffPrime2.sourceDebug = sourceDebug.first;

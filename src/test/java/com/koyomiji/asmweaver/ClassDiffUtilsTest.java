@@ -169,4 +169,61 @@ class ClassDiffUtilsTest {
       }
     }
   }
+
+  @Test
+  void test_isEmpty() {
+    var unique1 = ClassNodeHelperTest.generateUnique();
+
+    for (int i = 0; i < unique1.size(); i++) {
+      ClassNode node1 = unique1.get(i);
+      ClassDiff diff12 = ClassDiffUtils.diff(node1, node1);
+
+      Assertions.assertTrue(diff12.isEmpty(), "i=" + i);
+    }
+  }
+
+  @Test
+  void test_commute_empty() throws ConflictException {
+    var unique1 = ClassNodeHelperTest.generateUnique();
+
+    for (int i = 0; i < unique1.size(); i++) {
+      ClassNode node1 = unique1.get(i);
+      ClassDiff diff12 = ClassDiffUtils.diff(node1, node1);
+      ClassDiff diff23 = ClassDiffUtils.diff(node1, node1);
+
+      var commuted = ClassDiffUtils.commute(diff12, diff23);
+
+      Assertions.assertTrue(commuted.first.isEmpty(), "i=" + i);
+      Assertions.assertTrue(commuted.second.isEmpty(), "i=" + i);
+    }
+  }
+
+  @Test
+  void test_invert_empty() {
+    var unique1 = ClassNodeHelperTest.generateUnique();
+
+    for (int i = 0; i < unique1.size(); i++) {
+      ClassNode node1 = unique1.get(i);
+      ClassDiff diff12 = ClassDiffUtils.diff(node1, node1);
+
+      var inverted = ClassDiffUtils.invert(diff12);
+
+      Assertions.assertTrue(inverted.isEmpty(), "i=" + i);
+    }
+  }
+
+  @Test
+  void test_composed_empty() {
+    var unique1 = ClassNodeHelperTest.generateUnique();
+
+    for (int i = 0; i < unique1.size(); i++) {
+      ClassNode node1 = unique1.get(i);
+      ClassDiff diff12 = ClassDiffUtils.diff(node1, node1);
+      ClassDiff diff23 = ClassDiffUtils.diff(node1, node1);
+
+      var composed = ClassDiffUtils.compose(diff12, diff23);
+
+      Assertions.assertTrue(composed.isEmpty(), "i=" + i);
+    }
+  }
 }
