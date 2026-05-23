@@ -2,11 +2,12 @@ package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.CustomDataOutput;
+import com.koyomiji.asmweaver.util.tuple.Pair;
+import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.RecordComponentNode;
+import org.objectweb.asm.tree.TypeAnnotationNode;
 
 import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class RecordComponentDiffUtils {
@@ -62,6 +63,105 @@ public class RecordComponentDiffUtils {
     );
     // attrs
     return patchedNode;
+  }
+
+  public static RecordComponentDiff invert(RecordComponentDiff diff) {
+    RecordComponentDiff inverted = new RecordComponentDiff();
+    inverted.name = ListDiffUtils.invert(diff.name);
+    inverted.descriptor = ListDiffUtils.invert(diff.descriptor);
+    inverted.signature = ListDiffUtils.invert(diff.signature);
+    inverted.visibleAnnotations = ListDiffUtils.invert(
+            diff.visibleAnnotations
+    );
+    inverted.invisibleAnnotations = ListDiffUtils.invert(
+            diff.invisibleAnnotations
+    );
+    inverted.visibleTypeAnnotations = ListDiffUtils.invert(
+            diff.visibleTypeAnnotations
+    );
+    inverted.invisibleTypeAnnotations = ListDiffUtils.invert(
+            diff.invisibleTypeAnnotations
+    );
+    return inverted;
+  }
+
+  public static RecordComponentDiff compose(RecordComponentDiff diff1, RecordComponentDiff diff2) {
+    RecordComponentDiff composed = new RecordComponentDiff();
+    composed.name = ListDiffUtils.compose(diff1.name, diff2.name, String::equals);
+    composed.descriptor = ListDiffUtils.compose(diff1.descriptor, diff2.descriptor, String::equals);
+    composed.signature = ListDiffUtils.compose(diff1.signature, diff2.signature, String::equals);
+    composed.visibleAnnotations = ListDiffUtils.compose(
+            diff1.visibleAnnotations,
+            diff2.visibleAnnotations,
+            AnnotationNodeHelper::equals
+    );
+    composed.invisibleAnnotations = ListDiffUtils.compose(
+            diff1.invisibleAnnotations,
+            diff2.invisibleAnnotations,
+            AnnotationNodeHelper::equals
+    );
+    composed.visibleTypeAnnotations = ListDiffUtils.compose(
+            diff1.visibleTypeAnnotations,
+            diff2.visibleTypeAnnotations,
+            AnnotationNodeHelper::equals
+    );
+    composed.invisibleTypeAnnotations = ListDiffUtils.compose(
+            diff1.invisibleTypeAnnotations,
+            diff2.invisibleTypeAnnotations,
+            AnnotationNodeHelper::equals
+    );
+    return composed;
+  }
+
+  public static Pair<RecordComponentDiff, RecordComponentDiff> commute(RecordComponentDiff diff1, RecordComponentDiff diff2) throws ConflictException {
+    RecordComponentDiff diff2Prime = new RecordComponentDiff();
+    RecordComponentDiff diff1Prime = new RecordComponentDiff();
+
+    Pair<ListDiff<String>, ListDiff<String>> name = ListDiffUtils.commute(diff1.name, diff2.name, String::equals);
+    diff2Prime.name = name.first;
+    diff1Prime.name = name.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> descriptor = ListDiffUtils.commute(diff1.descriptor, diff2.descriptor, String::equals);
+    diff2Prime.descriptor = descriptor.first;
+    diff1Prime.descriptor = descriptor.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> signature = ListDiffUtils.commute(diff1.signature, diff2.signature, String::equals);
+    diff2Prime.signature = signature.first;
+    diff1Prime.signature = signature.second;
+
+    Pair<ListDiff<AnnotationNode>, ListDiff<AnnotationNode>> visibleAnnotations = ListDiffUtils.commute(
+            diff1.visibleAnnotations,
+            diff2.visibleAnnotations,
+            AnnotationNodeHelper::equals
+    );
+    diff2Prime.visibleAnnotations = visibleAnnotations.first;
+    diff1Prime.visibleAnnotations = visibleAnnotations.second;
+
+    Pair<ListDiff<AnnotationNode>, ListDiff<AnnotationNode>> invisibleAnnotations = ListDiffUtils.commute(
+            diff1.invisibleAnnotations,
+            diff2.invisibleAnnotations,
+            AnnotationNodeHelper::equals
+    );
+    diff2Prime.invisibleAnnotations = invisibleAnnotations.first;
+    diff1Prime.invisibleAnnotations = invisibleAnnotations.second;
+
+    Pair<ListDiff<TypeAnnotationNode>, ListDiff<TypeAnnotationNode>> visibleTypeAnnotations = ListDiffUtils.commute(
+            diff1.visibleTypeAnnotations,
+            diff2.visibleTypeAnnotations,
+            AnnotationNodeHelper::equals
+    );
+    diff2Prime.visibleTypeAnnotations = visibleTypeAnnotations.first;
+    diff1Prime.visibleTypeAnnotations = visibleTypeAnnotations.second;
+
+    Pair<ListDiff<TypeAnnotationNode>, ListDiff<TypeAnnotationNode>> invisibleTypeAnnotations = ListDiffUtils.commute(
+            diff1.invisibleTypeAnnotations,
+            diff2.invisibleTypeAnnotations,
+            AnnotationNodeHelper::equals
+    );
+    diff2Prime.invisibleTypeAnnotations = invisibleTypeAnnotations.first;
+    diff1Prime.invisibleTypeAnnotations = invisibleTypeAnnotations.second;
+
+    return Pair.of(diff2Prime, diff1Prime);
   }
 
   public static void write(RecordComponentDiff diff, CustomDataOutput out) throws IOException {

@@ -8,8 +8,6 @@ import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.TryCatchBlockNode;
 import org.objectweb.asm.tree.TypeAnnotationNode;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
@@ -51,6 +49,22 @@ public class TryCatchBlockNodeHelper {
             .append(ListHelper.hashCodeNullToEmpty(node.visibleTypeAnnotations, AnnotationNodeHelper::hashCode))
             .append(ListHelper.hashCodeNullToEmpty(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode))
             .build();
+  }
+
+  public static TryCatchBlockNode mapLabels(TryCatchBlockNode node, Function<LabelNode, LabelNode> labelMap) {
+    if (node == null) {
+      return null;
+    }
+
+    TryCatchBlockNode mapped = new TryCatchBlockNode(
+            labelMap.apply(node.start),
+            labelMap.apply(node.end),
+            labelMap.apply(node.handler),
+            node.type
+    );
+    mapped.visibleTypeAnnotations = node.visibleTypeAnnotations;
+    mapped.invisibleTypeAnnotations = node.invisibleTypeAnnotations;
+    return mapped;
   }
 
   public static void write(TryCatchBlockNode node, CustomDataOutput out, Function<LabelNode, Integer> labelToIndex) throws IOException {

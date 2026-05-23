@@ -170,6 +170,23 @@ public class AnnotationNodeHelper {
     return Objects.hashCode(value);
   }
 
+  public static LocalVariableAnnotationNode mapLabels(LocalVariableAnnotationNode node, Function<LabelNode, LabelNode> labelMap) {
+    if (node == null) {
+      return null;
+    }
+
+    LocalVariableAnnotationNode mapped = new LocalVariableAnnotationNode(
+            node.typeRef,
+            node.typePath,
+            ListHelper.map(node.start, label -> labelMap.apply(label)).toArray(new LabelNode[0]),
+            ListHelper.map(node.end, label -> labelMap.apply(label)).toArray(new LabelNode[0]),
+            ListHelper.map(node.index, idx -> idx).stream().mapToInt(Integer::intValue).toArray(),
+            node.desc
+    );
+    mapped.values = node.values;
+    return mapped;
+  }
+
   public static enum ValueType {
     BYTE,
     CHAR,

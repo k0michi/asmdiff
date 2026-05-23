@@ -43,9 +43,6 @@ public class InsnListDiff implements IDiff {
     }
 
     public enum Mode {
-      /**
-       * Anchored by the previous instruction and the next instruction.
-       */
       BETWEEN,
       BEFORE,
       AFTER

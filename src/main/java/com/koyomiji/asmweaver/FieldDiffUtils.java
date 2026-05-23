@@ -2,12 +2,12 @@ package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.CustomDataOutput;
-import com.koyomiji.asmweaver.io.DataStreamHelper;
+import com.koyomiji.asmweaver.util.tuple.Pair;
+import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.FieldNode;
+import org.objectweb.asm.tree.TypeAnnotationNode;
 
 import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class FieldDiffUtils {
@@ -80,6 +80,77 @@ public class FieldDiffUtils {
     patchedNode.invisibleTypeAnnotations = ListDiffUtils.patch(node.invisibleTypeAnnotations, diff.invisibleTypeAnnotations);
     // attributes
     return patchedNode;
+  }
+
+  public static FieldDiff invert(FieldDiff diff) {
+    FieldDiff inverted = new FieldDiff();
+    inverted.access = ListDiffUtils.invert(diff.access);
+    inverted.name = ListDiffUtils.invert(diff.name);
+    inverted.desc = ListDiffUtils.invert(diff.desc);
+    inverted.signature = ListDiffUtils.invert(diff.signature);
+    inverted.value = ListDiffUtils.invert(diff.value);
+    inverted.visibleAnnotations = ListDiffUtils.invert(diff.visibleAnnotations);
+    inverted.invisibleAnnotations = ListDiffUtils.invert(diff.invisibleAnnotations);
+    inverted.visibleTypeAnnotations = ListDiffUtils.invert(diff.visibleTypeAnnotations);
+    inverted.invisibleTypeAnnotations = ListDiffUtils.invert(diff.invisibleTypeAnnotations);
+    return inverted;
+  }
+
+  public static FieldDiff compose(FieldDiff diff1, FieldDiff diff2) {
+    FieldDiff composed = new FieldDiff();
+    composed.access = ListDiffUtils.compose(diff1.access, diff2.access, Integer::equals);
+    composed.name = ListDiffUtils.compose(diff1.name, diff2.name, String::equals);
+    composed.desc = ListDiffUtils.compose(diff1.desc, diff2.desc, String::equals);
+    composed.signature = ListDiffUtils.compose(diff1.signature, diff2.signature, String::equals);
+    composed.value = ListDiffUtils.compose(diff1.value, diff2.value, Object::equals);
+    composed.visibleAnnotations = ListDiffUtils.compose(diff1.visibleAnnotations, diff2.visibleAnnotations, AnnotationNodeHelper::equals);
+    composed.invisibleAnnotations = ListDiffUtils.compose(diff1.invisibleAnnotations, diff2.invisibleAnnotations, AnnotationNodeHelper::equals);
+    composed.visibleTypeAnnotations = ListDiffUtils.compose(diff1.visibleTypeAnnotations, diff2.visibleTypeAnnotations, AnnotationNodeHelper::equals);
+    composed.invisibleTypeAnnotations = ListDiffUtils.compose(diff1.invisibleTypeAnnotations, diff2.invisibleTypeAnnotations, AnnotationNodeHelper::equals);
+    return composed;
+  }
+
+  public static Pair<FieldDiff, FieldDiff> commute(FieldDiff diff1, FieldDiff diff2) throws ConflictException {
+    FieldDiff diff2Prime = new FieldDiff();
+    FieldDiff diff1Prime = new FieldDiff();
+
+    Pair<ListDiff<Integer>, ListDiff<Integer>> access = ListDiffUtils.commute(diff1.access, diff2.access, Integer::equals);
+    diff2Prime.access = access.first;
+    diff1Prime.access = access.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> name = ListDiffUtils.commute(diff1.name, diff2.name, String::equals);
+    diff2Prime.name = name.first;
+    diff1Prime.name = name.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> desc = ListDiffUtils.commute(diff1.desc, diff2.desc, String::equals);
+    diff2Prime.desc = desc.first;
+    diff1Prime.desc = desc.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> signature = ListDiffUtils.commute(diff1.signature, diff2.signature, String::equals);
+    diff2Prime.signature = signature.first;
+    diff1Prime.signature = signature.second;
+
+    Pair<ListDiff<Object>, ListDiff<Object>> value = ListDiffUtils.commute(diff1.value, diff2.value, Object::equals);
+    diff2Prime.value = value.first;
+    diff1Prime.value = value.second;
+
+    Pair<ListDiff<AnnotationNode>, ListDiff<AnnotationNode>> visibleAnnotations = ListDiffUtils.commute(diff1.visibleAnnotations, diff2.visibleAnnotations, AnnotationNodeHelper::equals);
+    diff2Prime.visibleAnnotations = visibleAnnotations.first;
+    diff1Prime.visibleAnnotations = visibleAnnotations.second;
+
+    Pair<ListDiff<AnnotationNode>, ListDiff<AnnotationNode>> invisibleAnnotations = ListDiffUtils.commute(diff1.invisibleAnnotations, diff2.invisibleAnnotations, AnnotationNodeHelper::equals);
+    diff2Prime.invisibleAnnotations = invisibleAnnotations.first;
+    diff1Prime.invisibleAnnotations = invisibleAnnotations.second;
+
+    Pair<ListDiff<TypeAnnotationNode>, ListDiff<TypeAnnotationNode>> visibleTypeAnnotations = ListDiffUtils.commute(diff1.visibleTypeAnnotations, diff2.visibleTypeAnnotations, AnnotationNodeHelper::equals);
+    diff2Prime.visibleTypeAnnotations = visibleTypeAnnotations.first;
+    diff1Prime.visibleTypeAnnotations = visibleTypeAnnotations.second;
+
+    Pair<ListDiff<TypeAnnotationNode>, ListDiff<TypeAnnotationNode>> invisibleTypeAnnotations = ListDiffUtils.commute(diff1.invisibleTypeAnnotations, diff2.invisibleTypeAnnotations, AnnotationNodeHelper::equals);
+    diff2Prime.invisibleTypeAnnotations = invisibleTypeAnnotations.first;
+    diff1Prime.invisibleTypeAnnotations = invisibleTypeAnnotations.second;
+
+    return Pair.of(diff2Prime, diff1Prime);
   }
 
   public static void write(FieldDiff diff, CustomDataOutput out) throws IOException {

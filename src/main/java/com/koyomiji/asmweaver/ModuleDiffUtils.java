@@ -2,11 +2,10 @@ package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.CustomDataOutput;
-import org.objectweb.asm.tree.ModuleNode;
+import com.koyomiji.asmweaver.util.tuple.Pair;
+import org.objectweb.asm.tree.*;
 
 import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class ModuleDiffUtils {
@@ -96,6 +95,83 @@ public class ModuleDiffUtils {
             diff.provides
     );
     return patchedNode;
+  }
+
+  public static ModuleDiff invert(ModuleDiff diff) {
+    ModuleDiff invertedDiff = new ModuleDiff();
+    invertedDiff.name = ListDiffUtils.invert(diff.name);
+    invertedDiff.access = ListDiffUtils.invert(diff.access);
+    invertedDiff.version = ListDiffUtils.invert(diff.version);
+    invertedDiff.mainClass = ListDiffUtils.invert(diff.mainClass);
+    invertedDiff.packages = ListDiffUtils.invert(diff.packages);
+    invertedDiff.requires = ListDiffUtils.invert(diff.requires);
+    invertedDiff.exports = ListDiffUtils.invert(diff.exports);
+    invertedDiff.opens = ListDiffUtils.invert(diff.opens);
+    invertedDiff.uses = ListDiffUtils.invert(diff.uses);
+    invertedDiff.provides = ListDiffUtils.invert(diff.provides);
+    return invertedDiff;
+  }
+
+  public static ModuleDiff compose(ModuleDiff diff1, ModuleDiff diff2) {
+    ModuleDiff composedDiff = new ModuleDiff();
+    composedDiff.name = ListDiffUtils.compose(diff1.name, diff2.name, String::equals);
+    composedDiff.access = ListDiffUtils.compose(diff1.access, diff2.access, Integer::equals);
+    composedDiff.version = ListDiffUtils.compose(diff1.version, diff2.version, String::equals);
+    composedDiff.mainClass = ListDiffUtils.compose(diff1.mainClass, diff2.mainClass, String::equals);
+    composedDiff.packages = ListDiffUtils.compose(diff1.packages, diff2.packages, String::equals);
+    composedDiff.requires = ListDiffUtils.compose(diff1.requires, diff2.requires, ModuleRequireNodeHelper::equals);
+    composedDiff.exports = ListDiffUtils.compose(diff1.exports, diff2.exports, ModuleExportNodeHelper::equals);
+    composedDiff.opens = ListDiffUtils.compose(diff1.opens, diff2.opens, ModuleOpenNodeHelper::equals);
+    composedDiff.uses = ListDiffUtils.compose(diff1.uses, diff2.uses, String::equals);
+    composedDiff.provides = ListDiffUtils.compose(diff1.provides, diff2.provides, ModuleProvideNodeHelper::equals);
+    return composedDiff;
+  }
+
+  public static Pair<ModuleDiff, ModuleDiff> commute(ModuleDiff diff1, ModuleDiff diff2) throws ConflictException {
+    ModuleDiff diff2Prime = new ModuleDiff();
+    ModuleDiff diff1Prime = new ModuleDiff();
+
+    Pair<ListDiff<String>, ListDiff<String>> name = ListDiffUtils.commute(diff1.name, diff2.name, String::equals);
+    diff2Prime.name = name.first;
+    diff1Prime.name = name.second;
+
+    Pair<ListDiff<Integer>, ListDiff<Integer>> access = ListDiffUtils.commute(diff1.access, diff2.access, Integer::equals);
+    diff2Prime.access = access.first;
+    diff1Prime.access = access.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> version = ListDiffUtils.commute(diff1.version, diff2.version, String::equals);
+    diff2Prime.version = version.first;
+    diff1Prime.version = version.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> mainClass = ListDiffUtils.commute(diff1.mainClass, diff2.mainClass, String::equals);
+    diff2Prime.mainClass = mainClass.first;
+    diff1Prime.mainClass = mainClass.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> packages = ListDiffUtils.commute(diff1.packages, diff2.packages, String::equals);
+    diff2Prime.packages = packages.first;
+    diff1Prime.packages = packages.second;
+
+    Pair<ListDiff<ModuleRequireNode>, ListDiff<ModuleRequireNode>> requires = ListDiffUtils.commute(diff1.requires, diff2.requires, ModuleRequireNodeHelper::equals);
+    diff2Prime.requires = requires.first;
+    diff1Prime.requires = requires.second;
+
+    Pair<ListDiff<ModuleExportNode>, ListDiff<ModuleExportNode>> exports = ListDiffUtils.commute(diff1.exports, diff2.exports, ModuleExportNodeHelper::equals);
+    diff2Prime.exports = exports.first;
+    diff1Prime.exports = exports.second;
+
+    Pair<ListDiff<ModuleOpenNode>, ListDiff<ModuleOpenNode>> opens = ListDiffUtils.commute(diff1.opens, diff2.opens, ModuleOpenNodeHelper::equals);
+    diff2Prime.opens = opens.first;
+    diff1Prime.opens = opens.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> uses = ListDiffUtils.commute(diff1.uses, diff2.uses, String::equals);
+    diff2Prime.uses = uses.first;
+    diff1Prime.uses = uses.second;
+
+    Pair<ListDiff<ModuleProvideNode>, ListDiff<ModuleProvideNode>> provides = ListDiffUtils.commute(diff1.provides, diff2.provides, ModuleProvideNodeHelper::equals);
+    diff2Prime.provides = provides.first;
+    diff1Prime.provides = provides.second;
+
+    return Pair.of(diff2Prime, diff1Prime);
   }
 
   public static void write(ModuleDiff diff, CustomDataOutput out) throws IOException {

@@ -5,6 +5,8 @@ import com.koyomiji.asmweaver.analysis.DefUseChainAnalyzer;
 import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.CustomDataOutput;
 import com.koyomiji.asmweaver.util.UnionFind;
+import com.koyomiji.asmweaver.util.tuple.Pair;
+import com.koyomiji.asmweaver.util.tuple.Triplet;
 import org.objectweb.asm.tree.*;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
 
@@ -301,6 +303,243 @@ public class MethodDiffUtils {
             ListHelper.ofNullableArray(annotations),
             ListHelper::nullToEmpty
     );
+  }
+
+  public static MethodDiff invert(MethodDiff diff) {
+    MethodDiff inverted = new MethodDiff();
+    inverted.access = ListDiffUtils.invert(diff.access);
+    inverted.name = ListDiffUtils.invert(diff.name);
+    inverted.desc = ListDiffUtils.invert(diff.desc);
+    inverted.signature = ListDiffUtils.invert(diff.signature);
+    inverted.exceptions = ListDiffUtils.invert(diff.exceptions);
+    inverted.parameters = ListDiffUtils.invert(diff.parameters);
+    inverted.visibleAnnotations = ListDiffUtils.invert(diff.visibleAnnotations);
+    inverted.invisibleAnnotations = ListDiffUtils.invert(diff.invisibleAnnotations);
+    inverted.visibleTypeAnnotations = ListDiffUtils.invert(diff.visibleTypeAnnotations);
+    inverted.invisibleTypeAnnotations = ListDiffUtils.invert(diff.invisibleTypeAnnotations);
+
+    inverted.annotationDefault = ListDiffUtils.invert(diff.annotationDefault);
+    inverted.visibleAnnotableParameterCount = ListDiffUtils.invert(diff.visibleAnnotableParameterCount);
+    inverted.visibleParameterAnnotations = KeyedListDiffUtils.invert(diff.visibleParameterAnnotations, ListDiffUtils::invert);
+    inverted.invisibleAnnotableParameterCount = ListDiffUtils.invert(diff.invisibleAnnotableParameterCount);
+    inverted.invisibleParameterAnnotations = KeyedListDiffUtils.invert(diff.invisibleParameterAnnotations, ListDiffUtils::invert);
+    inverted.instructions = InsnListDiffUtils.invert(diff.instructions);
+    inverted.tryCatchBlocks = ListDiffUtils.invert(diff.tryCatchBlocks);
+    inverted.maxStack = ListDiffUtils.invert(diff.maxStack);
+    inverted.maxLocals = ListDiffUtils.invert(diff.maxLocals);
+    inverted.localVariables = ListDiffUtils.invert(diff.localVariables);
+    inverted.visibleLocalVariableAnnotations = ListDiffUtils.invert(diff.visibleLocalVariableAnnotations);
+    inverted.invisibleLocalVariableAnnotations = ListDiffUtils.invert(diff.invisibleLocalVariableAnnotations);
+    return inverted;
+  }
+
+  public static MethodDiff compose(MethodDiff diff1, MethodDiff diff2) {
+    MethodDiff composed = new MethodDiff();
+    composed.access = ListDiffUtils.compose(diff1.access, diff2.access, Integer::equals);
+    composed.name = ListDiffUtils.compose(diff1.name, diff2.name, String::equals);
+    composed.signature = ListDiffUtils.compose(diff1.signature, diff2.signature, String::equals);
+    composed.exceptions = ListDiffUtils.compose(diff1.exceptions, diff2.exceptions, String::equals);
+    composed.parameters = ListDiffUtils.compose(diff1.parameters, diff2.parameters, ParameterNodeHelper::equals);
+    composed.visibleAnnotations = ListDiffUtils.compose(diff1.visibleAnnotations, diff2.visibleAnnotations, AnnotationNodeHelper::equals);
+    composed.invisibleAnnotations = ListDiffUtils.compose(diff1.invisibleAnnotations, diff2.invisibleAnnotations, AnnotationNodeHelper::equals);
+    composed.visibleTypeAnnotations = ListDiffUtils.compose(diff1.visibleTypeAnnotations, diff2.visibleTypeAnnotations, AnnotationNodeHelper::equals);
+    composed.invisibleTypeAnnotations = ListDiffUtils.compose(diff1.invisibleTypeAnnotations, diff2.invisibleTypeAnnotations, AnnotationNodeHelper::equals);
+    composed.annotationDefault = ListDiffUtils.compose(diff1.annotationDefault, diff2.annotationDefault, Object::equals);
+    composed.visibleAnnotableParameterCount = ListDiffUtils.compose(diff1.visibleAnnotableParameterCount, diff2.visibleAnnotableParameterCount, Integer::equals);
+    composed.visibleParameterAnnotations = KeyedListDiffUtils.compose(
+            diff1.visibleParameterAnnotations,
+            diff2.visibleParameterAnnotations,
+            (l1, l2) -> ListDiffUtils.compose(l1, l2, AnnotationNodeHelper::equals),
+            ListDiffUtils::patch,
+            ListDiffUtils::invert
+    );
+    composed.invisibleAnnotableParameterCount = ListDiffUtils.compose(diff1.invisibleAnnotableParameterCount, diff2.invisibleAnnotableParameterCount, Integer::equals);
+    composed.invisibleParameterAnnotations = KeyedListDiffUtils.compose(
+            diff1.invisibleParameterAnnotations,
+            diff2.invisibleParameterAnnotations,
+            (l1, l2) -> ListDiffUtils.compose(l1, l2, AnnotationNodeHelper::equals),
+            ListDiffUtils::patch,
+            ListDiffUtils::invert
+    );
+    composed.instructions = InsnListDiffUtils.compose(
+            diff1.instructions,
+            diff2.instructions
+    );
+    composed.tryCatchBlocks = ListDiffUtils.compose(diff1.tryCatchBlocks, diff2.tryCatchBlocks, TryCatchBlockNodeHelper::equals);
+    composed.maxStack = ListDiffUtils.compose(diff1.maxStack, diff2.maxStack, Integer::equals);
+    composed.maxLocals = ListDiffUtils.compose(diff1.maxLocals, diff2.maxLocals, Integer::equals);
+    composed.localVariables = ListDiffUtils.compose(diff1.localVariables, diff2.localVariables, Object::equals);
+    composed.visibleLocalVariableAnnotations = ListDiffUtils.compose(diff1.visibleLocalVariableAnnotations, diff2.visibleLocalVariableAnnotations, LocalVariableAnnotationNode::equals);
+    composed.invisibleLocalVariableAnnotations = ListDiffUtils.compose(diff1.invisibleLocalVariableAnnotations, diff2.invisibleLocalVariableAnnotations, LocalVariableAnnotationNode::equals);
+    return composed;
+  }
+
+  public static Pair<MethodDiff, MethodDiff> commute(MethodDiff diff1, MethodDiff diff2) throws ConflictException {
+    MethodDiff diff2Prime = new MethodDiff();
+    MethodDiff diff1Prime = new MethodDiff();
+
+    Pair<ListDiff<Integer>, ListDiff<Integer>> access = ListDiffUtils.commute(diff1.access, diff2.access, Integer::equals);
+    diff2Prime.access = access.first;
+    diff1Prime.access = access.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> name = ListDiffUtils.commute(diff1.name, diff2.name, String::equals);
+    diff2Prime.name = name.first;
+    diff1Prime.name = name.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> desc = ListDiffUtils.commute(diff1.desc, diff2.desc, String::equals);
+    diff2Prime.desc = desc.first;
+    diff1Prime.desc = desc.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> signature = ListDiffUtils.commute(diff1.signature, diff2.signature, String::equals);
+    diff2Prime.signature = signature.first;
+    diff1Prime.signature = signature.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> exceptions = ListDiffUtils.commute(diff1.exceptions, diff2.exceptions, String::equals);
+    diff2Prime.exceptions = exceptions.first;
+    diff1Prime.exceptions = exceptions.second;
+
+    Pair<ListDiff<ParameterNode>, ListDiff<ParameterNode>> parameters = ListDiffUtils.commute(diff1.parameters, diff2.parameters, ParameterNodeHelper::equals);
+    diff2Prime.parameters = parameters.first;
+    diff1Prime.parameters = parameters.second;
+
+    Pair<ListDiff<AnnotationNode>, ListDiff<AnnotationNode>> visibleAnnotations = ListDiffUtils.commute(
+            diff1.visibleAnnotations,
+            diff2.visibleAnnotations,
+            AnnotationNodeHelper::equals
+    );
+    diff2Prime.visibleAnnotations = visibleAnnotations.first;
+    diff1Prime.visibleAnnotations = visibleAnnotations.second;
+
+    Pair<ListDiff<AnnotationNode>, ListDiff<AnnotationNode>> invisibleAnnotations = ListDiffUtils.commute(
+            diff1.invisibleAnnotations,
+            diff2.invisibleAnnotations,
+            AnnotationNodeHelper::equals
+    );
+    diff2Prime.invisibleAnnotations = invisibleAnnotations.first;
+    diff1Prime.invisibleAnnotations = invisibleAnnotations.second;
+
+    Pair<ListDiff<TypeAnnotationNode>, ListDiff<TypeAnnotationNode>> visibleTypeAnnotations = ListDiffUtils.commute(
+            diff1.visibleTypeAnnotations,
+            diff2.visibleTypeAnnotations,
+            AnnotationNodeHelper::equals
+    );
+    diff2Prime.visibleTypeAnnotations = visibleTypeAnnotations.first;
+    diff1Prime.visibleTypeAnnotations = visibleTypeAnnotations.second;
+
+    Pair<ListDiff<TypeAnnotationNode>, ListDiff<TypeAnnotationNode>> invisibleTypeAnnotations = ListDiffUtils.commute(
+            diff1.invisibleTypeAnnotations,
+            diff2.invisibleTypeAnnotations,
+            AnnotationNodeHelper::equals
+    );
+    diff2Prime.invisibleTypeAnnotations = invisibleTypeAnnotations.first;
+    diff1Prime.invisibleTypeAnnotations = invisibleTypeAnnotations.second;
+
+    Pair<ListDiff<Object>, ListDiff<Object>> annotationDefault = ListDiffUtils.commute(diff1.annotationDefault, diff2.annotationDefault, Object::equals);
+    diff2Prime.annotationDefault = annotationDefault.first;
+    diff1Prime.annotationDefault = annotationDefault.second;
+
+    Pair<ListDiff<Integer>, ListDiff<Integer>> visibleAnnotableParameterCount = ListDiffUtils.commute(diff1.visibleAnnotableParameterCount, diff2.visibleAnnotableParameterCount, Integer::equals);
+    diff2Prime.visibleAnnotableParameterCount = visibleAnnotableParameterCount.first;
+    diff1Prime.visibleAnnotableParameterCount = visibleAnnotableParameterCount.second;
+
+    Pair<KeyedListDiff<Integer, List<AnnotationNode>, ListDiff<AnnotationNode>>, KeyedListDiff<Integer, List<AnnotationNode>, ListDiff<AnnotationNode>>> visibleParameterAnnotations = KeyedListDiffUtils.commute(
+            diff1.visibleParameterAnnotations,
+            diff2.visibleParameterAnnotations,
+            (d1, d2) -> ListDiffUtils.commute(d1, d2, AnnotationNodeHelper::equals),
+            (l1, l2) -> ListDiffUtils.diff(l1, l2, AnnotationNodeHelper::equals)
+    );
+    diff2Prime.visibleParameterAnnotations = visibleParameterAnnotations.first;
+    diff1Prime.visibleParameterAnnotations = visibleParameterAnnotations.second;
+
+    Pair<ListDiff<Integer>, ListDiff<Integer>> invisibleAnnotableParameterCount = ListDiffUtils.commute(diff1.invisibleAnnotableParameterCount, diff2.invisibleAnnotableParameterCount, Integer::equals);
+    diff2Prime.invisibleAnnotableParameterCount = invisibleAnnotableParameterCount.first;
+    diff1Prime.invisibleAnnotableParameterCount = invisibleAnnotableParameterCount.second;
+
+    Pair<KeyedListDiff<Integer, List<AnnotationNode>, ListDiff<AnnotationNode>>, KeyedListDiff<Integer, List<AnnotationNode>, ListDiff<AnnotationNode>>> invisibleParameterAnnotations = KeyedListDiffUtils.commute(
+            diff1.invisibleParameterAnnotations,
+            diff2.invisibleParameterAnnotations,
+            (d1, d2) -> ListDiffUtils.commute(d1, d2, AnnotationNodeHelper::equals),
+            (l1, l2) -> ListDiffUtils.diff(l1, l2, AnnotationNodeHelper::equals)
+    );
+    diff2Prime.invisibleParameterAnnotations = invisibleParameterAnnotations.first;
+    diff1Prime.invisibleParameterAnnotations = invisibleParameterAnnotations.second;
+
+    Triplet<InsnListDiff, InsnListDiff, UnionFind<LabelNode>> normalized = InsnListDiffUtils.normalizeLabels(
+            diff1.instructions,
+            diff2.instructions
+    );
+    Pair<InsnListDiff, InsnListDiff> instructions = InsnListDiffUtils.commute(
+            normalized.first,
+            normalized.second
+    );
+    diff2Prime.instructions = instructions.first;
+    diff1Prime.instructions = instructions.second;
+
+    Pair<ListDiff<TryCatchBlockNode>, ListDiff<TryCatchBlockNode>> tryCatchBlocks = ListDiffUtils.commute(
+            ListDiffUtils.mapOperands(
+                    diff1.tryCatchBlocks,
+                    tcb -> TryCatchBlockNodeHelper.mapLabels(tcb, normalized.third::find)
+            ),
+            ListDiffUtils.mapOperands(
+                    diff2.tryCatchBlocks,
+                    tcb -> TryCatchBlockNodeHelper.mapLabels(tcb, normalized.third::find)
+            ),
+            TryCatchBlockNodeHelper::equals
+    );
+    diff2Prime.tryCatchBlocks = tryCatchBlocks.first;
+    diff1Prime.tryCatchBlocks = tryCatchBlocks.second;
+
+    Pair<ListDiff<Integer>, ListDiff<Integer>> maxStack = ListDiffUtils.commute(diff1.maxStack, diff2.maxStack, Integer::equals);
+    diff2Prime.maxStack = maxStack.first;
+    diff1Prime.maxStack = maxStack.second;
+
+    Pair<ListDiff<Integer>, ListDiff<Integer>> maxLocals = ListDiffUtils.commute(diff1.maxLocals, diff2.maxLocals, Integer::equals);
+    diff2Prime.maxLocals = maxLocals.first;
+    diff1Prime.maxLocals = maxLocals.second;
+
+    Pair<ListDiff<LocalVariableNode>, ListDiff<LocalVariableNode>> localVariables = ListDiffUtils.commute(
+            ListDiffUtils.mapOperands(
+                    diff1.localVariables,
+                    lv -> LocalVariableNodeHelper.mapLabels(lv, normalized.third::find)
+            ),
+            ListDiffUtils.mapOperands(
+                    diff2.localVariables,
+                    lv -> LocalVariableNodeHelper.mapLabels(lv, normalized.third::find)
+            ),
+            LocalVariableNodeHelper::equals
+    );
+    diff2Prime.localVariables = localVariables.first;
+    diff1Prime.localVariables = localVariables.second;
+
+    Pair<ListDiff<LocalVariableAnnotationNode>, ListDiff<LocalVariableAnnotationNode>> visibleLocalVariableAnnotations = ListDiffUtils.commute(
+            ListDiffUtils.mapOperands(
+                    diff1.visibleLocalVariableAnnotations,
+                    lva -> AnnotationNodeHelper.mapLabels(lva, normalized.third::find)
+            ),
+            ListDiffUtils.mapOperands(
+                    diff2.visibleLocalVariableAnnotations,
+                    lva -> AnnotationNodeHelper.mapLabels(lva, normalized.third::find)
+            ),
+            LocalVariableAnnotationNode::equals
+    );
+    diff2Prime.visibleLocalVariableAnnotations = visibleLocalVariableAnnotations.first;
+    diff1Prime.visibleLocalVariableAnnotations = visibleLocalVariableAnnotations.second;
+
+    Pair<ListDiff<LocalVariableAnnotationNode>, ListDiff<LocalVariableAnnotationNode>> invisibleLocalVariableAnnotations = ListDiffUtils.commute(
+            ListDiffUtils.mapOperands(
+                    diff1.invisibleLocalVariableAnnotations,
+                    lva -> AnnotationNodeHelper.mapLabels(lva, normalized.third::find)
+            ),
+            ListDiffUtils.mapOperands(
+                    diff2.invisibleLocalVariableAnnotations,
+                    lva -> AnnotationNodeHelper.mapLabels(lva, normalized.third::find)
+            ),
+            LocalVariableAnnotationNode::equals
+    );
+    diff2Prime.invisibleLocalVariableAnnotations = invisibleLocalVariableAnnotations.first;
+    diff1Prime.invisibleLocalVariableAnnotations = invisibleLocalVariableAnnotations.second;
+
+    return Pair.of(diff2Prime, diff1Prime);
   }
 
   public static void write(MethodDiff diff, CustomDataOutput out, Function<LabelNode, Integer> labelToIndex) throws IOException {

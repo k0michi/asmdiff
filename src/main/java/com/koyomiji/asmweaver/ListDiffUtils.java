@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 
 public class ListDiffUtils {
   public static <T> ListDiff<T> invert(ListDiff<T> diff) {
@@ -302,6 +303,18 @@ public class ListDiffUtils {
     IteratorHelper.throwIfNext(itQ, () -> new IllegalDiffException("Composition Error: q has remaining operations after p is exhausted."));
 
     return new ListDiff<>(result);
+  }
+
+  public static <T> ListDiff<T> mapOperands(ListDiff<T> diff, Function<T, T> mapper) {
+    List<ListDiff.Operation<T>> mappedOps = new ArrayList<>();
+
+    for (ListDiff.Operation<T> op : diff.operations) {
+      T mappedOperand1 = (op.operand1 != null) ? mapper.apply(op.operand1) : null;
+      T mappedOperand2 = (op.operand2 != null) ? mapper.apply(op.operand2) : null;
+      mappedOps.add(new ListDiff.Operation<>(op.type, op.mode, mappedOperand1, mappedOperand2));
+    }
+
+    return new ListDiff<>(mappedOps);
   }
 
   public static <T> void write(ListDiff<T> diff, CustomDataOutput out, ListHelper.ElementWriter<T> elementWriter) throws IOException {

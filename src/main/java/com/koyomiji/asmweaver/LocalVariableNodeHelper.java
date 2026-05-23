@@ -59,6 +59,21 @@ public class LocalVariableNodeHelper {
             .build();
   }
 
+  public static LocalVariableNode mapLabels(LocalVariableNode node, Function<LabelNode, LabelNode> labelMap) {
+    if (node == null) {
+      return null;
+    }
+
+    return new LocalVariableNode(
+            node.name,
+            node.desc,
+            node.signature,
+            labelMap.apply(node.start),
+            labelMap.apply(node.end),
+            node.index
+    );
+  }
+
   public static void write(LocalVariableNode node, CustomDataOutput out, Function<LabelNode, Integer> labelToIndex) throws IOException {
     out.writeUTF(node.name);
     out.writeUTF(node.desc);

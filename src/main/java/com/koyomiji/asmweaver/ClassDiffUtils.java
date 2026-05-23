@@ -2,8 +2,8 @@ package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.CustomDataOutput;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.LabelNode;
+import com.koyomiji.asmweaver.util.tuple.Pair;
+import org.objectweb.asm.tree.*;
 
 import java.io.DataInput;
 import java.io.IOException;
@@ -145,6 +145,217 @@ public class ClassDiffUtils {
     );
 
     return patched;
+  }
+
+  public static ClassDiff invert(ClassDiff diff) {
+    ClassDiff inverted = new ClassDiff();
+    inverted.version = ListDiffUtils.invert(diff.version);
+    inverted.access = ListDiffUtils.invert(diff.access);
+    inverted.name = ListDiffUtils.invert(diff.name);
+    inverted.signature = ListDiffUtils.invert(diff.signature);
+    inverted.superName = ListDiffUtils.invert(diff.superName);
+    inverted.interfaces = ListDiffUtils.invert(diff.interfaces);
+    inverted.sourceFile = ListDiffUtils.invert(diff.sourceFile);
+    inverted.sourceDebug = ListDiffUtils.invert(diff.sourceDebug);
+    inverted.module = KeyedListDiffUtils.invert(
+            diff.module,
+            ModuleDiffUtils::invert
+    );
+    inverted.outerClass = ListDiffUtils.invert(diff.outerClass);
+    inverted.outerMethod = ListDiffUtils.invert(diff.outerMethod);
+    inverted.outerMethodDesc = ListDiffUtils.invert(diff.outerMethodDesc);
+    inverted.visibleAnnotations = ListDiffUtils.invert(diff.visibleAnnotations);
+    inverted.invisibleAnnotations = ListDiffUtils.invert(diff.invisibleAnnotations);
+    inverted.visibleTypeAnnotations = ListDiffUtils.invert(diff.visibleTypeAnnotations);
+    inverted.invisibleTypeAnnotations = ListDiffUtils.invert(diff.invisibleTypeAnnotations);
+    inverted.innerClasses = ListDiffUtils.invert(diff.innerClasses);
+    inverted.nestHostClass = ListDiffUtils.invert(diff.nestHostClass);
+    inverted.nestMembers = ListDiffUtils.invert(diff.nestMembers);
+    inverted.permittedSubclasses = ListDiffUtils.invert(diff.permittedSubclasses);
+    inverted.recordComponents = KeyedListDiffUtils.invert(
+            diff.recordComponents,
+            RecordComponentDiffUtils::invert
+    );
+    inverted.fields = KeyedListDiffUtils.invert(
+            diff.fields,
+            FieldDiffUtils::invert
+    );
+    inverted.methods = KeyedListDiffUtils.invert(
+            diff.methods,
+            MethodDiffUtils::invert
+    );
+    return inverted;
+  }
+
+  public static ClassDiff compose(ClassDiff diff1, ClassDiff diff2) {
+    ClassDiff composed = new ClassDiff();
+    composed.version = ListDiffUtils.compose(diff1.version, diff2.version, Integer::equals);
+    composed.access = ListDiffUtils.compose(diff1.access, diff2.access, Integer::equals);
+    composed.name = ListDiffUtils.compose(diff1.name, diff2.name, String::equals);
+    composed.signature = ListDiffUtils.compose(diff1.signature, diff2.signature, String::equals);
+    composed.superName = ListDiffUtils.compose(diff1.superName, diff2.superName, String::equals);
+    composed.interfaces = ListDiffUtils.compose(diff1.interfaces, diff2.interfaces, String::equals);
+    composed.sourceFile = ListDiffUtils.compose(diff1.sourceFile, diff2.sourceFile, String::equals);
+    composed.sourceDebug = ListDiffUtils.compose(diff1.sourceDebug, diff2.sourceDebug, String::equals);
+    composed.module = KeyedListDiffUtils.compose(
+            diff1.module,
+            diff2.module,
+            ModuleDiffUtils::compose,
+            ModuleDiffUtils::patch,
+            ModuleDiffUtils::invert
+    );
+    composed.outerClass = ListDiffUtils.compose(diff1.outerClass, diff2.outerClass, String::equals);
+    composed.outerMethod = ListDiffUtils.compose(diff1.outerMethod, diff2.outerMethod, String::equals);
+    composed.outerMethodDesc = ListDiffUtils.compose(diff1.outerMethodDesc, diff2.outerMethodDesc, String::equals);
+    composed.visibleAnnotations = ListDiffUtils.compose(diff1.visibleAnnotations, diff2.visibleAnnotations, AnnotationNodeHelper::equals);
+    composed.invisibleAnnotations = ListDiffUtils.compose(diff1.invisibleAnnotations, diff2.invisibleAnnotations, AnnotationNodeHelper::equals);
+    composed.visibleTypeAnnotations = ListDiffUtils.compose(diff1.visibleTypeAnnotations, diff2.visibleTypeAnnotations, AnnotationNodeHelper::equals);
+    composed.invisibleTypeAnnotations = ListDiffUtils.compose(diff1.invisibleTypeAnnotations, diff2.invisibleTypeAnnotations, AnnotationNodeHelper::equals);
+    composed.innerClasses = ListDiffUtils.compose(diff1.innerClasses, diff2.innerClasses, InnerClassNodeHelper::equals);
+    composed.nestHostClass = ListDiffUtils.compose(diff1.nestHostClass, diff2.nestHostClass, String::equals);
+    composed.nestMembers = ListDiffUtils.compose(diff1.nestMembers, diff2.nestMembers, String::equals);
+    composed.permittedSubclasses = ListDiffUtils.compose(diff1.permittedSubclasses, diff2.permittedSubclasses, String::equals);
+    composed.recordComponents = KeyedListDiffUtils.compose(
+            diff1.recordComponents,
+            diff2.recordComponents,
+            RecordComponentDiffUtils::compose,
+            RecordComponentDiffUtils::patch,
+            RecordComponentDiffUtils::invert
+    );
+    composed.fields = KeyedListDiffUtils.compose(
+            diff1.fields,
+            diff2.fields,
+            FieldDiffUtils::compose,
+            FieldDiffUtils::patch,
+            FieldDiffUtils::invert
+    );
+    composed.methods = KeyedListDiffUtils.compose(
+            diff1.methods,
+            diff2.methods,
+            MethodDiffUtils::compose,
+            MethodDiffUtils::patch,
+            MethodDiffUtils::invert
+    );
+    return composed;
+  }
+
+  public static Pair<ClassDiff, ClassDiff> commute(ClassDiff diff1, ClassDiff diff2) throws ConflictException {
+    ClassDiff diffPrime2 = new ClassDiff();
+    ClassDiff diffPrime1 = new ClassDiff();
+
+    Pair<ListDiff<Integer>, ListDiff<Integer>> version = ListDiffUtils.commute(diff1.version, diff2.version, Integer::equals);
+    diffPrime2.version = version.first;
+    diffPrime1.version = version.second;
+
+    Pair<ListDiff<Integer>, ListDiff<Integer>> access = ListDiffUtils.commute(diff1.access, diff2.access, Integer::equals);
+    diffPrime2.access = access.first;
+    diffPrime1.access = access.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> name = ListDiffUtils.commute(diff1.name, diff2.name, String::equals);
+    diffPrime2.name = name.first;
+    diffPrime1.name = name.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> signature = ListDiffUtils.commute(diff1.signature, diff2.signature, String::equals);
+    diffPrime2.signature = signature.first;
+    diffPrime1.signature = signature.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> superName = ListDiffUtils.commute(diff1.superName, diff2.superName, String::equals);
+    diffPrime2.superName = superName.first;
+    diffPrime1.superName = superName.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> interfaces = ListDiffUtils.commute(diff1.interfaces, diff2.interfaces, String::equals);
+    diffPrime2.interfaces = interfaces.first;
+    diffPrime1.interfaces = interfaces.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> sourceFile = ListDiffUtils.commute(diff1.sourceFile, diff2.sourceFile, String::equals);
+    diffPrime2.sourceFile = sourceFile.first;
+    diffPrime1.sourceDebug = sourceFile.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> sourceDebug = ListDiffUtils.commute(diff1.sourceDebug, diff2.sourceDebug, String::equals);
+    diffPrime2.sourceDebug = sourceDebug.first;
+    diffPrime1.sourceDebug = sourceDebug.second;
+
+    Pair<KeyedListDiff<Integer, ModuleNode, ModuleDiff>, KeyedListDiff<Integer, ModuleNode, ModuleDiff>> module = KeyedListDiffUtils.commute(
+            diff1.module,
+            diff2.module,
+            ModuleDiffUtils::commute,
+            ModuleDiffUtils::diff
+    );
+    diffPrime2.module = module.first;
+    diffPrime1.module = module.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> outerClass = ListDiffUtils.commute(diff1.outerClass, diff2.outerClass, String::equals);
+    diffPrime2.outerClass = outerClass.first;
+    diffPrime1.outerClass = outerClass.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> outerMethod = ListDiffUtils.commute(diff1.outerMethod, diff2.outerMethod, String::equals);
+    diffPrime2.outerMethod = outerMethod.first;
+    diffPrime1.outerMethod = outerMethod.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> outerMethodDesc = ListDiffUtils.commute(diff1.outerMethodDesc, diff2.outerMethodDesc, String::equals);
+    diffPrime2.outerMethodDesc = outerMethodDesc.first;
+    diffPrime1.outerMethodDesc = outerMethodDesc.second;
+
+    Pair<ListDiff<AnnotationNode>, ListDiff<AnnotationNode>> visibleAnnotations = ListDiffUtils.commute(diff1.visibleAnnotations, diff2.visibleAnnotations, AnnotationNodeHelper::equals);
+    diffPrime2.visibleAnnotations = visibleAnnotations.first;
+    diffPrime1.visibleAnnotations = visibleAnnotations.second;
+
+    Pair<ListDiff<AnnotationNode>, ListDiff<AnnotationNode>> invisibleAnnotations = ListDiffUtils.commute(diff1.invisibleAnnotations, diff2.invisibleAnnotations, AnnotationNodeHelper::equals);
+    diffPrime2.invisibleAnnotations = invisibleAnnotations.first;
+    diffPrime1.invisibleAnnotations = invisibleAnnotations.second;
+
+    Pair<ListDiff<TypeAnnotationNode>, ListDiff<TypeAnnotationNode>> visibleTypeAnnotations = ListDiffUtils.commute(diff1.visibleTypeAnnotations, diff2.visibleTypeAnnotations, AnnotationNodeHelper::equals);
+    diffPrime2.visibleTypeAnnotations = visibleTypeAnnotations.first;
+    diffPrime1.visibleTypeAnnotations = visibleTypeAnnotations.second;
+
+    Pair<ListDiff<TypeAnnotationNode>, ListDiff<TypeAnnotationNode>> invisibleTypeAnnotations = ListDiffUtils.commute(diff1.invisibleTypeAnnotations, diff2.invisibleTypeAnnotations, AnnotationNodeHelper::equals);
+    diffPrime2.invisibleTypeAnnotations = invisibleTypeAnnotations.first;
+    diffPrime1.invisibleTypeAnnotations = invisibleTypeAnnotations.second;
+
+    Pair<ListDiff<InnerClassNode>, ListDiff<InnerClassNode>> innerClasses = ListDiffUtils.commute(diff1.innerClasses, diff2.innerClasses, InnerClassNodeHelper::equals);
+    diffPrime2.innerClasses = innerClasses.first;
+    diffPrime1.innerClasses = innerClasses.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> nestHostClass = ListDiffUtils.commute(diff1.nestHostClass, diff2.nestHostClass, String::equals);
+    diffPrime2.nestHostClass = nestHostClass.first;
+    diffPrime1.nestHostClass = nestHostClass.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> nestMembers = ListDiffUtils.commute(diff1.nestMembers, diff2.nestMembers, String::equals);
+    diffPrime2.nestMembers = nestMembers.first;
+    diffPrime1.nestMembers = nestMembers.second;
+
+    Pair<ListDiff<String>, ListDiff<String>> permittedSubclasses = ListDiffUtils.commute(diff1.permittedSubclasses, diff2.permittedSubclasses, String::equals);
+    diffPrime2.permittedSubclasses = permittedSubclasses.first;
+    diffPrime1.permittedSubclasses = permittedSubclasses.second;
+
+    Pair<KeyedListDiff<MemberKey, RecordComponentNode, RecordComponentDiff>, KeyedListDiff<MemberKey, RecordComponentNode, RecordComponentDiff>> recordComponents = KeyedListDiffUtils.commute(
+            diff1.recordComponents,
+            diff2.recordComponents,
+            RecordComponentDiffUtils::commute,
+            RecordComponentDiffUtils::diff
+    );
+    diffPrime2.recordComponents = recordComponents.first;
+    diffPrime1.recordComponents = recordComponents.second;
+
+    Pair<KeyedListDiff<MemberKey, FieldNode, FieldDiff>, KeyedListDiff<MemberKey, FieldNode, FieldDiff>> fields = KeyedListDiffUtils.commute(
+            diff1.fields,
+            diff2.fields,
+            FieldDiffUtils::commute,
+            FieldDiffUtils::diff
+    );
+    diffPrime2.fields = fields.first;
+    diffPrime1.fields = fields.second;
+
+    Pair<KeyedListDiff<MemberKey, MethodNode, MethodDiff>, KeyedListDiff<MemberKey, MethodNode, MethodDiff>> methods = KeyedListDiffUtils.commute(
+            diff1.methods,
+            diff2.methods,
+            MethodDiffUtils::commute,
+            MethodDiffUtils::diff
+    );
+    diffPrime2.methods = methods.first;
+    diffPrime1.methods = methods.second;
+
+    return Pair.of(diffPrime2, diffPrime1);
   }
 
   public static void write(ClassDiff diff, CustomDataOutput out, Function<LabelNode, Integer> labelToIndex) throws IOException {

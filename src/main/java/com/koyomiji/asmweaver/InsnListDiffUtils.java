@@ -8,6 +8,7 @@ import com.koyomiji.asmweaver.util.BiPersistentHashMap;
 import com.koyomiji.asmweaver.util.PersistentHashMap;
 import com.koyomiji.asmweaver.util.UnionFind;
 import com.koyomiji.asmweaver.util.tuple.Pair;
+import com.koyomiji.asmweaver.util.tuple.Triplet;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 
@@ -50,10 +51,6 @@ public class InsnListDiffUtils {
    * @throws ConflictException
    */
   public static Pair<InsnListDiff, InsnListDiff> commute(InsnListDiff p, InsnListDiff q) throws ConflictException {
-    Pair<InsnListDiff, InsnListDiff> normalized = normalizeLabels(p, q);
-    p = normalized.first;
-    q = normalized.second;
-
     List<InsnListDiff.Operation> qPrimeOps = new ArrayList<>();
     List<InsnListDiff.Operation> pPrimeOps = new ArrayList<>();
 
@@ -206,7 +203,7 @@ public class InsnListDiffUtils {
     }
   }
 
-  public static Pair<InsnListDiff, InsnListDiff> normalizeLabels(InsnListDiff diff1, InsnListDiff diff2) {
+  public static Triplet<InsnListDiff, InsnListDiff, UnionFind<LabelNode>> normalizeLabels(InsnListDiff diff1, InsnListDiff diff2) {
     UnionFind<LabelNode> uf = new UnionFind<>();
 
     InsnListDiffPairIterator it = new InsnListDiffPairIterator(diff1.operations.iterator(), diff2.operations.iterator());
@@ -242,7 +239,7 @@ public class InsnListDiffUtils {
       normalizedOps2.add(mapLabels(op, uf::find));
     }
 
-    return Pair.of(new InsnListDiff(normalizedOps1), new InsnListDiff(normalizedOps2));
+    return Triplet.of(new InsnListDiff(normalizedOps1), new InsnListDiff(normalizedOps2), uf);
   }
 
   public static class State implements Comparable<State> {
