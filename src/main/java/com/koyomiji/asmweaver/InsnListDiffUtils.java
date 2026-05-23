@@ -59,60 +59,43 @@ public class InsnListDiffUtils {
     List<InsnListDiff.Operation> pPrimeOps = new ArrayList<>();
 
     Set<AbstractInsnNode> pInserted = collectInserted(p);
-    Iterator<InsnListDiff.Operation> itP = p.operations.iterator();
-    PeekableIterator<InsnListDiff.Operation> itQ = new PeekableIterator<>(q.operations.iterator());
 
-    while (itP.hasNext()) {
-      InsnListDiff.Operation opP = itP.next();
+    // 新しい同時イテレータを適用
+    InsnListDiffPairIterator it = new InsnListDiffPairIterator(p.operations.iterator(), q.operations.iterator());
 
-      if (opP.type == InsnListDiff.Operation.Type.DELETE) {
+    while (it.hasNext()) {
+      Pair<InsnListDiff.Operation, InsnListDiff.Operation> pair = it.next();
+      InsnListDiff.Operation opP = pair.first;
+      InsnListDiff.Operation opQ = pair.second;
+
+      // パターン1: P が単独で DELETE（Q側は進めない）
+      if (opP != null && opQ == null) {
         qPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opP.mode, opP.operand1, opP.operand1));
         pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, opP.mode, opP.operand1, null));
-      } else if (opP.type == InsnListDiff.Operation.Type.MATCH || isInsert(opP)) {
-        while (itQ.hasNext() && isInsert(itQ.peek())) {
-          InsnListDiff.Operation opQIns = itQ.next();
-          // FIXME
-//          verifyNoInternalDependency(opQIns.operand, pInsertedNodes);
-
-          qPrimeOps.add(opQIns);
-          pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opQIns.mode, opQIns.operand2, opQIns.operand2));
-        }
-
-        if (!itQ.hasNext()) {
-          throw new IllegalDiffException("p has remaining operations after q is exhausted");
-        }
-        AbstractInsnNode valP = (opP.type == InsnListDiff.Operation.Type.INSERT) ? opP.operand2 : opP.operand1;
-        InsnListDiff.Operation opQBase = itQ.next();
-
-        // FIXME
-//        if (!compareInsns(opP.operand, opQBase.operand, Function.identity())) {
-        if (!AbstractInsnNodeHelper.equalsIgnoreLabelsIgnoreLocals(valP, opQBase.operand1)) {
+      }
+      // パターン2: Q が単独で INSERT（P側は進めない）
+      else if (opP == null && opQ != null) {
+        // FIXME: verifyNoInternalDependency(opQ.operand, pInsertedNodes);
+        qPrimeOps.add(opQ);
+        pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opQ.mode, opQ.operand2, opQ.operand2));
+      }
+      // パターン3: 両方のタイムラインが揃った（MATCH/INSERT vs MATCH/DELETE）
+      else if (opP != null && opQ != null) {
+        if (!AbstractInsnNodeHelper.equals(opP.operand2, opQ.operand1)) {
           throw new IllegalDiffException("p and q disagree on node identity");
         }
 
         if (opP.type == InsnListDiff.Operation.Type.MATCH) {
-          qPrimeOps.add(opQBase);
-          if (opQBase.type == InsnListDiff.Operation.Type.MATCH) {
+          qPrimeOps.add(opQ);
+          if (opQ.type == InsnListDiff.Operation.Type.MATCH) {
             pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opP.mode, opP.operand1, opP.operand1));
           }
-        } else {
-          if (opQBase.type == InsnListDiff.Operation.Type.DELETE) {
+        } else { // opP.type == INSERT
+          if (opQ.type == InsnListDiff.Operation.Type.DELETE) {
             throw new ConflictException("p inserts a node that q deletes");
           }
-
           pPrimeOps.add(new InsnListDiff.Operation(opP.type, opP.mode, null, opP.operand2));
         }
-      }
-    }
-
-    while (itQ.hasNext()) {
-      InsnListDiff.Operation opQ = itQ.next();
-
-      if (isInsert(opQ)) {
-        qPrimeOps.add(opQ);
-        pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opQ.mode, opQ.operand2, opQ.operand2));
-      } else {
-        throw new IllegalDiffException("q has remaining operations after p is exhausted");
       }
     }
 
