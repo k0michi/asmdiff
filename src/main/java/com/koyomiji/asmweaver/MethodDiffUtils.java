@@ -337,6 +337,7 @@ public class MethodDiffUtils {
     MethodDiff composed = new MethodDiff();
     composed.access = ListDiffUtils.compose(diff1.access, diff2.access, Integer::equals);
     composed.name = ListDiffUtils.compose(diff1.name, diff2.name, String::equals);
+    composed.desc = ListDiffUtils.compose(diff1.desc, diff2.desc, String::equals);
     composed.signature = ListDiffUtils.compose(diff1.signature, diff2.signature, String::equals);
     composed.exceptions = ListDiffUtils.compose(diff1.exceptions, diff2.exceptions, String::equals);
     composed.parameters = ListDiffUtils.compose(diff1.parameters, diff2.parameters, ParameterNodeHelper::equals);
