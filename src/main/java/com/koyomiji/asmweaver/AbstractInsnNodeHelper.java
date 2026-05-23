@@ -2,6 +2,7 @@ package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.CustomDataOutput;
+import com.koyomiji.asmweaver.util.FunctionMapAdapter;
 import org.objectweb.asm.tree.*;
 
 import java.io.IOException;
@@ -618,5 +619,13 @@ public class AbstractInsnNodeHelper {
     }
 
     return targets;
+  }
+
+  public static AbstractInsnNode mapLabelTargets(AbstractInsnNode insn, Function<LabelNode, LabelNode> labelMap) {
+    if (insn == null) {
+      return null;
+    }
+
+    return insn.clone(new FunctionMapAdapter<>(labelMap));
   }
 }

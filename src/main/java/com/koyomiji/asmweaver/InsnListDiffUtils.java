@@ -7,6 +7,7 @@ import com.koyomiji.asmweaver.io.CustomDataOutput;
 import com.koyomiji.asmweaver.util.BiPersistentHashMap;
 import com.koyomiji.asmweaver.util.PeekableIterator;
 import com.koyomiji.asmweaver.util.PersistentHashMap;
+import com.koyomiji.asmweaver.util.UnionFind;
 import com.koyomiji.asmweaver.util.tuple.Pair;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.LabelNode;
@@ -49,8 +50,11 @@ public class InsnListDiffUtils {
    * @param q
    * @throws ConflictException
    */
-  // FIXME: 左でdelete、右でinsertされている時はConflictにするべき
   public static Pair<InsnListDiff, InsnListDiff> commute(InsnListDiff p, InsnListDiff q) throws ConflictException {
+    Pair<InsnListDiff, InsnListDiff> normalized = normalizeLabels(p, q);
+    p = normalized.first;
+    q = normalized.second;
+
     List<InsnListDiff.Operation> qPrimeOps = new ArrayList<>();
     List<InsnListDiff.Operation> pPrimeOps = new ArrayList<>();
 
@@ -168,8 +172,7 @@ public class InsnListDiffUtils {
 
         InsnListDiff.Operation opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
 
-        // FIXME: should not ignore
-        if (!AbstractInsnNodeHelper.equalsIgnoreLabelsIgnoreLocals(opP.operand2, opQ.operand1)) {
+        if (!AbstractInsnNodeHelper.equals(opP.operand2, opQ.operand1)) {
           throw new IllegalDiffException("Composition Error: Operand mismatch at B.");
         }
 
@@ -177,40 +180,16 @@ public class InsnListDiffUtils {
           ins1.add(opP);
         }
       } else if (opP.type == InsnListDiff.Operation.Type.DELETE) {
-//        List<InsnListDiff.Operation> qInsertions = collectInsertions(itQ);
-//
-//        int matchIndex = -1;
-//        for (int i = 0; i < qInsertions.size(); i++) {
-//          // FIXME: should not ignore
-//          if (AbstractInsnNodeHelper.equalsIgnoreLabelsIgnoreLocals(qInsertions.get(i).operand, opP.operand)) {
-//            matchIndex = i;
-//            break;
-//          }
-//        }
-//
-//        if (matchIndex != -1) {
-//          InsnListDiff.Operation matchingInsert = qInsertions.remove(matchIndex);
-//          ins2.addAll(qInsertions);
-//
-//          result.addAll(mergeInsertionSlot(ins1, ins2));
-//          ins1.clear();
-//          ins2.clear();
-//
-//          result.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, matchingInsert.mode, opP.operand));
-//        } else {
-//          ins2.addAll(qInsertions);
         result.addAll(mergeInsertionSlot(ins1, ins2));
         ins1.clear();
         ins2.clear();
         result.add(opP);
-//        }
       } else { // MATCH
         ins2.addAll(collectInsertions(itQ));
 
         InsnListDiff.Operation opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
 
-        // FIXME: should not ignore
-        if (!AbstractInsnNodeHelper.equalsIgnoreLabelsIgnoreLocals(opP.operand2, opQ.operand1)) {
+        if (!AbstractInsnNodeHelper.equals(opP.operand2, opQ.operand1)) {
           throw new IllegalDiffException("Composition Error: Operand mismatch at C.");
         }
 
@@ -255,6 +234,67 @@ public class InsnListDiffUtils {
     }
 
     return labelMap;
+  }
+
+  public static InsnListDiff.Operation mapLabels(InsnListDiff.Operation op, Function<LabelNode, LabelNode> labelMap) {
+    return new InsnListDiff.Operation(
+            op.type,
+            op.mode,
+            AbstractInsnNodeHelper.mapLabelTargets(op.operand1, labelMap),
+            AbstractInsnNodeHelper.mapLabelTargets(op.operand2, labelMap)
+    );
+  }
+
+  private static void unionLabels(UnionFind<LabelNode> uf, AbstractInsnNode node1, AbstractInsnNode node2) {
+    List<LabelNode> labels1 = AbstractInsnNodeHelper.getLabelTargets(node1);
+    List<LabelNode> labels2 = AbstractInsnNodeHelper.getLabelTargets(node2);
+
+    if (labels1.size() != labels2.size()) {
+      throw new IllegalDiffException("Cannot normalize labels: Mismatched number of label targets.");
+    }
+
+    for (int k = 0; k < labels1.size(); k++) {
+      uf.union(labels1.get(k), labels2.get(k));
+    }
+  }
+
+  public static Pair<InsnListDiff, InsnListDiff> normalizeLabels(InsnListDiff diff1, InsnListDiff diff2) {
+    UnionFind<LabelNode> uf = new UnionFind<>();
+
+    PairedInsnListDiffIterator it = new PairedInsnListDiffIterator(diff1.operations.iterator(), diff2.operations.iterator());
+
+    while (it.hasNext()) {
+      Pair<InsnListDiff.Operation, InsnListDiff.Operation> pair = it.next();
+      InsnListDiff.Operation op1 = pair.first;
+      InsnListDiff.Operation op2 = pair.second;
+
+      if (op1 != null && op2 != null) {
+        AbstractInsnNode nodeJFromDiff1 = op1.operand2;
+        AbstractInsnNode nodeJFromDiff2 = op2.operand1;
+
+        if (op1.type == InsnListDiff.Operation.Type.MATCH) {
+          unionLabels(uf, op1.operand1, op1.operand2);
+        }
+
+        unionLabels(uf, nodeJFromDiff1, nodeJFromDiff2);
+
+        if (op2.type == InsnListDiff.Operation.Type.MATCH) {
+          unionLabels(uf, op2.operand1, op2.operand2);
+        }
+      }
+    }
+
+    List<InsnListDiff.Operation> normalizedOps1 = new ArrayList<>();
+    for (InsnListDiff.Operation op : diff1.operations) {
+      normalizedOps1.add(mapLabels(op, uf::find));
+    }
+
+    List<InsnListDiff.Operation> normalizedOps2 = new ArrayList<>();
+    for (InsnListDiff.Operation op : diff2.operations) {
+      normalizedOps2.add(mapLabels(op, uf::find));
+    }
+
+    return Pair.of(new InsnListDiff(normalizedOps1), new InsnListDiff(normalizedOps2));
   }
 
   public static class State implements Comparable<State> {
