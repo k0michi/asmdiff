@@ -6,11 +6,11 @@ import com.koyomiji.asmweaver.util.tuple.Pair;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-public class PairedInsnListDiffIterator implements Iterator<Pair<InsnListDiff.Operation, InsnListDiff.Operation>> {
+public class InsnListDiffPairIterator implements Iterator<Pair<InsnListDiff.Operation, InsnListDiff.Operation>> {
   private final PeekableIterator<InsnListDiff.Operation> itP;
   private final PeekableIterator<InsnListDiff.Operation> itQ;
 
-  public PairedInsnListDiffIterator(Iterator<InsnListDiff.Operation> p, Iterator<InsnListDiff.Operation> q) {
+  public InsnListDiffPairIterator(Iterator<InsnListDiff.Operation> p, Iterator<InsnListDiff.Operation> q) {
     this.itP = new PeekableIterator<>(p);
     this.itQ = new PeekableIterator<>(q);
   }

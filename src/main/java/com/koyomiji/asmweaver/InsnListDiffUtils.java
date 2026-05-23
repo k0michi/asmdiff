@@ -261,7 +261,7 @@ public class InsnListDiffUtils {
   public static Pair<InsnListDiff, InsnListDiff> normalizeLabels(InsnListDiff diff1, InsnListDiff diff2) {
     UnionFind<LabelNode> uf = new UnionFind<>();
 
-    PairedInsnListDiffIterator it = new PairedInsnListDiffIterator(diff1.operations.iterator(), diff2.operations.iterator());
+    InsnListDiffPairIterator it = new InsnListDiffPairIterator(diff1.operations.iterator(), diff2.operations.iterator());
 
     while (it.hasNext()) {
       Pair<InsnListDiff.Operation, InsnListDiff.Operation> pair = it.next();
