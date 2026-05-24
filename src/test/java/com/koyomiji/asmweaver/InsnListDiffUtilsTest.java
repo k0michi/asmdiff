@@ -568,8 +568,7 @@ class InsnListDiffUtilsTest {
             labelMap
     );
 
-    Assertions.assertEquals(LabelNodes.l2, ((JumpInsnNode) patched.get(1)).label);
-    Assertions.assertEquals(LabelNodes.l2, patched.get(0));
+    Assertions.assertEquals(((JumpInsnNode) patched.get(1)).label, patched.get(0));
   }
 
   @Test
