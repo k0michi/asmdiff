@@ -213,7 +213,7 @@ class ClassDiffUtilsTest {
   }
 
   @Test
-  void test_composed_empty() {
+  void test_compose_empty() {
     var unique1 = ClassNodeHelperTest.generateUnique();
 
     for (int i = 0; i < unique1.size(); i++) {
