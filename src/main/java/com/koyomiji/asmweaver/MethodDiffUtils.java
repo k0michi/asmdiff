@@ -249,6 +249,9 @@ public class MethodDiffUtils {
       tryCatchBlock.handler = labelMap.get(tryCatchBlock.handler);
     }
 
+    patched.maxStack = ListDiffUtils.patchNonNullableValue(node.maxStack, diff.maxStack);
+    patched.maxLocals = ListDiffUtils.patchNonNullableValue(node.maxLocals, diff.maxLocals);
+
     patched.localVariables = ListDiffUtils.patch(
             node.localVariables,
             diff.localVariables
@@ -599,12 +602,12 @@ public class MethodDiffUtils {
     ListDiffUtils.write(
             diff.visibleLocalVariableAnnotations,
             out,
-            AnnotationNodeHelper::write
+            (element, stream) -> AnnotationNodeHelper.write(element, stream, labelToIndex)
     );
     ListDiffUtils.write(
             diff.invisibleLocalVariableAnnotations,
             out,
-            AnnotationNodeHelper::write
+            (element, stream) -> AnnotationNodeHelper.write(element, stream, labelToIndex)
     );
   }
 
