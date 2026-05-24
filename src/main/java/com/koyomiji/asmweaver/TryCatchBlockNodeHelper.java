@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
 public class TryCatchBlockNodeHelper {
   public static boolean equals(TryCatchBlockNode node1, TryCatchBlockNode node2, BiPredicate<LabelNode, LabelNode> labelEquals) {
@@ -36,15 +37,15 @@ public class TryCatchBlockNodeHelper {
     return equals(node1, node2, Objects::equals);
   }
 
-  public static int hashCode(TryCatchBlockNode node) {
+  public static int hashCode(TryCatchBlockNode node, ToIntFunction<LabelNode> labelHashCode) {
     if (node == null) {
       return 0;
     }
 
     return new HashCodeBuilder()
-            .append(node.start)
-            .append(node.end)
-            .append(node.handler)
+            .append(node.start, labelHashCode)
+            .append(node.end, labelHashCode)
+            .append(node.handler, labelHashCode)
             .append(node.type)
             .append(ListHelper.hashCodeNullToEmpty(node.visibleTypeAnnotations, AnnotationNodeHelper::hashCode))
             .append(ListHelper.hashCodeNullToEmpty(node.invisibleTypeAnnotations, AnnotationNodeHelper::hashCode))

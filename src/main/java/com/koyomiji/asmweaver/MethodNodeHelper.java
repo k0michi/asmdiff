@@ -123,6 +123,7 @@ public class MethodNodeHelper {
                     )
             )
             .append(node.instructions, (list) -> InsnListHelper.hashCode(new InsnListListAdapter(list), labelHashCode))
+            .append(node.tryCatchBlocks, l -> ListHelper.hashCodeNullToEmpty(l, tcb -> TryCatchBlockNodeHelper.hashCode(tcb, labelHashCode)))
             .append(node.maxStack)
             .append(node.maxLocals)
             .append(node.localVariables, l -> ListHelper.hashCodeNullToEmpty(l, lv -> LocalVariableNodeHelper.hashCode(lv, labelHashCode)))
