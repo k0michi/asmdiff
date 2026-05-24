@@ -656,13 +656,20 @@ public class InsnListDiffUtils {
           List<LabelNode> extracted2 = AbstractInsnNodeHelper.getLabelTargets(op.operand2);
 
           for (int k = 0; k < extracted1.size(); k++) {
-            labelMap.put(extracted2.get(k), extracted1.get(k));
+            labelMap.putIfAbsent(extracted2.get(k), new LabelNode());
+            labelMap.putIfAbsent(extracted1.get(k), labelMap.get(extracted2.get(k)));
           }
 
           i++;
           j++;
           break;
         case INSERT:
+          List<LabelNode> extracted = AbstractInsnNodeHelper.getLabelTargets(op.operand2);
+
+          for (int k = 0; k < extracted.size(); k++) {
+            labelMap.putIfAbsent(extracted.get(k), new LabelNode());
+          }
+
           j++;
           break;
         case DELETE:
@@ -676,18 +683,12 @@ public class InsnListDiffUtils {
     for (InsnListDiff.Operation op : diff.operations) {
       switch (op.type) {
         case MATCH:
-          patched.add(insns.get(i));
+          patched.add(AbstractInsnNodeHelper.mapLabelTargets(insns.get(i), labelMap::get));
           i++;
           j++;
           break;
         case INSERT:
-          List<LabelNode> extracted2 = AbstractInsnNodeHelper.getLabelTargets(op.operand2);
-
-          for (int k = 0; k < extracted2.size(); k++) {
-            labelMap.putIfAbsent(extracted2.get(k), new LabelNode());
-          }
-
-          patched.add(op.operand2.clone(labelMap));
+          patched.add(AbstractInsnNodeHelper.mapLabelTargets(op.operand2, labelMap::get));
           j++;
           break;
         case DELETE:
