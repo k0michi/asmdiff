@@ -706,13 +706,8 @@ public class InsnListDiffUtils {
       out.writeByte(op.type.ordinal());
       out.writeByte(op.mode.ordinal());
 
-      if (op.operand1 != null) {
-        NullableHelper.write(op.operand1, out, (o, outStream) -> AbstractInsnNodeHelper.write(o, outStream, labelToIndex));
-      }
-
-      if (op.operand2 != null) {
-        NullableHelper.write(op.operand2, out, (o, outStream) -> AbstractInsnNodeHelper.write(o, outStream, labelToIndex));
-      }
+      NullableHelper.write(op.operand1, out, (o, outStream) -> AbstractInsnNodeHelper.write(o, outStream, labelToIndex));
+      NullableHelper.write(op.operand2, out, (o, outStream) -> AbstractInsnNodeHelper.write(o, outStream, labelToIndex));
     }
   }
 
