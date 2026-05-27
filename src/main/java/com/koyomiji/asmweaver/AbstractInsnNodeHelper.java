@@ -439,14 +439,14 @@ public class AbstractInsnNodeHelper {
         FrameNode frameNode = (FrameNode) node;
         out.writeInt(frameNode.type);
         ListHelper.write(
-                frameNode.local,
+                ListHelper.nullToEmpty(frameNode.local),
                 out,
                 (value, stream) -> {
                   writeFrameValue(value, stream, labelToIndex);
                 }
         );
         ListHelper.write(
-                frameNode.stack,
+                ListHelper.nullToEmpty(frameNode.stack),
                 out,
                 (value, stream) -> {
                   writeFrameValue(value, stream, labelToIndex);
@@ -473,8 +473,25 @@ public class AbstractInsnNodeHelper {
     } else if (value instanceof LabelNode) {
       out.writeInt(2);
       out.writeInt(labelToIndex.apply((LabelNode) value));
+    } else if (value == null) {
+      out.writeInt(3);
     } else {
       throw new IllegalArgumentException("Unsupported frame value type: " + value.getClass());
+    }
+  }
+
+  private static Object readFrameValue(CustomDataInput in, Function<Integer, LabelNode> indexToLabel) throws IOException {
+    switch (in.readInt()) {
+      case 0:
+        return in.readInt();
+      case 1:
+        return in.readUTF();
+      case 2:
+        return indexToLabel.apply(in.readInt());
+      case 3:
+        return null;
+      default:
+        throw new IllegalArgumentException("Unknown frame value type: " + in.readInt());
     }
   }
 
@@ -574,19 +591,6 @@ public class AbstractInsnNodeHelper {
     insnNode.invisibleTypeAnnotations = invisibleTypeAnnotations;
 
     return insnNode;
-  }
-
-  private static Object readFrameValue(CustomDataInput in, Function<Integer, LabelNode> indexToLabel) throws IOException {
-    switch (in.readInt()) {
-      case 0:
-        return in.readInt();
-      case 1:
-        return in.readUTF();
-      case 2:
-        return indexToLabel.apply(in.readInt());
-      default:
-        throw new IllegalArgumentException("Unknown frame value type: " + in.readInt());
-    }
   }
 
   public static boolean equalsIgnoreLabelsIgnoreLocals(AbstractInsnNode insn1, AbstractInsnNode insn2) {
