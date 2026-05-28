@@ -431,7 +431,10 @@ class KeyedListDiffUtilsTest {
     Assertions.assertEquals(KeyedListDiff.Operation.Type.MATCH, diff.operations.get(0).type);
     Assertions.assertEquals(KeyedListDiff.Operation.Type.MATCH, diff.operations.get(1).type);
 
-    Assertions.assertEquals(1, diff.operations.get(0).operandDiff.operations.size());
-    Assertions.assertEquals(2, diff.operations.get(1).operandDiff.operations.size());
+    Assertions.assertEquals(0, diff.operations.get(0).operandDiff.distance());
+    Assertions.assertEquals(2, diff.operations.get(1).operandDiff.distance());
+
+//    Assertions.assertEquals(1, diff.operations.get(0).operandDiff.operations.size());
+//    Assertions.assertEquals(2, diff.operations.get(1).operandDiff.operations.size());
   }
 }

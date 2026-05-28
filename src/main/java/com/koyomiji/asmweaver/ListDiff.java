@@ -1,16 +1,27 @@
 package com.koyomiji.asmweaver;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ListDiff<T> implements IDiff {
+  public boolean isEmpty;
   public List<Operation<T>> operations;
 
+  public ListDiff() {
+    isEmpty = true;
+  }
+
   public ListDiff(List<Operation<T>> operations) {
+    isEmpty = false;
     this.operations = operations;
   }
 
   @Override
   public boolean isEmpty() {
+    if (this.isEmpty) {
+      return true;
+    }
+
     for (Operation<T> op : operations) {
       if (op.type != Operation.Type.MATCH) {
         return false;
@@ -22,6 +33,10 @@ public class ListDiff<T> implements IDiff {
 
   @Override
   public int distance() {
+    if (this.isEmpty) {
+      return 0;
+    }
+
     int distance = 0;
 
     for (Operation<T> op : operations) {

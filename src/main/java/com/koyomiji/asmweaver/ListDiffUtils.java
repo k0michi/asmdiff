@@ -14,6 +14,10 @@ import java.util.function.Function;
 
 public class ListDiffUtils {
   public static <T> ListDiff<T> invert(ListDiff<T> diff) {
+    if (diff.isEmpty) {
+      return new ListDiff<>();
+    }
+
     List<ListDiff.Operation<T>> invertedOperations = new ArrayList<>();
 
     for (ListDiff.Operation<T> op : diff.operations) {
@@ -40,6 +44,10 @@ public class ListDiffUtils {
   }
 
   public static <T> Pair<ListDiff<T>, ListDiff<T>> commute(ListDiff<T> p, ListDiff<T> q, BiPredicate<T, T> compare) throws ConflictException {
+    if (p.isEmpty || q.isEmpty) {
+      return new Pair<>(q, p);
+    }
+
     List<ListDiff.Operation<T>> qPrimeOps = new ArrayList<>();
     List<ListDiff.Operation<T>> pPrimeOps = new ArrayList<>();
 
@@ -162,6 +170,19 @@ public class ListDiffUtils {
       j--;
     }
 
+    boolean isEmpty = true;
+
+    for (ListDiff.Operation<T> op : operations) {
+      if (op.type != ListDiff.Operation.Type.MATCH) {
+        isEmpty = false;
+        break;
+      }
+    }
+
+    if (isEmpty) {
+      return new ListDiff<>();
+    }
+
     List<ListDiff.Operation<T>> reversedOperations = new ArrayList<>();
 
     for (int k = operations.size() - 1; k >= 0; k--) {
@@ -180,6 +201,10 @@ public class ListDiffUtils {
   }
 
   public static <T> List<T> patch(List<T> list, ListDiff<T> diff) {
+    if (diff.isEmpty) {
+      return list;
+    }
+
     List<T> result = new ArrayList<>();
     int i = 0;
 
@@ -251,6 +276,14 @@ public class ListDiffUtils {
    * @throws ConflictException
    */
   public static <T> ListDiff<T> compose(ListDiff<T> p, ListDiff<T> q, BiPredicate<T, T> compare2) {
+    if (p.isEmpty) {
+      return q;
+    }
+
+    if (q.isEmpty) {
+      return p;
+    }
+
     List<ListDiff.Operation<T>> result = new ArrayList<>();
 
     PeekableIterator<ListDiff.Operation<T>> itP = new PeekableIterator<>(p.operations.iterator());
@@ -306,6 +339,10 @@ public class ListDiffUtils {
   }
 
   public static <T> ListDiff<T> mapOperands(ListDiff<T> diff, Function<T, T> mapper) {
+    if (diff.isEmpty) {
+      return diff;
+    }
+
     List<ListDiff.Operation<T>> mappedOps = new ArrayList<>();
 
     for (ListDiff.Operation<T> op : diff.operations) {
@@ -318,6 +355,12 @@ public class ListDiffUtils {
   }
 
   public static <T> void write(ListDiff<T> diff, CustomDataOutput out, ListHelper.ElementWriter<T> elementWriter) throws IOException {
+    out.writeBoolean(diff.isEmpty);
+
+    if (diff.isEmpty) {
+      return;
+    }
+
     out.writeInt(diff.operations.size());
 
     for (ListDiff.Operation<T> op : diff.operations) {
@@ -329,6 +372,10 @@ public class ListDiffUtils {
   }
 
   public static <T> ListDiff<T> read(CustomDataInput in, ListHelper.ElementReader<T> elementReader) throws IOException {
+    if (in.readBoolean()) {
+      return new ListDiff<>();
+    }
+
     ArrayList<ListDiff.Operation<T>> operations = new ArrayList<>();
     int size = in.readInt();
 
