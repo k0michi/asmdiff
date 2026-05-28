@@ -2,11 +2,14 @@ package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.CustomDataOutput;
+import com.koyomiji.asmweaver.util.AutoIncrementBiHashMap;
 import com.koyomiji.asmweaver.util.tuple.Pair;
 import org.objectweb.asm.tree.*;
 
 import java.io.DataInput;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Function;
 
 public class ClassDiffUtils {
@@ -358,6 +361,10 @@ public class ClassDiffUtils {
     return Pair.of(diffPrime2, diffPrime1);
   }
 
+  public static void write(ClassDiff diff, CustomDataOutput out) throws IOException {
+    write(diff, out, new AutoIncrementBiHashMap<>()::get);
+  }
+
   public static void write(ClassDiff diff, CustomDataOutput out, Function<LabelNode, Integer> labelToIndex) throws IOException {
     ListDiffUtils.write(diff.version, out, (element, stream) -> stream.writeInt(element));
     ListDiffUtils.write(diff.access, out, (element, stream) -> stream.writeInt(element));
@@ -398,6 +405,11 @@ public class ClassDiffUtils {
             (element, stream) -> MethodNodeHelper.write(element, stream, labelToIndex),
             (element, stream) -> MethodDiffUtils.write(element, stream, labelToIndex)
     );
+  }
+
+  public static ClassDiff read(CustomDataInput in) throws IOException {
+    Map<Integer, LabelNode> indexToLabel = new HashMap<>();
+    return read(in, i -> indexToLabel.computeIfAbsent(i, k -> new LabelNode()));
   }
 
   public static ClassDiff read(CustomDataInput in, Function<Integer, LabelNode> indexToLabel) throws IOException {
