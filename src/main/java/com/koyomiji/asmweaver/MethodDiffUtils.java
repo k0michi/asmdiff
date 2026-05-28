@@ -253,7 +253,7 @@ public class MethodDiffUtils {
     patched.maxLocals = ListDiffUtils.patchNonNullableValue(node.maxLocals, diff.maxLocals);
 
     patched.localVariables = ListDiffUtils.patch(
-            node.localVariables,
+            ListHelper.nullToEmpty(node.localVariables),
             diff.localVariables
     );
 
@@ -265,7 +265,7 @@ public class MethodDiffUtils {
     }
 
     patched.visibleLocalVariableAnnotations = ListDiffUtils.patch(
-            node.visibleLocalVariableAnnotations,
+            ListHelper.nullToEmpty(node.visibleLocalVariableAnnotations),
             diff.visibleLocalVariableAnnotations
     );
 
@@ -282,7 +282,7 @@ public class MethodDiffUtils {
     }
 
     patched.invisibleLocalVariableAnnotations = ListDiffUtils.patch(
-            node.invisibleLocalVariableAnnotations,
+            ListHelper.nullToEmpty(node.invisibleLocalVariableAnnotations),
             diff.invisibleLocalVariableAnnotations
     );
 
