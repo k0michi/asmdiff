@@ -14,6 +14,10 @@ import java.util.function.Function;
 
 public class KeyedListDiffUtils {
   public static <Key, Value, Diff extends IDiff> KeyedListDiff<Key, Value, Diff> invert(KeyedListDiff<Key, Value, Diff> diff, Function<Diff, Diff> invert) {
+    if (diff.isEmpty) {
+      return new KeyedListDiff<>();
+    }
+
     List<KeyedListDiff.Operation<Key, Value, Diff>> invertedOperations = new ArrayList<>();
 
     for (KeyedListDiff.Operation<Key, Value, Diff> op : diff.operations) {
@@ -84,6 +88,19 @@ public class KeyedListDiffUtils {
       j--;
     }
 
+    boolean isEmpty = true;
+
+    for (KeyedListDiff.Operation<Key, Value, Diff> op : operations) {
+      if (op.type != KeyedListDiff.Operation.Type.MATCH || !op.operandDiff.isEmpty()) {
+        isEmpty = false;
+        break;
+      }
+    }
+
+    if (isEmpty) {
+      return new KeyedListDiff<>();
+    }
+
     List<KeyedListDiff.Operation<Key, Value, Diff>> reversedOperations = new ArrayList<>();
 
     for (int k = operations.size() - 1; k >= 0; k--) {
@@ -117,6 +134,10 @@ public class KeyedListDiffUtils {
             (p1, p2) -> diffFunction.apply(p1.second, p2.second)
     );
 
+    if (pairedDiff.isEmpty) {
+      return new KeyedListDiff<>();
+    }
+
     List<KeyedListDiff.Operation<Integer, Value, Diff>> unwrappedOps = new ArrayList<>();
 
     for (KeyedListDiff.Operation<Integer, Pair<Integer, Value>, Diff> op : pairedDiff.operations) {
@@ -145,6 +166,10 @@ public class KeyedListDiffUtils {
   }
 
   public static <Key, Value, Diff extends IDiff> List<Value> patch(List<Value> original, KeyedListDiff<Key, Value, Diff> diff, BiFunction<Value, Diff, Value> elementPatch) {
+    if (diff.isEmpty) {
+      return original;
+    }
+
     List<Value> result = new ArrayList<>();
     int i = 0;
 
@@ -182,6 +207,12 @@ public class KeyedListDiffUtils {
           ListHelper.ElementWriter<Value> valueWriter,
           ListHelper.ElementWriter<Diff> diffWriter
   ) throws IOException {
+    out.writeBoolean(diff.isEmpty);
+
+    if (diff.isEmpty()) {
+      return;
+    }
+
     out.writeInt(diff.operations.size());
 
     for (KeyedListDiff.Operation<Key, Value, Diff> op : diff.operations) {
@@ -207,6 +238,10 @@ public class KeyedListDiffUtils {
           ListHelper.ElementReader<Value> valueReader,
           ListHelper.ElementReader<Diff> diffReader
   ) throws IOException {
+    if (in.readBoolean()) {
+      return new KeyedListDiff<>();
+    }
+
     int size = in.readInt();
     List<KeyedListDiff.Operation<Key, Value, Diff>> operations = new ArrayList<>();
 
@@ -236,6 +271,10 @@ public class KeyedListDiffUtils {
           CommuteFunction<Diff> commuteDiff,
           BiFunction<Value, Value, Diff> diffFunction
   ) throws ConflictException {
+    if (p.isEmpty() || q.isEmpty()) {
+      return new Pair<>(q, p);
+    }
+
     List<KeyedListDiff.Operation<Key, Value, Diff>> qPrimeOps = new ArrayList<>();
     List<KeyedListDiff.Operation<Key, Value, Diff>> pPrimeOps = new ArrayList<>();
 
@@ -354,6 +393,14 @@ public class KeyedListDiffUtils {
           BiFunction<Value, Diff, Value> applyDiff,
           Function<Diff, Diff> invertDiff
   ) {
+    if (p.isEmpty()) {
+      return q;
+    }
+
+    if (q.isEmpty()) {
+      return p;
+    }
+
     List<KeyedListDiff.Operation<Key, Value, Diff>> result = new ArrayList<>();
 
     PeekableIterator<KeyedListDiff.Operation<Key, Value, Diff>> itP = new PeekableIterator<>(p.operations.iterator());
