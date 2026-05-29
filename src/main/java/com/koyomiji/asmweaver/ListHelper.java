@@ -122,14 +122,14 @@ public class ListHelper {
   }
 
   public static <T> void write(List<T> list, CustomDataOutput stream, ElementWriter<T> elementWriter) throws IOException {
-    stream.writeInt(list.size());
+    stream.writeVarInt(list.size());
     for (T element : list) {
       elementWriter.write(element, stream);
     }
   }
 
   public static <T> List<T> read(CustomDataInput stream, ElementReader<T> elementReader) throws IOException {
-    int size = stream.readInt();
+    int size = stream.readVarInt();
     List<T> list = new ArrayList<>(size);
     for (int i = 0; i < size; i++) {
       list.add(elementReader.read(stream));

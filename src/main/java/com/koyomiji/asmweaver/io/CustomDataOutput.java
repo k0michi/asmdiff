@@ -16,4 +16,13 @@ public interface CustomDataOutput extends DataOutput {
   <T> void writeNullable(T element, ListHelper.ElementWriter<T> writer) throws IOException;
 
   <T> void writeVariant(String name, int id, T element, ListHelper.ElementWriter<T> writer) throws IOException;
+
+  default void writeVarInt(int value) throws IOException {
+    while ((value & ~0x7F) != 0) {
+      writeByte((value & 0x7F) | 0x80);
+      value >>>= 7;
+    }
+
+    writeByte(value & 0x7F);
+  }
 }
