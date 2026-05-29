@@ -73,6 +73,8 @@ public class InsnListHelper {
 
       if (index != -1) {
         merged.add(index + 1, lineNumber);
+      } else {
+        throw new RuntimeException("No instruction found for line number: " + lineNumber.line);
       }
     }
 

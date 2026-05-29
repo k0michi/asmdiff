@@ -101,10 +101,13 @@ public class MethodDiffUtils {
     } catch (AnalyzerException e) {
     }
 
+    Pair<List<AbstractInsnNode>, List<LineNumberNode>> split1 = InsnListHelper.splitLineNumbers(new InsnListListAdapter(node1.instructions));
+    Pair<List<AbstractInsnNode>, List<LineNumberNode>> split2 = InsnListHelper.splitLineNumbers(new InsnListListAdapter(node2.instructions));
+
     diff.instructions = InsnListDiffUtils.diff(
-            new InsnListListAdapter(node1.instructions),
+            split1.first,
             duChains1::get,
-            new InsnListListAdapter(node2.instructions),
+            split2.first,
             duChains2::get
     );
 
@@ -127,10 +130,17 @@ public class MethodDiffUtils {
 //    }
 
     Map<LabelNode, LabelNode> labelMap = InsnListDiffUtils.extractInverseLabelMap(
-            new InsnListListAdapter(node1.instructions),
-            new InsnListListAdapter(node2.instructions),
+            split1.first,
+            split2.first,
             diff.instructions
     );
+
+    diff.lineNumbers = ListDiffUtils.diff(
+            split1.second,
+            ListHelper.map(split2.second, ln -> (LineNumberNode) AbstractInsnNodeHelper.mapLabelTargets(ln, label -> labelMap.getOrDefault(label, label))),
+            AbstractInsnNodeHelper::equals
+    );
+
 //    List<Pair<Integer, Integer>> locals1 = new ArrayList<>();
 //    List<Pair<Integer, Integer>> locals2 = new ArrayList<>();
 
@@ -237,11 +247,28 @@ public class MethodDiffUtils {
             ListDiffUtils::patch
     ).toArray(new List[0]);
 
+    Pair<List<AbstractInsnNode>, List<LineNumberNode>> split = InsnListHelper.splitLineNumbers(new InsnListListAdapter(node.instructions));
+
     HashMap<LabelNode, LabelNode> labelMap = new HashMap<>();
-    patched.instructions = InsnListHelper.fromList(InsnListDiffUtils.patch(
-            new InsnListListAdapter(node.instructions),
+    List<AbstractInsnNode> instructions = InsnListDiffUtils.patch(
+            split.first,
             diff.instructions,
             labelMap
+    );
+
+    List<LineNumberNode> lineNumbers = ListDiffUtils.patch(
+            split.second,
+            diff.lineNumbers
+    );
+
+    for (LineNumberNode ln : lineNumbers) {
+//      labelMap.putIfAbsent(ln.start, new LabelNode());
+      ln.start = labelMap.get(ln.start);
+    }
+
+    patched.instructions = InsnListHelper.fromList(InsnListHelper.mergeLineNumbers(
+            instructions,
+            lineNumbers
     ));
 
     patched.tryCatchBlocks = ListDiffUtils.patch(
@@ -342,6 +369,7 @@ public class MethodDiffUtils {
     inverted.invisibleAnnotableParameterCount = ListDiffUtils.invert(diff.invisibleAnnotableParameterCount);
     inverted.invisibleParameterAnnotations = KeyedListDiffUtils.invert(diff.invisibleParameterAnnotations, ListDiffUtils::invert);
     inverted.instructions = InsnListDiffUtils.invert(diff.instructions);
+    inverted.lineNumbers = ListDiffUtils.invert(diff.lineNumbers);
     inverted.tryCatchBlocks = ListDiffUtils.invert(diff.tryCatchBlocks);
     inverted.maxStack = ListDiffUtils.invert(diff.maxStack);
     inverted.maxLocals = ListDiffUtils.invert(diff.maxLocals);
@@ -391,6 +419,11 @@ public class MethodDiffUtils {
     composed.instructions = InsnListDiffUtils.compose(
             diff1.instructions,
             diff2.instructions
+    );
+    composed.lineNumbers = ListDiffUtils.compose(
+            diff1.lineNumbers,
+            diff2.lineNumbers,
+            AbstractInsnNodeHelper::equals
     );
     composed.tryCatchBlocks = ListDiffUtils.compose(diff1.tryCatchBlocks, diff2.tryCatchBlocks, TryCatchBlockNodeHelper::equals);
     composed.maxStack = ListDiffUtils.compose(diff1.maxStack, diff2.maxStack, Integer::equals);
@@ -506,6 +539,20 @@ public class MethodDiffUtils {
     diff2Prime.instructions = instructions.first;
     diff1Prime.instructions = instructions.second;
 
+    Pair<ListDiff<LineNumberNode>, ListDiff<LineNumberNode>> lineNumbers = ListDiffUtils.commute(
+            ListDiffUtils.mapOperands(
+                    diff1.lineNumbers,
+                    ln -> (LineNumberNode) AbstractInsnNodeHelper.mapLabelTargets(ln, normalized.third::find)
+            ),
+            ListDiffUtils.mapOperands(
+                    diff2.lineNumbers,
+                    ln -> (LineNumberNode) AbstractInsnNodeHelper.mapLabelTargets(ln, normalized.third::find)
+            ),
+            AbstractInsnNodeHelper::equals
+    );
+    diff2Prime.lineNumbers = lineNumbers.first;
+    diff1Prime.lineNumbers = lineNumbers.second;
+
     Pair<ListDiff<TryCatchBlockNode>, ListDiff<TryCatchBlockNode>> tryCatchBlocks = ListDiffUtils.commute(
             ListDiffUtils.mapOperands(
                     diff1.tryCatchBlocks,
@@ -613,6 +660,11 @@ public class MethodDiffUtils {
             labelToIndex
     );
     ListDiffUtils.write(
+            diff.lineNumbers,
+            out,
+            (element, stream) -> AbstractInsnNodeHelper.write(element, stream, labelToIndex)
+    );
+    ListDiffUtils.write(
             diff.tryCatchBlocks,
             out,
             (element, stream) -> TryCatchBlockNodeHelper.write(element, stream, labelToIndex)
@@ -678,6 +730,7 @@ public class MethodDiffUtils {
             stream -> ListDiffUtils.read(stream, AnnotationNodeHelper::readAnnotationNode)
     );
     diff.instructions = InsnListDiffUtils.read(in, labelToIndex);
+    diff.lineNumbers = ListDiffUtils.read(in, stream -> (LineNumberNode) AbstractInsnNodeHelper.read(stream, labelToIndex));
     diff.tryCatchBlocks = ListDiffUtils.read(in, stream -> TryCatchBlockNodeHelper.read(stream, labelToIndex));
     diff.maxStack = ListDiffUtils.read(in, DataInput::readInt);
     diff.maxLocals = ListDiffUtils.read(in, DataInput::readInt);

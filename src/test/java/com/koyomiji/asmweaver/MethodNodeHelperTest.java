@@ -138,6 +138,27 @@ class MethodNodeHelperTest {
     );
     list.add(node22);
 
+    // LineNumber
+
+    l0 = new LabelNode();
+    l1 = new LabelNode();
+    MethodNode node23 = new MethodNode(0, "method", "()V", null, null);
+    node23.instructions.add(l0);
+    node23.instructions.add(new LineNumberNode(1, l0));
+    node23.instructions.add(new InsnNode(Opcodes.NOP));
+    list.add(node23);
+
+    l0 = new LabelNode();
+    l1 = new LabelNode();
+    MethodNode node24 = new MethodNode(0, "method", "()V", null, null);
+    node24.instructions.add(l0);
+    node24.instructions.add(new LineNumberNode(1, l0));
+    node24.instructions.add(new InsnNode(Opcodes.NOP));
+    node24.instructions.add(l1);
+    node24.instructions.add(new LineNumberNode(1, l1));
+    node24.instructions.add(new InsnNode(Opcodes.NOP));
+    list.add(node24);
+
     return list;
   }
 
