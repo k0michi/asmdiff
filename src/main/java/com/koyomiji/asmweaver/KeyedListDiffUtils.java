@@ -213,23 +213,17 @@ public class KeyedListDiffUtils {
       return;
     }
 
-    out.writeInt(diff.operations.size());
-
-    for (KeyedListDiff.Operation<Key, Value, Diff> op : diff.operations) {
-      out.writeInt(op.type.ordinal());
-      out.writeInt(op.mode.ordinal());
-      keyWriter.write(op.operandKey, out);
-      NullableHelper.write(
-              op.operandValue,
-              out,
-              valueWriter
-      );
-      NullableHelper.write(
-              op.operandDiff,
-              out,
-              diffWriter
-      );
-    }
+    ListHelper.write(
+            diff.operations,
+            out,
+            (element, stream) -> {
+              stream.writeByte(element.type.ordinal());
+              stream.writeByte(element.mode.ordinal());
+              keyWriter.write(element.operandKey, stream);
+              NullableHelper.write(element.operandValue, stream, valueWriter);
+              NullableHelper.write(element.operandDiff, stream, diffWriter);
+            }
+    );
   }
 
   public static <Key, Value, Diff extends IDiff> KeyedListDiff<Key, Value, Diff> read(
@@ -242,30 +236,24 @@ public class KeyedListDiffUtils {
       return new KeyedListDiff<>();
     }
 
-    int size = in.readInt();
-    List<KeyedListDiff.Operation<Key, Value, Diff>> operations = new ArrayList<>();
+    List<KeyedListDiff.Operation<Key, Value, Diff>> ops = ListHelper.read(
+            in,
+            stream -> {
+              return new KeyedListDiff.Operation<>(
+                      KeyedListDiff.Operation.Type.values()[stream.readByte()],
+                      KeyedListDiff.Operation.Mode.values()[stream.readByte()],
+                      keyReader.read(stream),
+                      NullableHelper.read(stream, valueReader),
+                      NullableHelper.read(stream, diffReader)
+              );
+            }
+    );
 
-    for (int i = 0; i < size; i++) {
-      int typeOrdinal = in.readInt();
-      int modeOrdinal = in.readInt();
-      Key key = keyReader.read(in);
-      Value value = NullableHelper.read(in, valueReader);
-      Diff diff = NullableHelper.read(in, diffReader);
-      operations.add(
-              new KeyedListDiff.Operation<>(
-                      KeyedListDiff.Operation.Type.values()[typeOrdinal],
-                      KeyedListDiff.Operation.Mode.values()[modeOrdinal],
-                      key,
-                      value,
-                      diff
-              )
-      );
-    }
-
-    return new KeyedListDiff<>(operations);
+    return new KeyedListDiff<>(ops);
   }
 
-  public static <Key, Value, Diff extends IDiff> Pair<KeyedListDiff<Key, Value, Diff>, KeyedListDiff<Key, Value, Diff>> commute(
+  public static <Key, Value, Diff extends
+          IDiff> Pair<KeyedListDiff<Key, Value, Diff>, KeyedListDiff<Key, Value, Diff>> commute(
           KeyedListDiff<Key, Value, Diff> p,
           KeyedListDiff<Key, Value, Diff> q,
           CommuteFunction<Diff> commuteDiff,
@@ -358,7 +346,8 @@ public class KeyedListDiffUtils {
     return new Pair<>(new KeyedListDiff<>(qPrimeOps), new KeyedListDiff<>(pPrimeOps));
   }
 
-  private static <Key, Value, Diff extends IDiff> List<KeyedListDiff.Operation<Key, Value, Diff>> collectInsertions(PeekableIterator<KeyedListDiff.Operation<Key, Value, Diff>> it) {
+  private static <Key, Value, Diff extends
+          IDiff> List<KeyedListDiff.Operation<Key, Value, Diff>> collectInsertions(PeekableIterator<KeyedListDiff.Operation<Key, Value, Diff>> it) {
     List<KeyedListDiff.Operation<Key, Value, Diff>> insertions = new ArrayList<>();
 
     while (it.hasNext() && it.peek().type == KeyedListDiff.Operation.Type.INSERT) {
@@ -368,7 +357,8 @@ public class KeyedListDiffUtils {
     return insertions;
   }
 
-  private static <Key, Value, Diff extends IDiff> List<KeyedListDiff.Operation<Key, Value, Diff>> mergeInsertionSlot(
+  private static <Key, Value, Diff extends
+          IDiff> List<KeyedListDiff.Operation<Key, Value, Diff>> mergeInsertionSlot(
           List<KeyedListDiff.Operation<Key, Value, Diff>> ins1,
           List<KeyedListDiff.Operation<Key, Value, Diff>> ins2
   ) {

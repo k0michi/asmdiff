@@ -760,26 +760,27 @@ public class InsnListDiffUtils {
   }
 
   public static void write(InsnListDiff diff, CustomDataOutput out, Function<LabelNode, Integer> labelToIndex) throws IOException {
-    out.writeInt(diff.operations.size());
-
-    for (InsnListDiff.Operation op : diff.operations) {
-      out.writeByte(op.type.ordinal());
-      out.writeByte(op.mode.ordinal());
-
-      NullableHelper.write(op.operand, out, (o, outStream) -> AbstractInsnNodeHelper.write(o, outStream, labelToIndex));
-    }
+    ListHelper.write(
+            diff.operations,
+            out,
+            (element, stream) -> {
+              stream.writeByte(element.type.ordinal());
+              stream.writeByte(element.mode.ordinal());
+              NullableHelper.write(element.operand, stream, (o, outStream) -> AbstractInsnNodeHelper.write(o, outStream, labelToIndex));
+            }
+    );
   }
 
   public static InsnListDiff read(CustomDataInput in, Function<Integer, LabelNode> indexToLabel) throws IOException {
-    List<InsnListDiff.Operation> operations = new ArrayList<>();
-    int size = in.readInt();
-
-    for (int i = 0; i < size; i++) {
-      InsnListDiff.Operation.Type type = InsnListDiff.Operation.Type.values()[in.readByte()];
-      InsnListDiff.Operation.Mode mode = InsnListDiff.Operation.Mode.values()[in.readByte()];
-      AbstractInsnNode operand = NullableHelper.read(in, (inStream) -> AbstractInsnNodeHelper.read(inStream, indexToLabel));
-      operations.add(new InsnListDiff.Operation(type, mode, operand));
-    }
+    List<InsnListDiff.Operation> operations = ListHelper.read(
+            in,
+            stream -> {
+              InsnListDiff.Operation.Type type = InsnListDiff.Operation.Type.values()[stream.readByte()];
+              InsnListDiff.Operation.Mode mode = InsnListDiff.Operation.Mode.values()[stream.readByte()];
+              AbstractInsnNode operand = NullableHelper.read(stream, (inStream) -> AbstractInsnNodeHelper.read(inStream, indexToLabel));
+              return new InsnListDiff.Operation(type, mode, operand);
+            }
+    );
 
     return new InsnListDiff(operations);
   }

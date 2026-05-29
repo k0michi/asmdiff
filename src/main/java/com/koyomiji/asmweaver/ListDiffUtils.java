@@ -360,13 +360,15 @@ public class ListDiffUtils {
       return;
     }
 
-    out.writeInt(diff.operations.size());
-
-    for (ListDiff.Operation<T> op : diff.operations) {
-      out.writeInt(op.type.ordinal());
-      out.writeInt(op.mode.ordinal());
-      NullableHelper.write(op.operand, out, elementWriter);
-    }
+    ListHelper.write(
+            diff.operations,
+            out,
+            (element, stream) -> {
+              stream.writeByte(element.type.ordinal());
+              stream.writeByte(element.mode.ordinal());
+              NullableHelper.write(element.operand, stream, elementWriter);
+            }
+    );
   }
 
   public static <T> ListDiff<T> read(CustomDataInput in, ListHelper.ElementReader<T> elementReader) throws IOException {
@@ -374,20 +376,16 @@ public class ListDiffUtils {
       return new ListDiff<>();
     }
 
-    ArrayList<ListDiff.Operation<T>> operations = new ArrayList<>();
-    int size = in.readInt();
+    List<ListDiff.Operation<T>> ops = ListHelper.read(
+            in,
+            stream -> new ListDiff.Operation<>(
+                    ListDiff.Operation.Type.values()[stream.readByte()],
+                    ListDiff.Operation.Mode.values()[stream.readByte()],
+                    NullableHelper.read(stream, elementReader)
+            )
+    );
 
-    for (int i = 0; i < size; i++) {
-      ListDiff.Operation<T> operation = new ListDiff.Operation<>(
-              ListDiff.Operation.Type.values()[in.readInt()],
-              ListDiff.Operation.Mode.values()[in.readInt()],
-              NullableHelper.read(in, elementReader)
-      );
-
-      operations.add(operation);
-    }
-
-    return new ListDiff<>(operations);
+    return new ListDiff<>(ops);
   }
 
   /**
