@@ -1,10 +1,12 @@
 package com.koyomiji.asmweaver;
 
+import com.koyomiji.asmweaver.util.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.LineNumberNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,5 +44,42 @@ class InsnListHelperTest {
     for (int i = 0; i < uniqueList.size(); i++) {
       Assertions.assertEquals(InsnListHelper.hashCodeNormalizeLabels(uniqueList.get(i)), InsnListHelper.hashCodeNormalizeLabels(uniqueList.get(i)));
     }
+  }
+
+  @Test
+  void test_splitLineNumbers_0() {
+    List<AbstractInsnNode> list = new ArrayList<>();
+    list.add(LabelNodes.l0);
+    list.add(new LineNumberNode(10, LabelNodes.l0));
+    list.add(new InsnNode(Opcodes.NOP));
+    list.add(LabelNodes.l1);
+    list.add(new LineNumberNode(10, LabelNodes.l1));
+    list.add(new InsnNode(Opcodes.NOP));
+
+    Pair<List<AbstractInsnNode>, List<LineNumberNode>> split = InsnListHelper.splitLineNumbers(list);
+    Assertions.assertEquals(4, split.first.size());
+    Assertions.assertTrue(AbstractInsnNodeHelper.equals(split.first.get(0), list.get(0)));
+    Assertions.assertTrue(AbstractInsnNodeHelper.equals(split.first.get(1), list.get(2)));
+    Assertions.assertTrue(AbstractInsnNodeHelper.equals(split.first.get(2), list.get(3)));
+    Assertions.assertTrue(AbstractInsnNodeHelper.equals(split.first.get(3), list.get(5)));
+    Assertions.assertEquals(2, split.second.size());
+    Assertions.assertTrue(AbstractInsnNodeHelper.equals(split.second.get(0), list.get(1)));
+    Assertions.assertTrue(AbstractInsnNodeHelper.equals(split.second.get(1), list.get(4)));
+  }
+
+  @Test
+  void test_splitLineNumbers_roundTrip() {
+    List<AbstractInsnNode> list = new ArrayList<>();
+    list.add(LabelNodes.l0);
+    list.add(new LineNumberNode(10, LabelNodes.l0));
+    list.add(new InsnNode(Opcodes.NOP));
+    list.add(LabelNodes.l1);
+    list.add(new LineNumberNode(10, LabelNodes.l1));
+    list.add(new InsnNode(Opcodes.NOP));
+
+    Pair<List<AbstractInsnNode>, List<LineNumberNode>> split = InsnListHelper.splitLineNumbers(list);
+    List<AbstractInsnNode> merged = InsnListHelper.mergeLineNumbers(split.first, split.second);
+
+    Assertions.assertTrue(ListHelper.equals(list, merged, AbstractInsnNodeHelper::equals));
   }
 }

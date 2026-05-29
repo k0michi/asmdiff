@@ -1,10 +1,13 @@
 package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.util.AutoIncrementBiHashMap;
+import com.koyomiji.asmweaver.util.tuple.Pair;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.LineNumberNode;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,5 +48,61 @@ public class InsnListHelper {
     }
 
     return insnList;
+  }
+
+  public static Pair<List<AbstractInsnNode>, List<LineNumberNode>> splitLineNumbers(List<AbstractInsnNode> insns) {
+    List<AbstractInsnNode> nonLineNumbers = new ArrayList<>();
+    List<LineNumberNode> lineNumbers = new ArrayList<>();
+
+    for (AbstractInsnNode insn : insns) {
+      if (insn instanceof LineNumberNode) {
+        lineNumbers.add((LineNumberNode) insn);
+      } else {
+        nonLineNumbers.add(insn);
+      }
+    }
+
+    return new Pair<>(nonLineNumbers, lineNumbers);
+  }
+
+  public static List<AbstractInsnNode> mergeLineNumbers(List<AbstractInsnNode> insns, List<LineNumberNode> lineNumbers) {
+    List<AbstractInsnNode> merged = new ArrayList<>(insns);
+
+    for (LineNumberNode lineNumber : lineNumbers) {
+      int index = merged.indexOf(lineNumber.start);
+
+      if (index != -1) {
+        merged.add(index + 1, lineNumber);
+      }
+    }
+
+    return merged;
+  }
+
+  public static List<LineNumberNode> relativizeLineNumbers(List<LineNumberNode> lineNumbers) {
+    List<LineNumberNode> relativized = new ArrayList<>();
+    int lastLine = 0;
+
+    for (LineNumberNode lineNumber : lineNumbers) {
+      int originalLine = lineNumber.line;
+      int delta = originalLine - lastLine;
+      LineNumberNode relativizedNode = new LineNumberNode(delta, lineNumber.start);
+      relativized.add(relativizedNode);
+      lastLine = originalLine;
+    }
+
+    return relativized;
+  }
+
+  public static List<LineNumberNode> absolutizeLineNumbers(List<LineNumberNode> lineNumbers) {
+    List<LineNumberNode> absolutized = new ArrayList<>();
+    int lastLine = 0;
+
+    for (LineNumberNode lineNumber : lineNumbers) {
+      lastLine += lineNumber.line;
+      absolutized.add(new LineNumberNode(lastLine, lineNumber.start));
+    }
+
+    return absolutized;
   }
 }
