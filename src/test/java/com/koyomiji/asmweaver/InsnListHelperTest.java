@@ -82,4 +82,29 @@ class InsnListHelperTest {
 
     Assertions.assertTrue(ListHelper.equals(list, merged, AbstractInsnNodeHelper::equals));
   }
+
+  @Test
+  void test_relativizeLineNumbers_0() {
+    List<LineNumberNode> list = new ArrayList<>();
+    list.add(new LineNumberNode(10, LabelNodes.l0));
+    list.add(new LineNumberNode(10, LabelNodes.l1));
+
+    List<LineNumberNode> relativized = InsnListHelper.relativizeLineNumbers(list);
+
+    Assertions.assertEquals(2, relativized.size());
+    Assertions.assertEquals(10, relativized.get(0).line);
+    Assertions.assertEquals(0, relativized.get(1).line);
+  }
+
+  @Test
+  void test_relativizeLineNumbers_roundTrip() {
+    List<LineNumberNode> list = new ArrayList<>();
+    list.add(new LineNumberNode(10, LabelNodes.l0));
+    list.add(new LineNumberNode(10, LabelNodes.l1));
+
+    List<LineNumberNode> relativized = InsnListHelper.relativizeLineNumbers(list);
+    List<LineNumberNode> absolutized = InsnListHelper.absolutizeLineNumbers(relativized);
+
+    Assertions.assertTrue(ListHelper.equals(list, absolutized, AbstractInsnNodeHelper::equals));
+  }
 }
