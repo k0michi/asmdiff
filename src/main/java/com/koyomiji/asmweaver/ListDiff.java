@@ -64,19 +64,13 @@ public class ListDiff<T> implements IDiff {
     public final Type type;
     public final Mode mode;
     /**
-     * For MATCH, operand1 is the element that matches in both lists.
-     * For DELETE, operand1 is the element to delete from the original list.
-     * Otherwise, operand1 is null.
+     * MATCH: operand is the matched element
+     * INSERT: operand is the inserted element
+     * DELETE: operand is the deleted element
      */
-    public final T operand1;
-    /**
-     * For MATCH, operand2 is the element that matches in both lists.
-     * For INSERT, operand2 is the element to insert into the original list.
-     * Otherwise, operand2 is null.
-     */
-    public final T operand2;
+    public final T operand;
 
-    public Operation(Type type, Mode mode, T operand1, T operand2) {
+    public Operation(Type type, Mode mode, T operand) {
       if (type == null) {
         throw new IllegalArgumentException("type cannot be null");
       }
@@ -87,8 +81,7 @@ public class ListDiff<T> implements IDiff {
 
       this.type = type;
       this.mode = mode;
-      this.operand1 = operand1;
-      this.operand2 = operand2;
+      this.operand = operand;
     }
   }
 }

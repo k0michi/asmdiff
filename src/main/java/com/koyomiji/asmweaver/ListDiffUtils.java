@@ -25,13 +25,13 @@ public class ListDiffUtils {
 
       switch (op.type) {
         case MATCH:
-          invertedOp = new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, op.mode, op.operand2, op.operand1);
+          invertedOp = new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, op.mode, op.operand);
           break;
         case INSERT:
-          invertedOp = new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, op.mode, op.operand2, op.operand1);
+          invertedOp = new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, op.mode, op.operand);
           break;
         case DELETE:
-          invertedOp = new ListDiff.Operation<>(ListDiff.Operation.Type.INSERT, op.mode, op.operand2, op.operand1);
+          invertedOp = new ListDiff.Operation<>(ListDiff.Operation.Type.INSERT, op.mode, op.operand);
           break;
         default:
           throw new IllegalStateException("Unexpected operation type: " + op.type);
@@ -59,21 +59,21 @@ public class ListDiffUtils {
 
       if (opP.type == ListDiff.Operation.Type.DELETE) {
         // DELETEの場合、operand1が対象。q'ではその要素をMATCH（維持）させる
-        qPrimeOps.add(new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, opP.mode, opP.operand1, opP.operand1));
-        pPrimeOps.add(new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, opP.mode, opP.operand1, null));
+        qPrimeOps.add(new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, opP.mode, opP.operand));
+        pPrimeOps.add(new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, opP.mode, opP.operand));
       } else {
         // opP が MATCH または INSERT の場合
-        T valP = (opP.type == ListDiff.Operation.Type.INSERT) ? opP.operand2 : opP.operand1;
+        T valP = opP.operand;
 
         while (itQ.hasNext() && itQ.peek().type == ListDiff.Operation.Type.INSERT) {
           ListDiff.Operation<T> opQIns = itQ.next();
           qPrimeOps.add(opQIns);
           // qが挿入した要素を、p'側ではMATCH（維持）として扱う
-          pPrimeOps.add(new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, opQIns.mode, opQIns.operand2, opQIns.operand2));
+          pPrimeOps.add(new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, opQIns.mode, opQIns.operand));
         }
 
         ListDiff.Operation<T> opQBase = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("p has remaining operations after q is exhausted"));
-        T valQBase = opQBase.operand1; // MATCHかDELETEなのでoperand1を使用
+        T valQBase = opQBase.operand;
 
         if (!compare.test(valP, valQBase)) {
           throw new IllegalDiffException("p and q disagree on node identity");
@@ -82,7 +82,7 @@ public class ListDiffUtils {
         if (opP.type == ListDiff.Operation.Type.MATCH) {
           qPrimeOps.add(opQBase);
           if (opQBase.type == ListDiff.Operation.Type.MATCH) {
-            pPrimeOps.add(new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, opP.mode, opP.operand1, opP.operand1));
+            pPrimeOps.add(new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, opP.mode, opP.operand));
           }
         } else {
           // opP.type == INSERT
@@ -90,7 +90,7 @@ public class ListDiffUtils {
             throw new ConflictException("p inserts a node that q deletes");
           }
           // pが挿入しようとしている要素をp'でもそのまま挿入
-          pPrimeOps.add(new ListDiff.Operation<>(ListDiff.Operation.Type.INSERT, opP.mode, null, opP.operand2));
+          pPrimeOps.add(new ListDiff.Operation<>(ListDiff.Operation.Type.INSERT, opP.mode, opP.operand));
         }
       }
     }
@@ -99,7 +99,7 @@ public class ListDiffUtils {
       ListDiff.Operation<T> opQ = itQ.next();
       if (opQ.type == ListDiff.Operation.Type.INSERT) {
         qPrimeOps.add(opQ);
-        pPrimeOps.add(new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, opQ.mode, opQ.operand2, opQ.operand2));
+        pPrimeOps.add(new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, opQ.mode, opQ.operand));
       } else {
         throw new IllegalDiffException("q has remaining operations after p is exhausted");
       }
@@ -137,7 +137,7 @@ public class ListDiffUtils {
 
     while (i > 0 && j > 0) {
       if (compare.test(list1.get(i - 1), list2.get(j - 1))) {
-        operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, ListDiff.Operation.Mode.BETWEEN, list1.get(i - 1), list2.get(j - 1)));
+        operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, ListDiff.Operation.Mode.BETWEEN, list1.get(i - 1)));
         i--;
         j--;
 //      } else if (dp[i][j] == dp[i - 1][j] + 1) {
@@ -149,24 +149,24 @@ public class ListDiffUtils {
 //      }
       } else if (dp[i][j] == dp[i][j - 1] + 1) {
 //        operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.INSERT, null, list2.get(j - 1)));
-        operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.INSERT, ListDiff.Operation.Mode.BETWEEN, null, list2.get(j - 1)));
+        operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.INSERT, ListDiff.Operation.Mode.BETWEEN, list2.get(j - 1)));
         j--;
       } else {
 //        operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, null, list1.get(i - 1)));
-        operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, ListDiff.Operation.Mode.BETWEEN, list1.get(i - 1), null));
+        operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, ListDiff.Operation.Mode.BETWEEN, list1.get(i - 1)));
         i--;
       }
     }
 
     while (i > 0) {
 //      operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, null, list1.get(i - 1)));
-      operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, ListDiff.Operation.Mode.BETWEEN, list1.get(i - 1), null));
+      operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, ListDiff.Operation.Mode.BETWEEN, list1.get(i - 1)));
       i--;
     }
 
     while (j > 0) {
 //      operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.INSERT, null, list2.get(j - 1)));
-      operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.INSERT, ListDiff.Operation.Mode.BETWEEN, null, list2.get(j - 1)));
+      operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.INSERT, ListDiff.Operation.Mode.BETWEEN, list2.get(j - 1)));
       j--;
     }
 
@@ -215,7 +215,7 @@ public class ListDiffUtils {
           i++;
           break;
         case INSERT:
-          result.add(op.operand2);
+          result.add(op.operand);
           break;
         case DELETE:
           i++;
@@ -300,7 +300,7 @@ public class ListDiffUtils {
 
         ListDiff.Operation<T> opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
 
-        if (!compare2.test(opP.operand2, opQ.operand1)) {
+        if (!compare2.test(opP.operand, opQ.operand)) {
           throw new IllegalDiffException("Composition Error: Operand mismatch at B.");
         }
 
@@ -318,7 +318,7 @@ public class ListDiffUtils {
 
         ListDiff.Operation<T> opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
 
-        if (!compare2.test(opP.operand2, opQ.operand1)) {
+        if (!compare2.test(opP.operand, opQ.operand)) {
           throw new IllegalDiffException("Composition Error: Operand mismatch at C.");
         }
 
@@ -326,7 +326,7 @@ public class ListDiffUtils {
         ins1.clear();
         ins2.clear();
 
-        result.add(new ListDiff.Operation<>(opQ.type, opQ.mode, opP.operand1, opQ.operand2));
+        result.add(new ListDiff.Operation<>(opQ.type, opQ.mode, opP.operand));
       }
     }
 
@@ -346,9 +346,8 @@ public class ListDiffUtils {
     List<ListDiff.Operation<T>> mappedOps = new ArrayList<>();
 
     for (ListDiff.Operation<T> op : diff.operations) {
-      T mappedOperand1 = (op.operand1 != null) ? mapper.apply(op.operand1) : null;
-      T mappedOperand2 = (op.operand2 != null) ? mapper.apply(op.operand2) : null;
-      mappedOps.add(new ListDiff.Operation<>(op.type, op.mode, mappedOperand1, mappedOperand2));
+      T mappedOperand = (op.operand != null) ? mapper.apply(op.operand) : null;
+      mappedOps.add(new ListDiff.Operation<>(op.type, op.mode, mappedOperand));
     }
 
     return new ListDiff<>(mappedOps);
@@ -366,8 +365,7 @@ public class ListDiffUtils {
     for (ListDiff.Operation<T> op : diff.operations) {
       out.writeInt(op.type.ordinal());
       out.writeInt(op.mode.ordinal());
-      NullableHelper.write(op.operand1, out, elementWriter);
-      NullableHelper.write(op.operand2, out, elementWriter);
+      NullableHelper.write(op.operand, out, elementWriter);
     }
   }
 
@@ -383,7 +381,6 @@ public class ListDiffUtils {
       ListDiff.Operation<T> operation = new ListDiff.Operation<>(
               ListDiff.Operation.Type.values()[in.readInt()],
               ListDiff.Operation.Mode.values()[in.readInt()],
-              NullableHelper.read(in, elementReader),
               NullableHelper.read(in, elementReader)
       );
 
