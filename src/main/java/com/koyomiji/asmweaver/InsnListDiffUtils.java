@@ -25,13 +25,13 @@ public class InsnListDiffUtils {
 
       switch (op.type) {
         case MATCH:
-          invertedOp = new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, InsnListDiff.Operation.Mode.BETWEEN, op.operand2, op.operand1);
+          invertedOp = new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, InsnListDiff.Operation.Mode.BETWEEN, op.operand);
           break;
         case INSERT:
-          invertedOp = new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, op.mode, op.operand2, op.operand1);
+          invertedOp = new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, op.mode, op.operand);
           break;
         case DELETE:
-          invertedOp = new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, op.mode, op.operand2, op.operand1);
+          invertedOp = new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, op.mode, op.operand);
           break;
         default:
           throw new IllegalStateException("Unexpected operation type: " + op.type);
@@ -66,31 +66,31 @@ public class InsnListDiffUtils {
 
       // パターン1: P が単独で DELETE（Q側は進めない）
       if (opP != null && opQ == null) {
-        qPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opP.mode, opP.operand1, opP.operand1));
-        pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, opP.mode, opP.operand1, null));
+        qPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opP.mode, opP.operand));
+        pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, opP.mode, opP.operand));
       }
       // パターン2: Q が単独で INSERT（P側は進めない）
       else if (opP == null && opQ != null) {
         // FIXME: verifyNoInternalDependency(opQ.operand, pInsertedNodes);
         qPrimeOps.add(opQ);
-        pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opQ.mode, opQ.operand2, opQ.operand2));
+        pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opQ.mode, opQ.operand));
       }
       // パターン3: 両方のタイムラインが揃った（MATCH/INSERT vs MATCH/DELETE）
       else if (opP != null && opQ != null) {
-        if (!AbstractInsnNodeHelper.equals(opP.operand2, opQ.operand1)) {
+        if (!AbstractInsnNodeHelper.equals(opP.operand, opQ.operand)) {
           throw new IllegalDiffException("p and q disagree on node identity");
         }
 
         if (opP.type == InsnListDiff.Operation.Type.MATCH) {
           qPrimeOps.add(opQ);
           if (opQ.type == InsnListDiff.Operation.Type.MATCH) {
-            pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opP.mode, opP.operand1, opP.operand1));
+            pPrimeOps.add(new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, opP.mode, opP.operand));
           }
         } else { // opP.type == INSERT
           if (opQ.type == InsnListDiff.Operation.Type.DELETE) {
             throw new ConflictException("p inserts a node that q deletes");
           }
-          pPrimeOps.add(new InsnListDiff.Operation(opP.type, opP.mode, null, opP.operand2));
+          pPrimeOps.add(new InsnListDiff.Operation(opP.type, opP.mode, opP.operand));
         }
       }
     }
@@ -107,7 +107,7 @@ public class InsnListDiffUtils {
 
     for (InsnListDiff.Operation op : diff.operations) {
       if (isInsert(op)) {
-        inserted.add(op.operand2);
+        inserted.add(op.operand);
       }
     }
 
@@ -134,7 +134,7 @@ public class InsnListDiffUtils {
       }
       // パターン3: 両方のタイムラインが揃った
       else if (opP != null && opQ != null) {
-        if (!AbstractInsnNodeHelper.equals(opP.operand2, opQ.operand1)) {
+        if (!AbstractInsnNodeHelper.equals(opP.operand, opQ.operand)) {
           throw new IllegalDiffException("Composition Error: Operand mismatch at intermediate state B.");
         }
 
@@ -146,7 +146,7 @@ public class InsnListDiffUtils {
           // QがDELETEなら相殺されてresultには何も入らない
         } else { // opP.type == MATCH
           // ベース操作同士の合成
-          result.add(new InsnListDiff.Operation(opQ.type, opQ.mode, opP.operand1, opQ.operand2));
+          result.add(new InsnListDiff.Operation(opQ.type, opQ.mode, opP.operand));
         }
       }
     }
@@ -181,12 +181,38 @@ public class InsnListDiffUtils {
     return labelMap;
   }
 
+  public static Map<LabelNode, LabelNode> extractInverseLabelMap(List<AbstractInsnNode> list1, List<AbstractInsnNode> list2, InsnListDiff diff) {
+    int i = 0, j = 0;
+    Map<LabelNode, LabelNode> labelMap = new HashMap<>();
+
+    for (InsnListDiff.Operation op : diff.operations) {
+      switch (op.type) {
+        case MATCH:
+          List<LabelNode> labels1 = AbstractInsnNodeHelper.getLabelTargets(list1.get(i));
+          List<LabelNode> labels2 = AbstractInsnNodeHelper.getLabelTargets(list2.get(j));
+          for (int k = 0; k < Math.min(labels1.size(), labels2.size()); k++) {
+            labelMap.put(labels2.get(k), labels1.get(k));
+          }
+          i++;
+          j++;
+          break;
+        case DELETE:
+          i++;
+          break;
+        case INSERT:
+          j++;
+          break;
+      }
+    }
+
+    return labelMap;
+  }
+
   public static InsnListDiff.Operation mapLabels(InsnListDiff.Operation op, Function<LabelNode, LabelNode> labelMap) {
     return new InsnListDiff.Operation(
             op.type,
             op.mode,
-            AbstractInsnNodeHelper.mapLabelTargets(op.operand1, labelMap),
-            AbstractInsnNodeHelper.mapLabelTargets(op.operand2, labelMap)
+            AbstractInsnNodeHelper.mapLabelTargets(op.operand, labelMap)
     );
   }
 
@@ -214,18 +240,18 @@ public class InsnListDiffUtils {
       InsnListDiff.Operation op2 = pair.second;
 
       if (op1 != null && op2 != null) {
-        AbstractInsnNode nodeJFromDiff1 = op1.operand2;
-        AbstractInsnNode nodeJFromDiff2 = op2.operand1;
+        AbstractInsnNode nodeJFromDiff1 = op1.operand;
+        AbstractInsnNode nodeJFromDiff2 = op2.operand;
 
-        if (op1.type == InsnListDiff.Operation.Type.MATCH) {
-          unionLabels(uf, op1.operand1, op1.operand2);
-        }
+//        if (op1.type == InsnListDiff.Operation.Type.MATCH) {
+//          unionLabels(uf, op1.operand1, op1.operand2);
+//        }
 
         unionLabels(uf, nodeJFromDiff1, nodeJFromDiff2);
 
-        if (op2.type == InsnListDiff.Operation.Type.MATCH) {
-          unionLabels(uf, op2.operand1, op2.operand2);
-        }
+//        if (op2.type == InsnListDiff.Operation.Type.MATCH) {
+//          unionLabels(uf, op2.operand1, op2.operand2);
+//        }
       }
     }
 
@@ -456,7 +482,6 @@ public class InsnListDiffUtils {
       State current = pq.poll();
 
       if (current.idxA >= insnsA.length && current.idxB >= insnsB.length) {
-//        return new InsnListDiff(current.operations);
         // Backtrack to construct the diff
 
         List<InsnListDiff.Operation> operations = new ArrayList<>();
@@ -466,7 +491,40 @@ public class InsnListDiffUtils {
         }
 
         Collections.reverse(operations);
-        return new InsnListDiff(operations);
+        List<InsnListDiff.Operation> operations2 = new ArrayList<>();
+
+        // Restore labels
+        Map<LabelNode, LabelNode> labelMap = new HashMap<>();
+        int k = 0, l = 0;
+
+        for (InsnListDiff.Operation op : operations) {
+          switch (op.type) {
+            case MATCH:
+              List<LabelNode> labelsA = AbstractInsnNodeHelper.getLabelTargets(listA.get(k));
+              List<LabelNode> labelsB = AbstractInsnNodeHelper.getLabelTargets(listB.get(l));
+
+              for (int m = 0; m < labelsA.size(); m++) {
+                labelMap.put(labelsB.get(m), labelsA.get(m));
+              }
+
+              k++;
+              l++;
+              break;
+            case DELETE:
+              k++;
+              break;
+            case INSERT:
+              l++;
+              break;
+          }
+        }
+
+        // Remap labels (INSERT)
+        for (InsnListDiff.Operation op : operations) {
+          operations2.add(mapLabels(op, label -> labelMap.getOrDefault(label, label)));
+        }
+
+        return new InsnListDiff(operations2);
       }
 
       var currentKey = new StateKey(current.idxA, current.idxB, current.labelMap.forwardMap(), current.duAToB, current.duBToA);
@@ -509,7 +567,7 @@ public class InsnListDiffUtils {
 //                        new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, InsnListDiff.Operation.Mode.BETWEEN, insnsA[current.idxA])
 //                ),
                 current,
-                new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, InsnListDiff.Operation.Mode.BETWEEN, insnsA[current.idxA], null),
+                new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, InsnListDiff.Operation.Mode.BETWEEN, insnsA[current.idxA]),
                 heuristicProvider
         );
         removeDeadLabels(state, lastOccurrenceA, lastOccurrenceB, listA, listB);
@@ -530,7 +588,7 @@ public class InsnListDiffUtils {
 //
 //                ),
                 current,
-                new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, InsnListDiff.Operation.Mode.BETWEEN, null, insnsB[current.idxB]),
+                new InsnListDiff.Operation(InsnListDiff.Operation.Type.INSERT, InsnListDiff.Operation.Mode.BETWEEN, insnsB[current.idxB]),
                 heuristicProvider
         );
         removeDeadLabels(state, lastOccurrenceA, lastOccurrenceB, listA, listB);
@@ -615,7 +673,7 @@ public class InsnListDiffUtils {
 //                          new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, null, insnA)
 //                  ),
                   current,
-                  new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, InsnListDiff.Operation.Mode.BETWEEN, insnA, insnB),
+                  new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, InsnListDiff.Operation.Mode.BETWEEN, insnA),
                   heuristicProvider
           );
           removeDeadLabels(state, lastOccurrenceA, lastOccurrenceB, listA, listB);
@@ -653,7 +711,7 @@ public class InsnListDiffUtils {
       switch (op.type) {
         case MATCH:
           List<LabelNode> extracted1 = AbstractInsnNodeHelper.getLabelTargets(insns.get(i));
-          List<LabelNode> extracted2 = AbstractInsnNodeHelper.getLabelTargets(op.operand2);
+          List<LabelNode> extracted2 = AbstractInsnNodeHelper.getLabelTargets(op.operand);
 
           for (int k = 0; k < extracted1.size(); k++) {
             labelMap.putIfAbsent(extracted2.get(k), new LabelNode());
@@ -664,12 +722,6 @@ public class InsnListDiffUtils {
           j++;
           break;
         case INSERT:
-          List<LabelNode> extracted = AbstractInsnNodeHelper.getLabelTargets(op.operand2);
-
-          for (int k = 0; k < extracted.size(); k++) {
-            labelMap.putIfAbsent(extracted.get(k), new LabelNode());
-          }
-
           j++;
           break;
         case DELETE:
@@ -687,10 +739,17 @@ public class InsnListDiffUtils {
           i++;
           j++;
           break;
-        case INSERT:
-          patched.add(AbstractInsnNodeHelper.mapLabelTargets(op.operand2, labelMap::get));
-          j++;
-          break;
+        case INSERT: {
+          List<LabelNode> extracted = AbstractInsnNodeHelper.getLabelTargets(op.operand);
+
+          for (int k = 0; k < extracted.size(); k++) {
+            labelMap.putIfAbsent(extracted.get(k), new LabelNode());
+          }
+
+          patched.add(AbstractInsnNodeHelper.mapLabelTargets(op.operand, labelMap::get));
+        }
+        j++;
+        break;
         case DELETE:
           i++;
           break;
@@ -707,8 +766,7 @@ public class InsnListDiffUtils {
       out.writeByte(op.type.ordinal());
       out.writeByte(op.mode.ordinal());
 
-      NullableHelper.write(op.operand1, out, (o, outStream) -> AbstractInsnNodeHelper.write(o, outStream, labelToIndex));
-      NullableHelper.write(op.operand2, out, (o, outStream) -> AbstractInsnNodeHelper.write(o, outStream, labelToIndex));
+      NullableHelper.write(op.operand, out, (o, outStream) -> AbstractInsnNodeHelper.write(o, outStream, labelToIndex));
     }
   }
 
@@ -719,9 +777,8 @@ public class InsnListDiffUtils {
     for (int i = 0; i < size; i++) {
       InsnListDiff.Operation.Type type = InsnListDiff.Operation.Type.values()[in.readByte()];
       InsnListDiff.Operation.Mode mode = InsnListDiff.Operation.Mode.values()[in.readByte()];
-      AbstractInsnNode operand1 = NullableHelper.read(in, (inStream) -> AbstractInsnNodeHelper.read(inStream, indexToLabel));
-      AbstractInsnNode operand2 = NullableHelper.read(in, (inStream) -> AbstractInsnNodeHelper.read(inStream, indexToLabel));
-      operations.add(new InsnListDiff.Operation(type, mode, operand1, operand2));
+      AbstractInsnNode operand = NullableHelper.read(in, (inStream) -> AbstractInsnNodeHelper.read(inStream, indexToLabel));
+      operations.add(new InsnListDiff.Operation(type, mode, operand));
     }
 
     return new InsnListDiff(operations);

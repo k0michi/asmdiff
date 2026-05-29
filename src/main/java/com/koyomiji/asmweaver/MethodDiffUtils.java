@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Function;
 
 public class MethodDiffUtils {
@@ -127,7 +126,7 @@ public class MethodDiffUtils {
 //      }
 //    }
 
-    Map<LabelNode, LabelNode> labelMap = InsnListDiffUtils.extractLabelMap(
+    Map<LabelNode, LabelNode> labelMap = InsnListDiffUtils.extractInverseLabelMap(
             new InsnListListAdapter(node1.instructions),
             new InsnListListAdapter(node2.instructions),
             diff.instructions
@@ -137,8 +136,8 @@ public class MethodDiffUtils {
 
     diff.tryCatchBlocks = ListDiffUtils.diff(
             node1.tryCatchBlocks,
-            node2.tryCatchBlocks,
-            (a, b) -> TryCatchBlockNodeHelper.equals(a, b, (lA, lB) -> labelMap.get(lA) == lB)
+            ListHelper.map(node2.tryCatchBlocks, tcb -> TryCatchBlockNodeHelper.mapLabels(tcb, label -> labelMap.getOrDefault(label, label))),
+            TryCatchBlockNodeHelper::equals
     );
 
     diff.maxStack = ListDiffUtils.diffNonNullableValue(
@@ -155,41 +154,51 @@ public class MethodDiffUtils {
 
     diff.localVariables = ListDiffUtils.diff(
             ListHelper.nullToEmpty(node1.localVariables),
-            ListHelper.nullToEmpty(node2.localVariables),
-            (a, b) ->
-                    LocalVariableNodeHelper.equals(a, b,
-                            (lA, lB) -> labelMap.get(lA) == lB,
-                            // FIXME: this is exact local match
-                            (tA, tB) -> labelMap.get(tA.first) == tB.first && labelMap.get(tA.second) == tB.second && Objects.equals(tA.third, tB.third)
-                    )
+//            ListHelper.nullToEmpty(node2.localVariables),
+            ListHelper.map(ListHelper.nullToEmpty(node2.localVariables), lv -> LocalVariableNodeHelper.mapLabels(lv, label -> labelMap.getOrDefault(label, label))),
+            LocalVariableNodeHelper::equals
     );
 
     diff.visibleLocalVariableAnnotations = ListDiffUtils.diff(
             ListHelper.nullToEmpty(node1.visibleLocalVariableAnnotations),
-            ListHelper.nullToEmpty(node2.visibleLocalVariableAnnotations),
-            (a, b) ->
-                    AnnotationNodeHelper.equals(a, b,
-                            (lA, lB) -> labelMap.get(lA) == lB,
-                            // FIXME: this is exact local match
-                            (tA, tB) -> labelMap.get(tA.first) == tB.first && labelMap.get(tA.second) == tB.second && Objects.equals(tA.third, tB.third)
-                    )
+            ListHelper.map(ListHelper.nullToEmpty(node2.visibleLocalVariableAnnotations), lva -> AnnotationNodeHelper.mapLabels(lva, label -> labelMap.getOrDefault(label, label))),
+            AnnotationNodeHelper::equals
+//            ListHelper.nullToEmpty(node2.visibleLocalVariableAnnotations),
+//            (a, b) ->
+//                    AnnotationNodeHelper.equals(a, b,
+//                            (lA, lB) -> labelMap.get(lA) == lB,
+//                            // FIXME: this is exact local match
+//                            (tA, tB) -> labelMap.get(tA.first) == tB.first && labelMap.get(tA.second) == tB.second && Objects.equals(tA.third, tB.third)
+//                    )
     );
 
     diff.invisibleLocalVariableAnnotations = ListDiffUtils.diff(
             ListHelper.nullToEmpty(node1.invisibleLocalVariableAnnotations),
-            ListHelper.nullToEmpty(node2.invisibleLocalVariableAnnotations),
-            (a, b) ->
-                    AnnotationNodeHelper.equals(a, b,
-                            (lA, lB) -> labelMap.get(lA) == lB,
-                            // FIXME: this is exact local match
-                            (tA, tB) -> labelMap.get(tA.first) == tB.first && labelMap.get(tA.second) == tB.second && Objects.equals(tA.third, tB.third)
-                    )
+            ListHelper.map(ListHelper.nullToEmpty(node2.invisibleLocalVariableAnnotations), lva -> AnnotationNodeHelper.mapLabels(lva, label -> labelMap.getOrDefault(label, label))),
+            AnnotationNodeHelper::equals
+//            ListHelper.nullToEmpty(node2.invisibleLocalVariableAnnotations),
+//            (a, b) ->
+//                    AnnotationNodeHelper.equals(a, b,
+//                            (lA, lB) -> labelMap.get(lA) == lB,
+//                            // FIXME: this is exact local match
+//                            (tA, tB) -> labelMap.get(tA.first) == tB.first && labelMap.get(tA.second) == tB.second && Objects.equals(tA.third, tB.third)
+//                    )
     );
+
+    if (diff.isEmpty()) {
+      MethodDiff d = new MethodDiff();
+      d.isEmpty = true;
+      return d;
+    }
 
     return diff;
   }
 
   public static MethodNode patch(MethodNode node, MethodDiff diff) {
+    if (diff.isEmpty) {
+      return node;
+    }
+
     MethodNode patched = new MethodNode();
     patched.access = ListDiffUtils.patchNonNullableValue(node.access, diff.access);
     patched.name = ListDiffUtils.patchNonNullableValue(node.name, diff.name);
@@ -309,6 +318,12 @@ public class MethodDiffUtils {
   }
 
   public static MethodDiff invert(MethodDiff diff) {
+    if (diff.isEmpty) {
+      MethodDiff d = new MethodDiff();
+      d.isEmpty = true;
+      return d;
+    }
+
     MethodDiff inverted = new MethodDiff();
     inverted.access = ListDiffUtils.invert(diff.access);
     inverted.name = ListDiffUtils.invert(diff.name);
@@ -337,6 +352,14 @@ public class MethodDiffUtils {
   }
 
   public static MethodDiff compose(MethodDiff diff1, MethodDiff diff2) {
+    if (diff1.isEmpty) {
+      return diff2;
+    }
+
+    if (diff2.isEmpty) {
+      return diff1;
+    }
+
     MethodDiff composed = new MethodDiff();
     composed.access = ListDiffUtils.compose(diff1.access, diff2.access, Integer::equals);
     composed.name = ListDiffUtils.compose(diff1.name, diff2.name, String::equals);
@@ -379,6 +402,10 @@ public class MethodDiffUtils {
   }
 
   public static Pair<MethodDiff, MethodDiff> commute(MethodDiff diff1, MethodDiff diff2) throws ConflictException {
+    if (diff1.isEmpty || diff2.isEmpty) {
+      return new Pair<>(diff2, diff1);
+    }
+
     MethodDiff diff2Prime = new MethodDiff();
     MethodDiff diff1Prime = new MethodDiff();
 
@@ -547,6 +574,12 @@ public class MethodDiffUtils {
   }
 
   public static void write(MethodDiff diff, CustomDataOutput out, Function<LabelNode, Integer> labelToIndex) throws IOException {
+    out.writeBoolean(diff.isEmpty);
+
+    if (diff.isEmpty) {
+      return;
+    }
+
     ListDiffUtils.write(diff.access, out, (element, stream) -> stream.writeInt(element));
     ListDiffUtils.write(diff.name, out, (element, stream) -> stream.writeUTF(element));
     ListDiffUtils.write(diff.desc, out, (element, stream) -> stream.writeUTF(element));
@@ -612,6 +645,12 @@ public class MethodDiffUtils {
   }
 
   public static MethodDiff read(CustomDataInput in, Function<Integer, LabelNode> labelToIndex) throws IOException {
+    if (in.readBoolean()) {
+      MethodDiff d = new MethodDiff();
+      d.isEmpty = true;
+      return d;
+    }
+
     MethodDiff diff = new MethodDiff();
     diff.access = ListDiffUtils.read(in, DataInput::readInt);
     diff.name = ListDiffUtils.read(in, DataInput::readUTF);

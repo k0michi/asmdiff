@@ -51,10 +51,9 @@ public class InsnListDiff implements IDiff {
     public final Type type;
     public final Mode mode;
 
-    public final AbstractInsnNode operand1;
-    public final AbstractInsnNode operand2;
+    public final AbstractInsnNode operand;
 
-    public Operation(Type type, Mode mode, AbstractInsnNode operand1, AbstractInsnNode operand2) {
+    public Operation(Type type, Mode mode, AbstractInsnNode operand) {
       if (type == null) {
         throw new IllegalArgumentException("type cannot be null");
       }
@@ -65,8 +64,7 @@ public class InsnListDiff implements IDiff {
 
       this.type = type;
       this.mode = mode;
-      this.operand1 = operand1;
-      this.operand2 = operand2;
+      this.operand = operand;
     }
   }
 }
