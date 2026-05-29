@@ -572,6 +572,23 @@ class InsnListDiffUtilsTest {
   }
 
   @Test
+  void test_diff_label_0()    {
+    List<AbstractInsnNode> list1 = new ArrayList<>();
+    list1.add(LabelNodes.l0);
+    list1.add(new JumpInsnNode(Opcodes.GOTO, LabelNodes.l0));
+    List<AbstractInsnNode> list2 = new ArrayList<>();
+    list2.add(LabelNodes.l1);
+    list2.add(new JumpInsnNode(Opcodes.GOTO, LabelNodes.l1));
+    InsnListDiff diff = InsnListDiffUtils.diff(
+            list1,
+            (insn) -> -1,
+            list2,
+            (insn) -> -1
+    );
+    Assertions.assertEquals(2, diff.distance());
+  }
+
+  @Test
   void test_extractLabels_0() {
     List<AbstractInsnNode> list1 = new ArrayList<>();
     list1.add(LabelNodes.l0);
