@@ -578,7 +578,7 @@ class InsnListDiffUtilsTest {
     list1.add(new JumpInsnNode(Opcodes.GOTO, LabelNodes.l0));
     List<AbstractInsnNode> list2 = new ArrayList<>();
     list2.add(LabelNodes.l1);
-    list2.add(new JumpInsnNode(Opcodes.GOTO, LabelNodes.l1));
+    list2.add(new JumpInsnNode(Opcodes.GOTO, LabelNodes.l0));
     InsnListDiff diff = InsnListDiffUtils.diff(
             list1,
             (insn) -> -1,
