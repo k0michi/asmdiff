@@ -89,7 +89,7 @@ class InsnListHelperTest {
     list.add(new LineNumberNode(10, LabelNodes.l0));
     list.add(new LineNumberNode(10, LabelNodes.l1));
 
-    List<LineNumberNode> relativized = InsnListHelper.relativizeLineNumbers(list);
+    List<LineNumberNode> relativized = InsnListHelper.relativizeLineNumbers(list, new LineTracker(0));
 
     Assertions.assertEquals(2, relativized.size());
     Assertions.assertEquals(10, relativized.get(0).line);
@@ -102,8 +102,8 @@ class InsnListHelperTest {
     list.add(new LineNumberNode(10, LabelNodes.l0));
     list.add(new LineNumberNode(10, LabelNodes.l1));
 
-    List<LineNumberNode> relativized = InsnListHelper.relativizeLineNumbers(list);
-    List<LineNumberNode> absolutized = InsnListHelper.absolutizeLineNumbers(relativized);
+    List<LineNumberNode> relativized = InsnListHelper.relativizeLineNumbers(list, new LineTracker(0));
+    List<LineNumberNode> absolutized = InsnListHelper.absolutizeLineNumbers(relativized, new LineTracker(0));
 
     Assertions.assertTrue(ListHelper.equals(list, absolutized, AbstractInsnNodeHelper::equals));
   }

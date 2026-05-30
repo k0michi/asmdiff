@@ -81,28 +81,24 @@ public class InsnListHelper {
     return merged;
   }
 
-  public static List<LineNumberNode> relativizeLineNumbers(List<LineNumberNode> lineNumbers) {
+  public static List<LineNumberNode> relativizeLineNumbers(List<LineNumberNode> lineNumbers, LineTracker lineTracker) {
     List<LineNumberNode> relativized = new ArrayList<>();
-    int lastLine = 0;
 
     for (LineNumberNode lineNumber : lineNumbers) {
-      int originalLine = lineNumber.line;
-      int delta = originalLine - lastLine;
+      int delta = lineTracker.getDelta(lineNumber.line);
       LineNumberNode relativizedNode = new LineNumberNode(delta, lineNumber.start);
       relativized.add(relativizedNode);
-      lastLine = originalLine;
     }
 
     return relativized;
   }
 
-  public static List<LineNumberNode> absolutizeLineNumbers(List<LineNumberNode> lineNumbers) {
+  public static List<LineNumberNode> absolutizeLineNumbers(List<LineNumberNode> lineNumbers, LineTracker lineTracker) {
     List<LineNumberNode> absolutized = new ArrayList<>();
-    int lastLine = 0;
 
     for (LineNumberNode lineNumber : lineNumbers) {
-      lastLine += lineNumber.line;
-      absolutized.add(new LineNumberNode(lastLine, lineNumber.start));
+      lineTracker.add(lineNumber.line);
+      absolutized.add(new LineNumberNode(lineTracker.getCurrentLine(), lineNumber.start));
     }
 
     return absolutized;
