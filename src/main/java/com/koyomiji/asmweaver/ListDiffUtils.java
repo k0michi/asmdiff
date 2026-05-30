@@ -45,7 +45,7 @@ public class ListDiffUtils {
 
   public static <T> Pair<ListDiff<T>, ListDiff<T>> commute(ListDiff<T> p, ListDiff<T> q, BiPredicate<T, T> compare) throws ConflictException {
     if (p.isEmpty || q.isEmpty) {
-      return new Pair<>(q, p);
+      return Pair.of(q, p);
     }
 
     List<ListDiff.Operation<T>> qPrimeOps = new ArrayList<>();
@@ -105,7 +105,7 @@ public class ListDiffUtils {
       }
     }
 
-    return new Pair<>(new ListDiff<>(qPrimeOps), new ListDiff<>(pPrimeOps));
+    return Pair.of(new ListDiff<>(qPrimeOps), new ListDiff<>(pPrimeOps));
   }
 
   // FIXME: Myers

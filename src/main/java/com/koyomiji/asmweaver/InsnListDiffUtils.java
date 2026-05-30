@@ -95,7 +95,7 @@ public class InsnListDiffUtils {
       }
     }
 
-    return new Pair<>(new InsnListDiff(qPrimeOps), new InsnListDiff(pPrimeOps));
+    return Pair.of(new InsnListDiff(qPrimeOps), new InsnListDiff(pPrimeOps));
   }
 
   private static boolean isInsert(InsnListDiff.Operation op) {

@@ -129,9 +129,6 @@ public class MethodDiffUtils {
             AbstractInsnNodeHelper::equals
     );
 
-//    List<Pair<Integer, Integer>> locals1 = new ArrayList<>();
-//    List<Pair<Integer, Integer>> locals2 = new ArrayList<>();
-
     diff.tryCatchBlocks = ListDiffUtils.diff(
             ListHelper.map(node1.tryCatchBlocks, tcb -> TryCatchBlockNodeHelper.mapLabels(tcb, labelMap::get)),
             ListHelper.map(node2.tryCatchBlocks, tcb -> TryCatchBlockNodeHelper.mapLabels(tcb, labelMap::get)),
@@ -151,7 +148,6 @@ public class MethodDiffUtils {
     );
 
     diff.localVariables = ListDiffUtils.diff(
-//            ListHelper.nullToEmpty(node2.localVariables),
             ListHelper.map(ListHelper.nullToEmpty(node1.localVariables), lv -> LocalVariableNodeHelper.mapLabels(lv, labelMap::get)),
             ListHelper.map(ListHelper.nullToEmpty(node2.localVariables), lv -> LocalVariableNodeHelper.mapLabels(lv, labelMap::get)),
             LocalVariableNodeHelper::equals
@@ -161,26 +157,12 @@ public class MethodDiffUtils {
             ListHelper.map(ListHelper.nullToEmpty(node1.visibleLocalVariableAnnotations), lva -> AnnotationNodeHelper.mapLabels(lva, labelMap::get)),
             ListHelper.map(ListHelper.nullToEmpty(node2.visibleLocalVariableAnnotations), lva -> AnnotationNodeHelper.mapLabels(lva, labelMap::get)),
             AnnotationNodeHelper::equals
-//            ListHelper.nullToEmpty(node2.visibleLocalVariableAnnotations),
-//            (a, b) ->
-//                    AnnotationNodeHelper.equals(a, b,
-//                            (lA, lB) -> labelMap.get(lA) == lB,
-//                            // FIXME: this is exact local match
-//                            (tA, tB) -> labelMap.get(tA.first) == tB.first && labelMap.get(tA.second) == tB.second && Objects.equals(tA.third, tB.third)
-//                    )
     );
 
     diff.invisibleLocalVariableAnnotations = ListDiffUtils.diff(
             ListHelper.map(ListHelper.nullToEmpty(node1.invisibleLocalVariableAnnotations), lva -> AnnotationNodeHelper.mapLabels(lva, labelMap::get)),
             ListHelper.map(ListHelper.nullToEmpty(node2.invisibleLocalVariableAnnotations), lva -> AnnotationNodeHelper.mapLabels(lva, labelMap::get)),
             AnnotationNodeHelper::equals
-//            ListHelper.nullToEmpty(node2.invisibleLocalVariableAnnotations),
-//            (a, b) ->
-//                    AnnotationNodeHelper.equals(a, b,
-//                            (lA, lB) -> labelMap.get(lA) == lB,
-//                            // FIXME: this is exact local match
-//                            (tA, tB) -> labelMap.get(tA.first) == tB.first && labelMap.get(tA.second) == tB.second && Objects.equals(tA.third, tB.third)
-//                    )
     );
 
     if (diff.isEmpty()) {
@@ -259,11 +241,6 @@ public class MethodDiffUtils {
                     diff.lineNumbers
             );
 
-//    for (LineNumberNode ln : lineNumbers) {
-//      labelMap.putIfAbsent(ln.start, new LabelNode());
-//      ln.start = labelMap.get(ln.start);
-//    }
-
     patched.instructions = InsnListHelper.fromList(InsnListHelper.mergeLineNumbers(
             instructions,
             lineNumbers
@@ -273,7 +250,6 @@ public class MethodDiffUtils {
 
     patched.tryCatchBlocks =
             ListDiffUtils.patch(
-//            node.tryCatchBlocks,
                     ListHelper.map(
                             node.tryCatchBlocks,
                             tcb -> TryCatchBlockNodeHelper.mapLabels(tcb, labelMap::get)
@@ -286,21 +262,11 @@ public class MethodDiffUtils {
             tcb -> TryCatchBlockNodeHelper.mapLabels(tcb, toPlain::get)
     );
 
-//    for (TryCatchBlockNode tryCatchBlock : patched.tryCatchBlocks) {
-//      labelMap.putIfAbsent(tryCatchBlock.start, new LabelNode());
-//      tryCatchBlock.start = labelMap.get(tryCatchBlock.start);
-//      labelMap.putIfAbsent(tryCatchBlock.end, new LabelNode());
-//      tryCatchBlock.end = labelMap.get(tryCatchBlock.end);
-//      labelMap.putIfAbsent(tryCatchBlock.handler, new LabelNode());
-//      tryCatchBlock.handler = labelMap.get(tryCatchBlock.handler);
-//    }
-
     patched.maxStack = ListDiffUtils.patchNonNullableValue(node.maxStack, diff.maxStack);
     patched.maxLocals = ListDiffUtils.patchNonNullableValue(node.maxLocals, diff.maxLocals);
 
     patched.localVariables =
             ListDiffUtils.patch(
-//                            ListHelper.nullToEmpty(node.localVariables),
                     ListHelper.map(
                             ListHelper.nullToEmpty(node.localVariables),
                             lv -> LocalVariableNodeHelper.mapLabels(lv, labelMap::get)
@@ -312,13 +278,6 @@ public class MethodDiffUtils {
             patched.localVariables,
             lv -> LocalVariableNodeHelper.mapLabels(lv, toPlain::get)
     );
-
-//    for (LocalVariableNode localVariable : patched.localVariables) {
-//      labelMap.putIfAbsent(localVariable.start, new LabelNode());
-//      localVariable.start = labelMap.get(localVariable.start);
-//      labelMap.putIfAbsent(localVariable.end, new LabelNode());
-//      localVariable.end = labelMap.get(localVariable.end);
-//    }
 
     patched.visibleLocalVariableAnnotations = ListDiffUtils.patch(
             ListHelper.map(
@@ -333,18 +292,6 @@ public class MethodDiffUtils {
             lva -> AnnotationNodeHelper.mapLabels(lva, toPlain::get)
     );
 
-//    for (LocalVariableAnnotationNode localVarAnn : patched.visibleLocalVariableAnnotations) {
-//      for (int i = 0; i < localVarAnn.start.size(); i++) {
-//        labelMap.putIfAbsent(localVarAnn.start.get(i), new LabelNode());
-//        localVarAnn.start.set(i, labelMap.get(localVarAnn.start.get(i)));
-//      }
-
-//      for (int i = 0; i < localVarAnn.end.size(); i++) {
-//        labelMap.putIfAbsent(localVarAnn.end.get(i), new LabelNode());
-//        localVarAnn.end.set(i, labelMap.get(localVarAnn.end.get(i)));
-//      }
-//    }
-
     patched.invisibleLocalVariableAnnotations = ListDiffUtils.patch(
             ListHelper.map(
                     ListHelper.nullToEmpty(node.invisibleLocalVariableAnnotations),
@@ -357,18 +304,6 @@ public class MethodDiffUtils {
             patched.invisibleLocalVariableAnnotations,
             lva -> AnnotationNodeHelper.mapLabels(lva, toPlain::get)
     );
-//
-//    for (LocalVariableAnnotationNode localVarAnn : patched.invisibleLocalVariableAnnotations) {
-//      for (int i = 0; i < localVarAnn.start.size(); i++) {
-////        labelMap.putIfAbsent(localVarAnn.start.get(i), new LabelNode());
-//        localVarAnn.start.set(i, labelMap.get(localVarAnn.start.get(i)));
-//      }
-//
-//      for (int i = 0; i < localVarAnn.end.size(); i++) {
-////        labelMap.putIfAbsent(localVarAnn.end.get(i), new LabelNode());
-//        localVarAnn.end.set(i, labelMap.get(localVarAnn.end.get(i)));
-//      }
-//    }
 
     return patched;
   }
@@ -472,7 +407,7 @@ public class MethodDiffUtils {
 
   public static Pair<MethodDiff, MethodDiff> commute(MethodDiff diff1, MethodDiff diff2) throws ConflictException {
     if (diff1.isEmpty || diff2.isEmpty) {
-      return new Pair<>(diff2, diff1);
+      return Pair.of(diff2, diff1);
     }
 
     MethodDiff diff2Prime = new MethodDiff();

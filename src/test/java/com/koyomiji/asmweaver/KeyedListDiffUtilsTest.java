@@ -75,7 +75,7 @@ class KeyedListDiffUtilsTest {
 
   private Pair<KeyedObjectDiff, KeyedObjectDiff> commuteKeyedObjectDiffs(KeyedObjectDiff diff1, KeyedObjectDiff diff2) throws ConflictException {
     var commuted = ListDiffUtils.commute(diff1.value, diff2.value, Objects::equals);
-    return new Pair<>(new KeyedObjectDiff(commuted.first), new KeyedObjectDiff(commuted.second));
+    return Pair.of(new KeyedObjectDiff(commuted.first), new KeyedObjectDiff(commuted.second));
   }
 
   private KeyedObjectDiff composeKeyedObjectDiffs(KeyedObjectDiff diff1, KeyedObjectDiff diff2) {

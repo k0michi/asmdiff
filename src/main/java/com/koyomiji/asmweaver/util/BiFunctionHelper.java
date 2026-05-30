@@ -7,7 +7,7 @@ import java.util.function.BiFunction;
 
 public class BiFunctionHelper {
   public static <K1, K2, V> BiFunction<K1, K2, V> fromMap(Map<Pair<K1, K2>, V> map) {
-    return (k1, k2) -> map.get(new Pair<>(k1, k2));
+    return (k1, k2) -> map.get(Pair.of(k1, k2));
   }
 
   public static <K2, V> BiFunction<V, K2, V> first() {

@@ -63,7 +63,7 @@ public class InsnListHelper {
       }
     }
 
-    return new Pair<>(nonLineNumbers, lineNumbers);
+    return Pair.of(nonLineNumbers, lineNumbers);
   }
 
   public static List<AbstractInsnNode> mergeLineNumbers(List<AbstractInsnNode> insns, List<LineNumberNode> lineNumbers) {

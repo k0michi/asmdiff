@@ -118,13 +118,13 @@ public class KeyedListDiffUtils {
     List<Pair<Integer, Value>> wrapped1 = new ArrayList<>();
 
     for (int i = 0; i < list1.size(); i++) {
-      wrapped1.add(new Pair<>(i, list1.get(i)));
+      wrapped1.add(Pair.of(i, list1.get(i)));
     }
 
     List<Pair<Integer, Value>> wrapped2 = new ArrayList<>();
 
     for (int i = 0; i < list2.size(); i++) {
-      wrapped2.add(new Pair<>(i, list2.get(i)));
+      wrapped2.add(Pair.of(i, list2.get(i)));
     }
 
     KeyedListDiff<Integer, Pair<Integer, Value>, Diff> pairedDiff = diff(
@@ -260,7 +260,7 @@ public class KeyedListDiffUtils {
           BiFunction<Value, Value, Diff> diffFunction
   ) throws ConflictException {
     if (p.isEmpty() || q.isEmpty()) {
-      return new Pair<>(q, p);
+      return Pair.of(q, p);
     }
 
     List<KeyedListDiff.Operation<Key, Value, Diff>> qPrimeOps = new ArrayList<>();
@@ -343,7 +343,7 @@ public class KeyedListDiffUtils {
       }
     }
 
-    return new Pair<>(new KeyedListDiff<>(qPrimeOps), new KeyedListDiff<>(pPrimeOps));
+    return Pair.of(new KeyedListDiff<>(qPrimeOps), new KeyedListDiff<>(pPrimeOps));
   }
 
   private static <Key, Value, Diff extends
