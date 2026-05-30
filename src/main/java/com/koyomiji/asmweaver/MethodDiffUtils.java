@@ -111,33 +111,21 @@ public class MethodDiffUtils {
             duChains2::get
     );
 
-//    Map<LabelNode, Integer> labelIndices1 = new HashMap<>();
-//
-//    for (int i = 0; i < node1.instructions.size(); i++) {
-//      AbstractInsnNode insn = node1.instructions.get(i);
-//      if (insn instanceof LabelNode) {
-//        labelIndices1.put((LabelNode) insn, i);
-//      }
-//    }
-//
-//    Map<LabelNode, Integer> labelIndices2 = new HashMap<>();
-//
-//    for (int i = 0; i < node2.instructions.size(); i++) {
-//      AbstractInsnNode insn = node2.instructions.get(i);
-//      if (insn instanceof LabelNode) {
-//        labelIndices2.put((LabelNode) insn, i);
-//      }
-//    }
-
-    Map<LabelNode, LabelNode> labelMap = InsnListDiffUtils.extractInverseLabelMap(
+    Map<LabelNode, IndexedLabelNode> labelMap = InsnListDiffUtils.extractIndexedLabelMap(
             split1.first,
             split2.first,
             diff.instructions
     );
 
     diff.lineNumbers = ListDiffUtils.diff(
-            split1.second,
-            ListHelper.map(split2.second, ln -> (LineNumberNode) AbstractInsnNodeHelper.mapLabelTargets(ln, label -> labelMap.getOrDefault(label, label))),
+            ListHelper.map(
+                    split1.second,
+                    ln -> (LineNumberNode) AbstractInsnNodeHelper.mapLabelTargets(ln, labelMap::get)
+            ),
+            ListHelper.map(
+                    split2.second,
+                    ln -> (LineNumberNode) AbstractInsnNodeHelper.mapLabelTargets(ln, labelMap::get)
+            ),
             AbstractInsnNodeHelper::equals
     );
 
@@ -145,8 +133,8 @@ public class MethodDiffUtils {
 //    List<Pair<Integer, Integer>> locals2 = new ArrayList<>();
 
     diff.tryCatchBlocks = ListDiffUtils.diff(
-            node1.tryCatchBlocks,
-            ListHelper.map(node2.tryCatchBlocks, tcb -> TryCatchBlockNodeHelper.mapLabels(tcb, label -> labelMap.getOrDefault(label, label))),
+            ListHelper.map(node1.tryCatchBlocks, tcb -> TryCatchBlockNodeHelper.mapLabels(tcb, labelMap::get)),
+            ListHelper.map(node2.tryCatchBlocks, tcb -> TryCatchBlockNodeHelper.mapLabels(tcb, labelMap::get)),
             TryCatchBlockNodeHelper::equals
     );
 
@@ -163,15 +151,15 @@ public class MethodDiffUtils {
     );
 
     diff.localVariables = ListDiffUtils.diff(
-            ListHelper.nullToEmpty(node1.localVariables),
 //            ListHelper.nullToEmpty(node2.localVariables),
-            ListHelper.map(ListHelper.nullToEmpty(node2.localVariables), lv -> LocalVariableNodeHelper.mapLabels(lv, label -> labelMap.getOrDefault(label, label))),
+            ListHelper.map(ListHelper.nullToEmpty(node1.localVariables), lv -> LocalVariableNodeHelper.mapLabels(lv, labelMap::get)),
+            ListHelper.map(ListHelper.nullToEmpty(node2.localVariables), lv -> LocalVariableNodeHelper.mapLabels(lv, labelMap::get)),
             LocalVariableNodeHelper::equals
     );
 
     diff.visibleLocalVariableAnnotations = ListDiffUtils.diff(
-            ListHelper.nullToEmpty(node1.visibleLocalVariableAnnotations),
-            ListHelper.map(ListHelper.nullToEmpty(node2.visibleLocalVariableAnnotations), lva -> AnnotationNodeHelper.mapLabels(lva, label -> labelMap.getOrDefault(label, label))),
+            ListHelper.map(ListHelper.nullToEmpty(node1.visibleLocalVariableAnnotations), lva -> AnnotationNodeHelper.mapLabels(lva, labelMap::get)),
+            ListHelper.map(ListHelper.nullToEmpty(node2.visibleLocalVariableAnnotations), lva -> AnnotationNodeHelper.mapLabels(lva, labelMap::get)),
             AnnotationNodeHelper::equals
 //            ListHelper.nullToEmpty(node2.visibleLocalVariableAnnotations),
 //            (a, b) ->
@@ -183,8 +171,8 @@ public class MethodDiffUtils {
     );
 
     diff.invisibleLocalVariableAnnotations = ListDiffUtils.diff(
-            ListHelper.nullToEmpty(node1.invisibleLocalVariableAnnotations),
-            ListHelper.map(ListHelper.nullToEmpty(node2.invisibleLocalVariableAnnotations), lva -> AnnotationNodeHelper.mapLabels(lva, label -> labelMap.getOrDefault(label, label))),
+            ListHelper.map(ListHelper.nullToEmpty(node1.invisibleLocalVariableAnnotations), lva -> AnnotationNodeHelper.mapLabels(lva, labelMap::get)),
+            ListHelper.map(ListHelper.nullToEmpty(node2.invisibleLocalVariableAnnotations), lva -> AnnotationNodeHelper.mapLabels(lva, labelMap::get)),
             AnnotationNodeHelper::equals
 //            ListHelper.nullToEmpty(node2.invisibleLocalVariableAnnotations),
 //            (a, b) ->
@@ -249,90 +237,138 @@ public class MethodDiffUtils {
 
     Pair<List<AbstractInsnNode>, List<LineNumberNode>> split = InsnListHelper.splitLineNumbers(new InsnListListAdapter(node.instructions));
 
-    HashMap<LabelNode, LabelNode> labelMap = new HashMap<>();
+    HashMap<LabelNode, IndexedLabelNode> labelMap = new HashMap<>();
     List<AbstractInsnNode> instructions = InsnListDiffUtils.patch(
             split.first,
             diff.instructions,
             labelMap
     );
 
-    List<LineNumberNode> lineNumbers = ListDiffUtils.patch(
-            split.second,
-            diff.lineNumbers
-    );
+    HashMap<LabelNode, LabelNode> toPlain = new HashMap<>();
 
-    for (LineNumberNode ln : lineNumbers) {
-//      labelMap.putIfAbsent(ln.start, new LabelNode());
-      ln.start = labelMap.get(ln.start);
+    for (IndexedLabelNode iln : labelMap.values()) {
+      toPlain.put(iln, new LabelNode());
     }
+
+    List<LineNumberNode> lineNumbers =
+            ListDiffUtils.patch(
+                    ListHelper.map(
+                            split.second,
+                            ln -> (LineNumberNode) AbstractInsnNodeHelper.mapLabelTargets(ln, labelMap::get)
+                    ),
+                    diff.lineNumbers
+            );
+
+//    for (LineNumberNode ln : lineNumbers) {
+//      labelMap.putIfAbsent(ln.start, new LabelNode());
+//      ln.start = labelMap.get(ln.start);
+//    }
 
     patched.instructions = InsnListHelper.fromList(InsnListHelper.mergeLineNumbers(
             instructions,
             lineNumbers
     ));
 
-    patched.tryCatchBlocks = ListDiffUtils.patch(
-            node.tryCatchBlocks,
-            diff.tryCatchBlocks
+    InsnListHelper.mapInPlace(patched.instructions, insn -> AbstractInsnNodeHelper.mapLabelTargets(insn, toPlain::get));
+
+    patched.tryCatchBlocks =
+            ListDiffUtils.patch(
+//            node.tryCatchBlocks,
+                    ListHelper.map(
+                            node.tryCatchBlocks,
+                            tcb -> TryCatchBlockNodeHelper.mapLabels(tcb, labelMap::get)
+                    ),
+                    diff.tryCatchBlocks
+            );
+
+    patched.tryCatchBlocks = ListHelper.map(
+            patched.tryCatchBlocks,
+            tcb -> TryCatchBlockNodeHelper.mapLabels(tcb, toPlain::get)
     );
 
-    for (TryCatchBlockNode tryCatchBlock : patched.tryCatchBlocks) {
-      labelMap.putIfAbsent(tryCatchBlock.start, new LabelNode());
-      tryCatchBlock.start = labelMap.get(tryCatchBlock.start);
-      labelMap.putIfAbsent(tryCatchBlock.end, new LabelNode());
-      tryCatchBlock.end = labelMap.get(tryCatchBlock.end);
-      labelMap.putIfAbsent(tryCatchBlock.handler, new LabelNode());
-      tryCatchBlock.handler = labelMap.get(tryCatchBlock.handler);
-    }
+//    for (TryCatchBlockNode tryCatchBlock : patched.tryCatchBlocks) {
+//      labelMap.putIfAbsent(tryCatchBlock.start, new LabelNode());
+//      tryCatchBlock.start = labelMap.get(tryCatchBlock.start);
+//      labelMap.putIfAbsent(tryCatchBlock.end, new LabelNode());
+//      tryCatchBlock.end = labelMap.get(tryCatchBlock.end);
+//      labelMap.putIfAbsent(tryCatchBlock.handler, new LabelNode());
+//      tryCatchBlock.handler = labelMap.get(tryCatchBlock.handler);
+//    }
 
     patched.maxStack = ListDiffUtils.patchNonNullableValue(node.maxStack, diff.maxStack);
     patched.maxLocals = ListDiffUtils.patchNonNullableValue(node.maxLocals, diff.maxLocals);
 
-    patched.localVariables = ListDiffUtils.patch(
-            ListHelper.nullToEmpty(node.localVariables),
-            diff.localVariables
+    patched.localVariables =
+            ListDiffUtils.patch(
+//                            ListHelper.nullToEmpty(node.localVariables),
+                    ListHelper.map(
+                            ListHelper.nullToEmpty(node.localVariables),
+                            lv -> LocalVariableNodeHelper.mapLabels(lv, labelMap::get)
+                    ),
+                    diff.localVariables
+            );
+
+    patched.localVariables = ListHelper.map(
+            patched.localVariables,
+            lv -> LocalVariableNodeHelper.mapLabels(lv, toPlain::get)
     );
 
-    for (LocalVariableNode localVariable : patched.localVariables) {
-      labelMap.putIfAbsent(localVariable.start, new LabelNode());
-      localVariable.start = labelMap.get(localVariable.start);
-      labelMap.putIfAbsent(localVariable.end, new LabelNode());
-      localVariable.end = labelMap.get(localVariable.end);
-    }
+//    for (LocalVariableNode localVariable : patched.localVariables) {
+//      labelMap.putIfAbsent(localVariable.start, new LabelNode());
+//      localVariable.start = labelMap.get(localVariable.start);
+//      labelMap.putIfAbsent(localVariable.end, new LabelNode());
+//      localVariable.end = labelMap.get(localVariable.end);
+//    }
 
     patched.visibleLocalVariableAnnotations = ListDiffUtils.patch(
-            ListHelper.nullToEmpty(node.visibleLocalVariableAnnotations),
+            ListHelper.map(
+                    ListHelper.nullToEmpty(node.visibleLocalVariableAnnotations),
+                    lva -> AnnotationNodeHelper.mapLabels(lva, labelMap::get)
+            ),
             diff.visibleLocalVariableAnnotations
     );
 
-    for (LocalVariableAnnotationNode localVarAnn : patched.visibleLocalVariableAnnotations) {
-      for (int i = 0; i < localVarAnn.start.size(); i++) {
-        labelMap.putIfAbsent(localVarAnn.start.get(i), new LabelNode());
-        localVarAnn.start.set(i, labelMap.get(localVarAnn.start.get(i)));
-      }
+    patched.visibleLocalVariableAnnotations = ListHelper.map(
+            patched.visibleLocalVariableAnnotations,
+            lva -> AnnotationNodeHelper.mapLabels(lva, toPlain::get)
+    );
 
-      for (int i = 0; i < localVarAnn.end.size(); i++) {
-        labelMap.putIfAbsent(localVarAnn.end.get(i), new LabelNode());
-        localVarAnn.end.set(i, labelMap.get(localVarAnn.end.get(i)));
-      }
-    }
+//    for (LocalVariableAnnotationNode localVarAnn : patched.visibleLocalVariableAnnotations) {
+//      for (int i = 0; i < localVarAnn.start.size(); i++) {
+//        labelMap.putIfAbsent(localVarAnn.start.get(i), new LabelNode());
+//        localVarAnn.start.set(i, labelMap.get(localVarAnn.start.get(i)));
+//      }
+
+//      for (int i = 0; i < localVarAnn.end.size(); i++) {
+//        labelMap.putIfAbsent(localVarAnn.end.get(i), new LabelNode());
+//        localVarAnn.end.set(i, labelMap.get(localVarAnn.end.get(i)));
+//      }
+//    }
 
     patched.invisibleLocalVariableAnnotations = ListDiffUtils.patch(
-            ListHelper.nullToEmpty(node.invisibleLocalVariableAnnotations),
+            ListHelper.map(
+                    ListHelper.nullToEmpty(node.invisibleLocalVariableAnnotations),
+                    lva -> AnnotationNodeHelper.mapLabels(lva, labelMap::get)
+            ),
             diff.invisibleLocalVariableAnnotations
     );
 
-    for (LocalVariableAnnotationNode localVarAnn : patched.invisibleLocalVariableAnnotations) {
-      for (int i = 0; i < localVarAnn.start.size(); i++) {
-        labelMap.putIfAbsent(localVarAnn.start.get(i), new LabelNode());
-        localVarAnn.start.set(i, labelMap.get(localVarAnn.start.get(i)));
-      }
-
-      for (int i = 0; i < localVarAnn.end.size(); i++) {
-        labelMap.putIfAbsent(localVarAnn.end.get(i), new LabelNode());
-        localVarAnn.end.set(i, labelMap.get(localVarAnn.end.get(i)));
-      }
-    }
+    patched.invisibleLocalVariableAnnotations = ListHelper.map(
+            patched.invisibleLocalVariableAnnotations,
+            lva -> AnnotationNodeHelper.mapLabels(lva, toPlain::get)
+    );
+//
+//    for (LocalVariableAnnotationNode localVarAnn : patched.invisibleLocalVariableAnnotations) {
+//      for (int i = 0; i < localVarAnn.start.size(); i++) {
+////        labelMap.putIfAbsent(localVarAnn.start.get(i), new LabelNode());
+//        localVarAnn.start.set(i, labelMap.get(localVarAnn.start.get(i)));
+//      }
+//
+//      for (int i = 0; i < localVarAnn.end.size(); i++) {
+////        labelMap.putIfAbsent(localVarAnn.end.get(i), new LabelNode());
+//        localVarAnn.end.set(i, labelMap.get(localVarAnn.end.get(i)));
+//      }
+//    }
 
     return patched;
   }

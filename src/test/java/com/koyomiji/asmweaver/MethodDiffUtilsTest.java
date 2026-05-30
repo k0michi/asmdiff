@@ -11,8 +11,6 @@ import org.objectweb.asm.tree.MethodNode;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 class MethodDiffUtilsTest {
   @Test
@@ -39,6 +37,8 @@ class MethodDiffUtilsTest {
 
         MethodNode patched = MethodDiffUtils.patch(node1, read);
 
+        MethodDiff d = MethodDiffUtils.diff(node2, patched);
+        Assertions.assertTrue(d.isEmpty(), "i=" + i + ", j=" + j);
         Assertions.assertTrue(MethodNodeHelper.equalsNormalizeLabels(node2, patched), "i=" + i + ", j=" + j);
       }
     }

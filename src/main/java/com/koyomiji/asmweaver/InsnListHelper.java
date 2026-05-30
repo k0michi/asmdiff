@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
 public class InsnListHelper {
@@ -102,5 +103,13 @@ public class InsnListHelper {
     }
 
     return absolutized;
+  }
+
+  public static void mapInPlace(InsnList insns, Function<AbstractInsnNode, AbstractInsnNode> mapper) {
+    for (int i = 0; i < insns.size(); i++) {
+      AbstractInsnNode insn = insns.get(i);
+      AbstractInsnNode mappedInsn = mapper.apply(insn);
+      insns.set(insn, mappedInsn);
+    }
   }
 }

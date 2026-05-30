@@ -181,27 +181,69 @@ public class InsnListDiffUtils {
     return labelMap;
   }
 
-  public static Map<LabelNode, LabelNode> extractInverseLabelMap(List<AbstractInsnNode> list1, List<AbstractInsnNode> list2, InsnListDiff diff) {
+  public static Map<LabelNode, IndexedLabelNode> extractIndexedLabelMap(List<AbstractInsnNode> list1, List<AbstractInsnNode> list2, InsnListDiff diff) {
     int i = 0, j = 0;
-    Map<LabelNode, LabelNode> labelMap = new HashMap<>();
+    Map<LabelNode, IndexedLabelNode> labelMap = new HashMap<>();
 
+    int index = 0;
     for (InsnListDiff.Operation op : diff.operations) {
       switch (op.type) {
-        case MATCH:
-          List<LabelNode> labels1 = AbstractInsnNodeHelper.getLabelTargets(list1.get(i));
-          List<LabelNode> labels2 = AbstractInsnNodeHelper.getLabelTargets(list2.get(j));
-          for (int k = 0; k < Math.min(labels1.size(), labels2.size()); k++) {
-            labelMap.put(labels2.get(k), labels1.get(k));
+        case MATCH: {
+          List<LabelNode> extracted1 = AbstractInsnNodeHelper.getLabelTargets(list1.get(i));
+          List<LabelNode> extracted2 = AbstractInsnNodeHelper.getLabelTargets(list2.get(j));
+
+          for (int k = 0; k < extracted1.size(); k++) {
+            if (!labelMap.containsKey(extracted1.get(k))) {
+              IndexedLabelNode l = new IndexedLabelNode(index++);
+              labelMap.put(extracted1.get(k), l);
+              labelMap.put(extracted2.get(k), l);
+            }
           }
+
           i++;
           j++;
           break;
-        case DELETE:
-          i++;
-          break;
-        case INSERT:
+        }
+        case INSERT: {
           j++;
           break;
+        }
+        case DELETE: {
+          List<LabelNode> extracted = AbstractInsnNodeHelper.getLabelTargets(list1.get(i));
+
+          for (LabelNode l : extracted) {
+            if (!labelMap.containsKey(l)) {
+              labelMap.put(l, new IndexedLabelNode(index++));
+            }
+          }
+
+          i++;
+          break;
+        }
+      }
+    }
+
+    i = j = 0;
+    for (InsnListDiff.Operation op : diff.operations) {
+      switch (op.type) {
+        case MATCH: {
+          i++;
+          j++;
+          break;
+        }
+        case INSERT: {
+          List<LabelNode> extracted = AbstractInsnNodeHelper.getLabelTargets(list2.get(j));
+
+          for (LabelNode l : extracted) {
+//            labelMap.put(l, new IndexedLabelNode(index++));
+            if (!labelMap.containsKey(l)) {
+              labelMap.put(l, new IndexedLabelNode(index++));
+            }
+          }
+
+          j++;
+          break;
+        }
       }
     }
 
@@ -698,8 +740,7 @@ public class InsnListDiffUtils {
     pq.add(newState);
   }
 
-  public static List<AbstractInsnNode> patch(List<AbstractInsnNode> insns, InsnListDiff diff, Map<LabelNode, LabelNode> labelMap) {
-
+  public static List<AbstractInsnNode> patch(List<AbstractInsnNode> insns, InsnListDiff diff, Map<LabelNode, IndexedLabelNode> labelMap) {
     // labels in diff to labels in insns
     // For labels that match at least once, keep the original label.
     // Otherwise, create a new label.
@@ -707,26 +748,62 @@ public class InsnListDiffUtils {
     int i = 0;
     int j = 0;
 
+    int index = 0;
     for (InsnListDiff.Operation op : diff.operations) {
       switch (op.type) {
-        case MATCH:
+        case MATCH: {
           List<LabelNode> extracted1 = AbstractInsnNodeHelper.getLabelTargets(insns.get(i));
           List<LabelNode> extracted2 = AbstractInsnNodeHelper.getLabelTargets(op.operand);
 
           for (int k = 0; k < extracted1.size(); k++) {
-            labelMap.putIfAbsent(extracted2.get(k), new LabelNode());
-            labelMap.putIfAbsent(extracted1.get(k), labelMap.get(extracted2.get(k)));
+            if (!labelMap.containsKey(extracted1.get(k))) {
+              IndexedLabelNode l = new IndexedLabelNode(index++);
+              labelMap.put(extracted1.get(k), l);
+              labelMap.put(extracted2.get(k), l);
+            }
           }
 
           i++;
           j++;
           break;
-        case INSERT:
+        }
+        case INSERT: {
           j++;
           break;
-        case DELETE:
+        }
+        case DELETE: {
+          List<LabelNode> extracted = AbstractInsnNodeHelper.getLabelTargets(insns.get(i));
+
+          for (LabelNode l : extracted) {
+            if (!labelMap.containsKey(l)) {
+              labelMap.put(l, new IndexedLabelNode(index++));
+            }
+          }
+
           i++;
           break;
+        }
+      }
+    }
+    for (InsnListDiff.Operation op : diff.operations) {
+      switch (op.type) {
+        case MATCH: {
+          i++;
+          j++;
+          break;
+        }
+        case INSERT: {
+          List<LabelNode> extracted = AbstractInsnNodeHelper.getLabelTargets(op.operand);
+
+          for (LabelNode l : extracted) {
+//            labelMap.put(l, new IndexedLabelNode(index++));
+            if (!labelMap.containsKey(l)) {
+              labelMap.put(l, new IndexedLabelNode(index++));
+            }
+          }
+
+          break;
+        }
       }
     }
 
@@ -740,12 +817,6 @@ public class InsnListDiffUtils {
           j++;
           break;
         case INSERT: {
-          List<LabelNode> extracted = AbstractInsnNodeHelper.getLabelTargets(op.operand);
-
-          for (int k = 0; k < extracted.size(); k++) {
-            labelMap.putIfAbsent(extracted.get(k), new LabelNode());
-          }
-
           patched.add(AbstractInsnNodeHelper.mapLabelTargets(op.operand, labelMap::get));
         }
         j++;

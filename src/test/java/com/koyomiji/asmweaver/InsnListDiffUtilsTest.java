@@ -544,7 +544,7 @@ class InsnListDiffUtilsTest {
 
     List<AbstractInsnNode> list3 = new ArrayList<>();
     list3.add(LabelNodes.l2);
-    HashMap<LabelNode, LabelNode> labelMap = new HashMap<>();
+    HashMap<LabelNode, IndexedLabelNode> labelMap = new HashMap<>();
     List<AbstractInsnNode> patched = InsnListDiffUtils.patch(
             list3,
             diff,
