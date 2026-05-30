@@ -227,8 +227,6 @@ public class InsnListDiffUtils {
       return labelMap;
     }
 
-    // FIXME
-
     int i = 0, j = 0;
     Map<LabelNode, IndexedLabelNode> labelMap = new HashMap<>();
 
