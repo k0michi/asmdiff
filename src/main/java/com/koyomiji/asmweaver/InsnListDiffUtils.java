@@ -18,6 +18,10 @@ import java.util.function.Function;
 
 public class InsnListDiffUtils {
   public static InsnListDiff invert(InsnListDiff diff) {
+    if (diff == null) {
+      return null;
+    }
+
     List<InsnListDiff.Operation> invertedOperations = new ArrayList<>();
 
     for (InsnListDiff.Operation op : diff.operations) {
@@ -51,6 +55,10 @@ public class InsnListDiffUtils {
    * @throws ConflictException
    */
   public static Pair<InsnListDiff, InsnListDiff> commute(InsnListDiff p, InsnListDiff q) throws ConflictException {
+    if (p == null || q == null) {
+      return Pair.of(q, p);
+    }
+
     List<InsnListDiff.Operation> qPrimeOps = new ArrayList<>();
     List<InsnListDiff.Operation> pPrimeOps = new ArrayList<>();
 
@@ -115,6 +123,14 @@ public class InsnListDiffUtils {
   }
 
   public static InsnListDiff compose(InsnListDiff p, InsnListDiff q) {
+    if (p == null) {
+      return q;
+    }
+
+    if (q == null) {
+      return p;
+    }
+
     List<InsnListDiff.Operation> result = new ArrayList<>();
 
     InsnListDiffPairIterator it = new InsnListDiffPairIterator(p.operations.iterator(), q.operations.iterator());
@@ -154,34 +170,65 @@ public class InsnListDiffUtils {
     return new InsnListDiff(result);
   }
 
-  public static Map<LabelNode, LabelNode> extractLabelMap(List<AbstractInsnNode> list1, List<AbstractInsnNode> list2, InsnListDiff diff) {
-    int i = 0, j = 0;
-    Map<LabelNode, LabelNode> labelMap = new HashMap<>();
-
-    for (InsnListDiff.Operation op : diff.operations) {
-      switch (op.type) {
-        case MATCH:
-          List<LabelNode> labels1 = AbstractInsnNodeHelper.getLabelTargets(list1.get(i));
-          List<LabelNode> labels2 = AbstractInsnNodeHelper.getLabelTargets(list2.get(j));
-          for (int k = 0; k < Math.min(labels1.size(), labels2.size()); k++) {
-            labelMap.put(labels1.get(k), labels2.get(k));
-          }
-          i++;
-          j++;
-          break;
-        case DELETE:
-          i++;
-          break;
-        case INSERT:
-          j++;
-          break;
-      }
-    }
-
-    return labelMap;
-  }
+//  public static Map<LabelNode, LabelNode> extractLabelMap(List<AbstractInsnNode> list1, List<AbstractInsnNode> list2, InsnListDiff diff) {
+//    int i = 0, j = 0;
+//    Map<LabelNode, LabelNode> labelMap = new HashMap<>();
+//
+//    for (InsnListDiff.Operation op : diff.operations) {
+//      switch (op.type) {
+//        case MATCH:
+//          List<LabelNode> labels1 = AbstractInsnNodeHelper.getLabelTargets(list1.get(i));
+//          List<LabelNode> labels2 = AbstractInsnNodeHelper.getLabelTargets(list2.get(j));
+//          for (int k = 0; k < Math.min(labels1.size(), labels2.size()); k++) {
+//            labelMap.put(labels1.get(k), labels2.get(k));
+//          }
+//          i++;
+//          j++;
+//          break;
+//        case DELETE:
+//          i++;
+//          break;
+//        case INSERT:
+//          j++;
+//          break;
+//      }
+//    }
+//
+//    return labelMap;
+//  }
 
   public static Map<LabelNode, IndexedLabelNode> extractIndexedLabelMap(List<AbstractInsnNode> list1, List<AbstractInsnNode> list2, InsnListDiff diff) {
+    if (diff == null) {
+      Map<LabelNode, IndexedLabelNode> labelMap = new HashMap<>();
+
+      int index = 0;
+      for (int i = 0; i < list1.size(); i++) {
+        List<LabelNode> extracted = AbstractInsnNodeHelper.getLabelTargets(list1.get(i));
+
+        for (LabelNode l : extracted) {
+          if (!labelMap.containsKey(l)) {
+            labelMap.put(l, new IndexedLabelNode(index++));
+          }
+        }
+      }
+
+      for (int i = 0; i < list2.size(); i++) {
+        List<LabelNode> extracted1 = AbstractInsnNodeHelper.getLabelTargets(list1.get(i));
+        List<LabelNode> extracted2 = AbstractInsnNodeHelper.getLabelTargets(list2.get(i));
+
+
+        for (int j = 0; j < extracted2.size(); j++) {
+          if (!labelMap.containsKey(extracted2.get(j))) {
+            labelMap.put(extracted2.get(j), labelMap.get(extracted1.get(j)));
+          }
+        }
+      }
+
+      return labelMap;
+    }
+
+    // FIXME
+
     int i = 0, j = 0;
     Map<LabelNode, IndexedLabelNode> labelMap = new HashMap<>();
 
@@ -558,8 +605,18 @@ public class InsnListDiffUtils {
 
         List<InsnListDiff.Operation> operations = new ArrayList<>();
 
+        boolean empty = true;
+
         for (State s = current; s.previous != null; s = s.previous) {
           operations.add(s.operation);
+
+          if (s.operation.type != InsnListDiff.Operation.Type.MATCH) {
+            empty = false;
+          }
+        }
+
+        if (empty) {
+          return null;
         }
 
         Collections.reverse(operations);
@@ -771,6 +828,28 @@ public class InsnListDiffUtils {
   }
 
   public static List<AbstractInsnNode> patch(List<AbstractInsnNode> insns, InsnListDiff diff, Map<LabelNode, IndexedLabelNode> labelMap) {
+    if (diff == null) {
+      int index = 0;
+
+      for (int i = 0; i < insns.size(); i++) {
+        List<LabelNode> extracted = AbstractInsnNodeHelper.getLabelTargets(insns.get(i));
+
+        for (LabelNode l : extracted) {
+          if (!labelMap.containsKey(l)) {
+            labelMap.put(l, new IndexedLabelNode(index++));
+          }
+        }
+      }
+
+      List<AbstractInsnNode> mapped = new  ArrayList<>();
+
+      for (AbstractInsnNode insn : insns) {
+        mapped.add(AbstractInsnNodeHelper.mapLabelTargets(insn, labelMap::get));
+      }
+
+      return mapped;
+    }
+
     // labels in diff to labels in insns
     // For labels that match at least once, keep the original label.
     // Otherwise, create a new label.
@@ -892,6 +971,12 @@ public class InsnListDiffUtils {
   }
 
   public static void write(InsnListDiff diff, CustomDataOutput out, Function<LabelNode, Integer> labelToIndex) throws IOException {
+    out.writeBoolean(diff == null);
+
+    if (diff == null) {
+      return;
+    }
+
     ListHelper.write(
             diff.operations,
             out,
@@ -904,6 +989,10 @@ public class InsnListDiffUtils {
   }
 
   public static InsnListDiff read(CustomDataInput in, Function<Integer, LabelNode> indexToLabel) throws IOException {
+    if (in.readBoolean()) {
+      return null;
+    }
+
     List<InsnListDiff.Operation> operations = ListHelper.read(
             in,
             stream -> {
@@ -915,5 +1004,21 @@ public class InsnListDiffUtils {
     );
 
     return new InsnListDiff(operations);
+  }
+
+  public static int distance(InsnListDiff diff) {
+    if (diff == null) {
+      return 0;
+    }
+
+    int distance = 0;
+
+    for (InsnListDiff.Operation op : diff.operations) {
+      if (op.type == InsnListDiff.Operation.Type.INSERT || op.type == InsnListDiff.Operation.Type.DELETE) {
+        distance++;
+      }
+    }
+
+    return distance;
   }
 }

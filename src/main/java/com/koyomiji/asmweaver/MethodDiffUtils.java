@@ -117,11 +117,9 @@ public class MethodDiffUtils {
             diff.instructions
     );
 
-    // FIXME: null case
-    diff.instructions.operations = ListHelper.map(
-            diff.instructions.operations,
-            op -> InsnListDiffUtils.mapLabels(op, labelMap::get)
-    );
+    if (diff.instructions != null) {
+      diff.instructions.operations = ListHelper.map(diff.instructions.operations, op -> InsnListDiffUtils.mapLabels(op, labelMap::get));
+    }
 
     diff.lineNumbers = ListDiffUtils.diff(
             ListHelper.map(
@@ -171,17 +169,37 @@ public class MethodDiffUtils {
             AnnotationNodeHelper::equals
     );
 
-    if (diff.isEmpty()) {
-      MethodDiff d = new MethodDiff();
-      d.isEmpty = true;
-      return d;
+    if (diff.access == null
+            && diff.name == null
+            && diff.desc == null
+            && diff.signature == null
+            && diff.exceptions == null
+            && diff.parameters == null
+            && diff.visibleAnnotations == null
+            && diff.invisibleAnnotations == null
+            && diff.visibleTypeAnnotations == null
+            && diff.invisibleTypeAnnotations == null
+            && diff.annotationDefault == null
+            && diff.visibleAnnotableParameterCount == null
+            && diff.visibleParameterAnnotations == null
+            && diff.invisibleAnnotableParameterCount == null
+            && diff.invisibleParameterAnnotations == null
+            && diff.instructions == null
+            && diff.lineNumbers == null
+            && diff.tryCatchBlocks == null
+            && diff.maxStack == null
+            && diff.maxLocals == null
+            && diff.localVariables == null
+            && diff.visibleLocalVariableAnnotations == null
+            && diff.invisibleLocalVariableAnnotations == null) {
+      return null;
     }
 
     return diff;
   }
 
   public static MethodNode patch(MethodNode node, MethodDiff diff) {
-    if (diff.isEmpty) {
+    if (diff == null) {
       return node;
     }
 
@@ -322,10 +340,8 @@ public class MethodDiffUtils {
   }
 
   public static MethodDiff invert(MethodDiff diff) {
-    if (diff.isEmpty) {
-      MethodDiff d = new MethodDiff();
-      d.isEmpty = true;
-      return d;
+    if (diff == null) {
+      return null;
     }
 
     MethodDiff inverted = new MethodDiff();
@@ -357,11 +373,11 @@ public class MethodDiffUtils {
   }
 
   public static MethodDiff compose(MethodDiff diff1, MethodDiff diff2) {
-    if (diff1.isEmpty) {
+    if (diff1 == null) {
       return diff2;
     }
 
-    if (diff2.isEmpty) {
+    if (diff2 == null) {
       return diff1;
     }
 
@@ -412,7 +428,7 @@ public class MethodDiffUtils {
   }
 
   public static Pair<MethodDiff, MethodDiff> commute(MethodDiff diff1, MethodDiff diff2) throws ConflictException {
-    if (diff1.isEmpty || diff2.isEmpty) {
+    if (diff1 == null || diff2 == null) {
       return Pair.of(diff2, diff1);
     }
 
@@ -600,9 +616,9 @@ public class MethodDiffUtils {
   public static void write(MethodDiff diff, CustomDataOutput out) throws IOException {
     Function<LabelNode, Integer> labelToIndex = l -> ((IndexedLabelNode) l).index;
 
-    out.writeBoolean(diff.isEmpty);
+    out.writeBoolean(diff == null);
 
-    if (diff.isEmpty) {
+    if (diff == null) {
       return;
     }
 
@@ -680,9 +696,7 @@ public class MethodDiffUtils {
     Function<Integer, LabelNode> indexToLabel = i -> labelMap.computeIfAbsent(i, IndexedLabelNode::new);
 
     if (in.readBoolean()) {
-      MethodDiff d = new MethodDiff();
-      d.isEmpty = true;
-      return d;
+      return null;
     }
 
     MethodDiff diff = new MethodDiff();
@@ -721,5 +735,35 @@ public class MethodDiffUtils {
     diff.invisibleLocalVariableAnnotations = ListDiffUtils.read(in, stream -> AnnotationNodeHelper.readLocalVariableAnnotationNode(stream, indexToLabel));
 
     return diff;
+  }
+
+  public static int distance(MethodDiff diff) {
+    if (diff == null) {
+      return 0;
+    }
+
+    return ListDiffUtils.distance(diff.access)
+            + ListDiffUtils.distance(diff.name)
+            + ListDiffUtils.distance(diff.desc)
+            + ListDiffUtils.distance(diff.signature)
+            + ListDiffUtils.distance(diff.exceptions)
+            + ListDiffUtils.distance(diff.parameters)
+            + ListDiffUtils.distance(diff.visibleAnnotations)
+            + ListDiffUtils.distance(diff.invisibleAnnotations)
+            + ListDiffUtils.distance(diff.visibleTypeAnnotations)
+            + ListDiffUtils.distance(diff.invisibleTypeAnnotations)
+            + ListDiffUtils.distance(diff.annotationDefault)
+            + ListDiffUtils.distance(diff.visibleAnnotableParameterCount)
+            + KeyedListDiffUtils.distance(diff.visibleParameterAnnotations, ListDiffUtils::distance)
+            + ListDiffUtils.distance(diff.invisibleAnnotableParameterCount)
+            + KeyedListDiffUtils.distance(diff.invisibleParameterAnnotations, ListDiffUtils::distance)
+            + InsnListDiffUtils.distance(diff.instructions)
+            + ListDiffUtils.distance(diff.lineNumbers)
+            + ListDiffUtils.distance(diff.tryCatchBlocks)
+            + ListDiffUtils.distance(diff.maxStack)
+            + ListDiffUtils.distance(diff.maxLocals)
+            + ListDiffUtils.distance(diff.localVariables)
+            + ListDiffUtils.distance(diff.visibleLocalVariableAnnotations)
+            + ListDiffUtils.distance(diff.invisibleLocalVariableAnnotations);
   }
 }

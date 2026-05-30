@@ -61,10 +61,29 @@ public class ModuleDiffUtils {
             ListHelper.nullToEmpty(node2.provides),
             ModuleProvideNodeHelper::equals
     );
+
+    if (diff.name == null
+            && diff.access == null
+            && diff.version == null
+            && diff.mainClass == null
+            && diff.packages == null
+            && diff.requires == null
+            && diff.exports == null
+            && diff.opens == null
+            && diff.uses == null
+            && diff.provides == null
+    ) {
+      return null;
+    }
+
     return diff;
   }
 
   public static ModuleNode patch(ModuleNode node, ModuleDiff diff) {
+    if (diff == null) {
+      return node;
+    }
+
     String name = ListDiffUtils.patchNonNullableValue(node.name, diff.name);
     int access = ListDiffUtils.patchNonNullableValue(node.access, diff.access);
     String version = ListDiffUtils.patchNullableValue(node.version, diff.version);
@@ -98,6 +117,10 @@ public class ModuleDiffUtils {
   }
 
   public static ModuleDiff invert(ModuleDiff diff) {
+    if (diff == null) {
+      return null;
+    }
+
     ModuleDiff invertedDiff = new ModuleDiff();
     invertedDiff.name = ListDiffUtils.invert(diff.name);
     invertedDiff.access = ListDiffUtils.invert(diff.access);
@@ -113,6 +136,14 @@ public class ModuleDiffUtils {
   }
 
   public static ModuleDiff compose(ModuleDiff diff1, ModuleDiff diff2) {
+    if (diff1 == null) {
+      return diff2;
+    }
+
+    if (diff2 == null) {
+      return diff1;
+    }
+
     ModuleDiff composedDiff = new ModuleDiff();
     composedDiff.name = ListDiffUtils.compose(diff1.name, diff2.name, String::equals);
     composedDiff.access = ListDiffUtils.compose(diff1.access, diff2.access, Integer::equals);
@@ -128,6 +159,10 @@ public class ModuleDiffUtils {
   }
 
   public static Pair<ModuleDiff, ModuleDiff> commute(ModuleDiff diff1, ModuleDiff diff2) throws ConflictException {
+    if (diff1 == null || diff2 == null) {
+      return Pair.of(diff2, diff1);
+    }
+
     ModuleDiff diff2Prime = new ModuleDiff();
     ModuleDiff diff1Prime = new ModuleDiff();
 
@@ -175,6 +210,12 @@ public class ModuleDiffUtils {
   }
 
   public static void write(ModuleDiff diff, CustomDataOutput out) throws IOException {
+    out.writeBoolean(diff == null);
+
+    if (diff == null) {
+      return;
+    }
+
     ListDiffUtils.write(diff.name, out, (e, s) -> s.writeUTF(e));
     ListDiffUtils.write(diff.access, out, (e, s) -> s.writeInt(e));
     ListDiffUtils.write(diff.version, out, (e, s) -> s.writeUTF(e));
@@ -188,6 +229,10 @@ public class ModuleDiffUtils {
   }
 
   public static ModuleDiff read(CustomDataInput in) throws IOException {
+    if (in.readBoolean()) {
+      return null;
+    }
+
     ModuleDiff diff = new ModuleDiff();
     diff.name = ListDiffUtils.read(in, DataInput::readUTF);
     diff.access = ListDiffUtils.read(in, CustomDataInput::readInt);
@@ -200,5 +245,22 @@ public class ModuleDiffUtils {
     diff.uses = ListDiffUtils.read(in, DataInput::readUTF);
     diff.provides = ListDiffUtils.read(in, ModuleProvideNodeHelper::read);
     return diff;
+  }
+
+  public static int distance(ModuleDiff diff) {
+    if (diff == null) {
+      return 0;
+    }
+
+    return ListDiffUtils.distance(diff.name)
+            + ListDiffUtils.distance(diff.access)
+            + ListDiffUtils.distance(diff.version)
+            + ListDiffUtils.distance(diff.mainClass)
+            + ListDiffUtils.distance(diff.packages)
+            + ListDiffUtils.distance(diff.requires)
+            + ListDiffUtils.distance(diff.exports)
+            + ListDiffUtils.distance(diff.opens)
+            + ListDiffUtils.distance(diff.uses)
+            + ListDiffUtils.distance(diff.provides);
   }
 }

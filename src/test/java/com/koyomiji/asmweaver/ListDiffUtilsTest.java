@@ -14,7 +14,7 @@ class ListDiffUtilsTest {
     var oldList = List.of(1, 2, 3);
     var newList = List.of(1, 2, 3);
     var diff = ListDiffUtils.diff(oldList, newList, Integer::equals);
-    Assertions.assertEquals(0, diff.distance());
+    Assertions.assertEquals(0, ListDiffUtils.distance(diff));
 //    Assertions.assertEquals(3, diff.operations.size());
 //    Assertions.assertEquals(ListDiff.Operation.Type.MATCH, diff.operations.get(0).type);
 //    Assertions.assertEquals(ListDiff.Operation.Type.MATCH, diff.operations.get(1).type);
@@ -125,8 +125,8 @@ class ListDiffUtilsTest {
     var commuted1 = commuted.first;
     var commuted2 = commuted.second;
 
-    Assertions.assertEquals(0, commuted1.distance());
-    Assertions.assertEquals(0, commuted2.distance());
+    Assertions.assertEquals(0, ListDiffUtils.distance(commuted1));
+    Assertions.assertEquals(0, ListDiffUtils.distance(commuted2));
 
 //    Assertions.assertEquals(3, commuted1.operations.size());
 //
@@ -218,7 +218,7 @@ class ListDiffUtilsTest {
     var list2 = List.of(1, 2, 3);
 
     var diff = ListDiffUtils.diff(list1, list2, Integer::equals);
-    Assertions.assertTrue(diff.isEmpty());
+    Assertions.assertNull(diff);
   }
 
   @Test
@@ -227,7 +227,7 @@ class ListDiffUtilsTest {
     var list2 = List.of(1, 4, 3);
 
     var diff = ListDiffUtils.diff(list1, list2, Integer::equals);
-    Assertions.assertFalse(diff.isEmpty());
+    Assertions.assertNotNull(diff);
   }
 
   @Test
@@ -236,7 +236,7 @@ class ListDiffUtilsTest {
     var list2 = List.of(1, 2, 3);
 
     var diff = ListDiffUtils.diff(list1, list2, Integer::equals);
-    Assertions.assertEquals(0, diff.distance());
+    Assertions.assertEquals(0, ListDiffUtils.distance(diff));
   }
 
   @Test
@@ -245,7 +245,7 @@ class ListDiffUtilsTest {
     var list2 = List.of(1, 4, 3);
 
     var diff = ListDiffUtils.diff(list1, list2, Integer::equals);
-    Assertions.assertEquals(2, diff.distance());
+    Assertions.assertEquals(2, ListDiffUtils.distance(diff));
   }
 
   @Test

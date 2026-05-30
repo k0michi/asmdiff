@@ -3,24 +3,14 @@ package com.koyomiji.asmweaver;
 import java.util.List;
 
 public class KeyedListDiff<Key, Value, Diff extends IDiff> implements IDiff {
-  public boolean isEmpty;
   public List<Operation<Key, Value, Diff>> operations;
 
-  public KeyedListDiff() {
-    this.isEmpty = true;
-  }
-
   public KeyedListDiff(List<Operation<Key, Value, Diff>> operations) {
-    this.isEmpty = false;
     this.operations = operations;
   }
 
   @Override
   public boolean isEmpty() {
-    if (isEmpty) {
-      return true;
-    }
-
     for (Operation<Key, Value, Diff> op : operations) {
       if (op.type != Operation.Type.MATCH) {
         return false;
@@ -36,10 +26,6 @@ public class KeyedListDiff<Key, Value, Diff extends IDiff> implements IDiff {
 
   @Override
   public int distance() {
-    if (isEmpty) {
-      return 0;
-    }
-
     int distance = 0;
 
     for (Operation<Key, Value, Diff> op : operations) {

@@ -2,12 +2,10 @@ package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.BinaryReader;
 import com.koyomiji.asmweaver.io.BinaryWriter;
-import com.koyomiji.asmweaver.util.AutoIncrementBiHashMap;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.LabelNode;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -29,7 +27,7 @@ class ClassDiffUtilsTest {
     node2.visit(Opcodes.V1_8, 0, "TestClass", null, "java/lang/Object", null);
     node2.visitEnd();
     ClassDiff diff = ClassDiffUtils.diff(node1, node2);
-    Assertions.assertTrue(diff.isEmpty());
+    Assertions.assertNull(diff);
   }
 
   @Test
@@ -39,7 +37,7 @@ class ClassDiffUtilsTest {
     node2.visit(Opcodes.V1_8, 0, "TestClass", null, "java/lang/Object", null);
     node2.visitEnd();
     ClassDiff diff = ClassDiffUtils.diff(node1, node2);
-    Assertions.assertEquals(0, diff.distance());
+    Assertions.assertEquals(0, ClassDiffUtils.distance(diff));
   }
 
   @Test
@@ -60,8 +58,7 @@ class ClassDiffUtilsTest {
     node2.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC, "TestClass", null, "java/lang/Object", null);
     node2.visitEnd();
     ClassDiff diff = ClassDiffUtils.diff(node1, node2);
-    Assertions.assertFalse(diff.isEmpty());
-    Assertions.assertFalse(diff.access.isEmpty());
+    Assertions.assertNotNull(diff.access);
   }
 
   @Test
@@ -71,8 +68,7 @@ class ClassDiffUtilsTest {
     node2.visit(Opcodes.V1_8, 0, "TestClass2", null, "java/lang/Object", null);
     node2.visitEnd();
     ClassDiff diff = ClassDiffUtils.diff(node1, node2);
-    Assertions.assertFalse(diff.isEmpty());
-    Assertions.assertFalse(diff.name.isEmpty());
+    Assertions.assertNotNull(diff.name);
   }
 
   @Test
@@ -82,8 +78,7 @@ class ClassDiffUtilsTest {
     node2.visit(Opcodes.V1_8, 0, "TestClass", "TestClass", "java/lang/Object", null);
     node2.visitEnd();
     ClassDiff diff = ClassDiffUtils.diff(node1, node2);
-    Assertions.assertFalse(diff.isEmpty());
-    Assertions.assertFalse(diff.signature.isEmpty());
+    Assertions.assertNotNull(diff.signature);
   }
 
   @Test
@@ -93,8 +88,7 @@ class ClassDiffUtilsTest {
     node2.visit(Opcodes.V1_8, 0, "TestClass", null, "SomeClass", null);
     node2.visitEnd();
     ClassDiff diff = ClassDiffUtils.diff(node1, node2);
-    Assertions.assertFalse(diff.isEmpty());
-    Assertions.assertFalse(diff.superName.isEmpty());
+    Assertions.assertNotNull(diff.superName);
   }
 
   @Test
@@ -104,8 +98,7 @@ class ClassDiffUtilsTest {
     node2.visit(Opcodes.V1_8, 0, "TestClass", null, "java/lang/Object", new String[]{"java/io/Serializable"});
     node2.visitEnd();
     ClassDiff diff = ClassDiffUtils.diff(node1, node2);
-    Assertions.assertFalse(diff.isEmpty());
-    Assertions.assertFalse(diff.interfaces.isEmpty());
+    Assertions.assertNotNull(diff.interfaces);
   }
 
   private ClassDiff diff(String oldClassPath, String newClassPath) {
@@ -117,15 +110,13 @@ class ClassDiffUtilsTest {
   @Test
   void test_diff_sample_0() {
     ClassDiff diff = diff("/C1.class", "/C2.class");
-    Assertions.assertFalse(diff.isEmpty());
-    Assertions.assertFalse(diff.name.isEmpty());
+    Assertions.assertNotNull(diff.name);
   }
 
   @Test
   void test_diff_sample_1() {
     ClassDiff diff = diff("/C10.class", "/C11.class");
-    Assertions.assertFalse(diff.isEmpty());
-    Assertions.assertFalse(diff.methods.isEmpty());
+    Assertions.assertNotNull(diff.methods);
   }
 
   @Test
@@ -177,7 +168,7 @@ class ClassDiffUtilsTest {
       ClassNode node1 = unique1.get(i);
       ClassDiff diff12 = ClassDiffUtils.diff(node1, node1);
 
-      Assertions.assertTrue(diff12.isEmpty(), "i=" + i);
+      Assertions.assertNull(diff12, "i=" + i);
     }
   }
 
@@ -192,8 +183,8 @@ class ClassDiffUtilsTest {
 
       var commuted = ClassDiffUtils.commute(diff12, diff23);
 
-      Assertions.assertTrue(commuted.first.isEmpty(), "i=" + i);
-      Assertions.assertTrue(commuted.second.isEmpty(), "i=" + i);
+      Assertions.assertNull(commuted.first, "i=" + i);
+      Assertions.assertNull(commuted.second, "i=" + i);
     }
   }
 
@@ -207,7 +198,7 @@ class ClassDiffUtilsTest {
 
       var inverted = ClassDiffUtils.invert(diff12);
 
-      Assertions.assertTrue(inverted.isEmpty(), "i=" + i);
+      Assertions.assertNull(inverted, "i=" + i);
     }
   }
 
@@ -222,7 +213,7 @@ class ClassDiffUtilsTest {
 
       var composed = ClassDiffUtils.compose(diff12, diff23);
 
-      Assertions.assertTrue(composed.isEmpty(), "i=" + i);
+      Assertions.assertNull(composed, "i=" + i);
     }
   }
 }

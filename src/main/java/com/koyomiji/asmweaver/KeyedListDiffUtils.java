@@ -14,8 +14,8 @@ import java.util.function.Function;
 
 public class KeyedListDiffUtils {
   public static <Key, Value, Diff extends IDiff> KeyedListDiff<Key, Value, Diff> invert(KeyedListDiff<Key, Value, Diff> diff, Function<Diff, Diff> invert) {
-    if (diff.isEmpty) {
-      return new KeyedListDiff<>();
+    if (diff == null) {
+      return null;
     }
 
     List<KeyedListDiff.Operation<Key, Value, Diff>> invertedOperations = new ArrayList<>();
@@ -91,14 +91,14 @@ public class KeyedListDiffUtils {
     boolean isEmpty = true;
 
     for (KeyedListDiff.Operation<Key, Value, Diff> op : operations) {
-      if (op.type != KeyedListDiff.Operation.Type.MATCH || !op.operandDiff.isEmpty()) {
+      if (op.type != KeyedListDiff.Operation.Type.MATCH || op.operandDiff != null) {
         isEmpty = false;
         break;
       }
     }
 
     if (isEmpty) {
-      return new KeyedListDiff<>();
+      return null;
     }
 
     List<KeyedListDiff.Operation<Key, Value, Diff>> reversedOperations = new ArrayList<>();
@@ -134,8 +134,8 @@ public class KeyedListDiffUtils {
             (p1, p2) -> diffFunction.apply(p1.second, p2.second)
     );
 
-    if (pairedDiff.isEmpty) {
-      return new KeyedListDiff<>();
+    if (pairedDiff == null) {
+      return null;
     }
 
     List<KeyedListDiff.Operation<Integer, Value, Diff>> unwrappedOps = new ArrayList<>();
@@ -166,7 +166,7 @@ public class KeyedListDiffUtils {
   }
 
   public static <Key, Value, Diff extends IDiff> List<Value> patch(List<Value> original, KeyedListDiff<Key, Value, Diff> diff, BiFunction<Value, Diff, Value> elementPatch) {
-    if (diff.isEmpty) {
+    if (diff == null) {
       return original;
     }
 
@@ -207,9 +207,9 @@ public class KeyedListDiffUtils {
           ListHelper.ElementWriter<Value> valueWriter,
           ListHelper.ElementWriter<Diff> diffWriter
   ) throws IOException {
-    out.writeBoolean(diff.isEmpty);
+    out.writeBoolean(diff == null);
 
-    if (diff.isEmpty()) {
+    if (diff == null) {
       return;
     }
 
@@ -233,7 +233,7 @@ public class KeyedListDiffUtils {
           ListHelper.ElementReader<Diff> diffReader
   ) throws IOException {
     if (in.readBoolean()) {
-      return new KeyedListDiff<>();
+      return null;
     }
 
     List<KeyedListDiff.Operation<Key, Value, Diff>> ops = ListHelper.read(
@@ -259,7 +259,7 @@ public class KeyedListDiffUtils {
           CommuteFunction<Diff> commuteDiff,
           BiFunction<Value, Value, Diff> diffFunction
   ) throws ConflictException {
-    if (p.isEmpty() || q.isEmpty()) {
+    if (p == null || q == null) {
       return Pair.of(q, p);
     }
 
@@ -319,7 +319,7 @@ public class KeyedListDiffUtils {
 
           // 【方針適用】：insert -> match/change のパターン切り分け
           // q の持っている変更（operandDiff）が空でない（実質的なchangeである）場合は、依存関係があるため交換不可
-          if (!opQBase.operandDiff.isEmpty()) {
+          if (opQBase.operandDiff != null) {
             throw new ConflictException("Conflict: p inserts a node that q subsequently modifies (Key: " + opP.operandKey + ")");
           }
 
@@ -383,11 +383,11 @@ public class KeyedListDiffUtils {
           BiFunction<Value, Diff, Value> applyDiff,
           Function<Diff, Diff> invertDiff
   ) {
-    if (p.isEmpty()) {
+    if (p == null) {
       return q;
     }
 
-    if (q.isEmpty()) {
+    if (q == null) {
       return p;
     }
 
@@ -480,5 +480,23 @@ public class KeyedListDiffUtils {
 
     IteratorHelper.throwIfNext(itQ, () -> new IllegalDiffException("Composition Error: q has remaining operations after p is exhausted."));
     return new KeyedListDiff<>(result);
+  }
+
+  public static <Key, Value, Diff extends IDiff> int distance(KeyedListDiff<Key, Value, Diff> diff, Function<Diff, Integer> diffDistance) {
+    if (diff == null) {
+      return 0;
+    }
+
+    int distance = 0;
+
+    for (KeyedListDiff.Operation<Key, Value, Diff> op : diff.operations) {
+      if (op.type != KeyedListDiff.Operation.Type.MATCH) {
+        distance++;
+      } else {
+        distance += diffDistance.apply(op.operandDiff);
+      }
+    }
+
+    return distance;
   }
 }

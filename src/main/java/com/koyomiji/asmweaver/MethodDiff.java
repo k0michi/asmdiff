@@ -5,8 +5,6 @@ import org.objectweb.asm.tree.*;
 import java.util.List;
 
 public class MethodDiff implements IDiff {
-  public boolean isEmpty;
-
   public ListDiff<Integer> access;
   public ListDiff<String> name;
   public ListDiff<String> desc;
@@ -34,10 +32,6 @@ public class MethodDiff implements IDiff {
 
   @Override
   public boolean isEmpty() {
-    if (isEmpty) {
-      return true;
-    }
-
     return access.isEmpty()
             && name.isEmpty()
             && desc.isEmpty()
@@ -65,10 +59,6 @@ public class MethodDiff implements IDiff {
 
   @Override
   public int distance() {
-    if (isEmpty) {
-      return 0;
-    }
-
     return access.distance()
             + name.distance()
             + desc.distance()

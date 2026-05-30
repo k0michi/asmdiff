@@ -37,10 +37,26 @@ public class RecordComponentDiffUtils {
             AnnotationNodeHelper::equals
     );
     // attrs
+
+    if (diff.name == null
+            && diff.descriptor == null
+            && diff.signature == null
+            && diff.visibleAnnotations == null
+            && diff.invisibleAnnotations == null
+            && diff.visibleTypeAnnotations == null
+            && diff.invisibleTypeAnnotations == null
+    ) {
+      return null;
+    }
+
     return diff;
   }
 
   public static RecordComponentNode patch(RecordComponentNode node, RecordComponentDiff diff) {
+    if (diff == null) {
+      return node;
+    }
+
     String name = ListDiffUtils.patchNonNullableValue(node.name, diff.name);
     String descriptor = ListDiffUtils.patchNonNullableValue(node.descriptor, diff.descriptor);
     String signature = ListDiffUtils.patchNullableValue(node.signature, diff.signature);
@@ -66,6 +82,10 @@ public class RecordComponentDiffUtils {
   }
 
   public static RecordComponentDiff invert(RecordComponentDiff diff) {
+    if (diff == null) {
+      return null;
+    }
+
     RecordComponentDiff inverted = new RecordComponentDiff();
     inverted.name = ListDiffUtils.invert(diff.name);
     inverted.descriptor = ListDiffUtils.invert(diff.descriptor);
@@ -86,6 +106,14 @@ public class RecordComponentDiffUtils {
   }
 
   public static RecordComponentDiff compose(RecordComponentDiff diff1, RecordComponentDiff diff2) {
+    if (diff1 == null) {
+      return diff2;
+    }
+
+    if (diff2 == null) {
+      return diff1;
+    }
+
     RecordComponentDiff composed = new RecordComponentDiff();
     composed.name = ListDiffUtils.compose(diff1.name, diff2.name, String::equals);
     composed.descriptor = ListDiffUtils.compose(diff1.descriptor, diff2.descriptor, String::equals);
@@ -114,6 +142,10 @@ public class RecordComponentDiffUtils {
   }
 
   public static Pair<RecordComponentDiff, RecordComponentDiff> commute(RecordComponentDiff diff1, RecordComponentDiff diff2) throws ConflictException {
+    if (diff1 == null || diff2 == null) {
+      return Pair.of(diff2, diff1);
+    }
+
     RecordComponentDiff diff2Prime = new RecordComponentDiff();
     RecordComponentDiff diff1Prime = new RecordComponentDiff();
 
@@ -165,6 +197,12 @@ public class RecordComponentDiffUtils {
   }
 
   public static void write(RecordComponentDiff diff, CustomDataOutput out) throws IOException {
+    out.writeBoolean(diff == null);
+
+    if (diff == null) {
+      return;
+    }
+
     ListDiffUtils.write(diff.name, out, (e, s) -> s.writeUTF(e));
     ListDiffUtils.write(diff.descriptor, out, (e, s) -> s.writeUTF(e));
     ListDiffUtils.write(diff.signature, out, (e, s) -> s.writeUTF(e));
@@ -175,6 +213,10 @@ public class RecordComponentDiffUtils {
   }
 
   public static RecordComponentDiff read(CustomDataInput in) throws IOException {
+    if (in.readBoolean()) {
+      return null;
+    }
+
     RecordComponentDiff diff = new RecordComponentDiff();
     diff.name = ListDiffUtils.read(in, DataInput::readUTF);
     diff.descriptor = ListDiffUtils.read(in, DataInput::readUTF);
@@ -184,5 +226,19 @@ public class RecordComponentDiffUtils {
     diff.visibleTypeAnnotations = ListDiffUtils.read(in, AnnotationNodeHelper::readTypeAnnotationNode);
     diff.invisibleTypeAnnotations = ListDiffUtils.read(in, AnnotationNodeHelper::readTypeAnnotationNode);
     return diff;
+  }
+
+  public static int distance(RecordComponentDiff diff) {
+    if (diff == null) {
+      return 0;
+    }
+
+    return ListDiffUtils.distance(diff.name)
+            + ListDiffUtils.distance(diff.descriptor)
+            +  ListDiffUtils.distance(diff.signature)
+            + ListDiffUtils.distance(diff.visibleAnnotations)
+            + ListDiffUtils.distance(diff.invisibleAnnotations)
+            + ListDiffUtils.distance(diff.visibleTypeAnnotations)
+            + ListDiffUtils.distance(diff.invisibleTypeAnnotations);
   }
 }

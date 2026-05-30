@@ -2,15 +2,11 @@ package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.CustomDataOutput;
-import com.koyomiji.asmweaver.util.AutoIncrementBiHashMap;
 import com.koyomiji.asmweaver.util.tuple.Pair;
 import org.objectweb.asm.tree.*;
 
 import java.io.DataInput;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Function;
 
 public class ClassDiffUtils {
 
@@ -44,10 +40,43 @@ public class ClassDiffUtils {
     diff.recordComponents = KeyedListDiffUtils.diff(ListHelper.nullToEmpty(class1.recordComponents), ListHelper.nullToEmpty(class2.recordComponents), (rc) -> new MemberKey(rc.name, rc.descriptor), RecordComponentDiffUtils::diff);
     diff.fields = KeyedListDiffUtils.diff(class1.fields, class2.fields, (f) -> new MemberKey(f.name, f.desc), FieldDiffUtils::diff);
     diff.methods = KeyedListDiffUtils.diff(class1.methods, class2.methods, (m) -> new MemberKey(m.name, m.desc), MethodDiffUtils::diff);
+
+    if (diff.version == null
+            && diff.access == null
+            && diff.name == null
+            && diff.signature == null
+            && diff.superName == null
+            && diff.interfaces == null
+            && diff.sourceFile == null
+            && diff.sourceDebug == null
+            && diff.module == null
+            && diff.outerClass == null
+            && diff.outerMethod == null
+            && diff.outerMethodDesc == null
+            && diff.visibleAnnotations == null
+            && diff.invisibleAnnotations == null
+            && diff.visibleTypeAnnotations == null
+            && diff.invisibleTypeAnnotations == null
+            && diff.innerClasses == null
+            && diff.nestHostClass == null
+            && diff.nestMembers == null
+            && diff.permittedSubclasses == null
+            && diff.recordComponents == null
+            && diff.fields == null
+            && diff.methods == null
+    ) {
+      return null;
+    }
+
+
     return diff;
   }
 
   public static ClassNode patch(ClassNode node, ClassDiff diff) {
+    if (diff == null) {
+      return node;
+    }
+
     ClassNode patched = new ClassNode();
     patched.version = ListDiffUtils.patchNonNullableValue(
             node.version,
@@ -151,6 +180,10 @@ public class ClassDiffUtils {
   }
 
   public static ClassDiff invert(ClassDiff diff) {
+    if (diff == null) {
+      return null;
+    }
+
     ClassDiff inverted = new ClassDiff();
     inverted.version = ListDiffUtils.invert(diff.version);
     inverted.access = ListDiffUtils.invert(diff.access);
@@ -191,6 +224,14 @@ public class ClassDiffUtils {
   }
 
   public static ClassDiff compose(ClassDiff diff1, ClassDiff diff2) {
+    if (diff1 == null) {
+      return diff2;
+    }
+
+    if (diff2 == null) {
+      return diff1;
+    }
+
     ClassDiff composed = new ClassDiff();
     composed.version = ListDiffUtils.compose(diff1.version, diff2.version, Integer::equals);
     composed.access = ListDiffUtils.compose(diff1.access, diff2.access, Integer::equals);
@@ -243,6 +284,10 @@ public class ClassDiffUtils {
   }
 
   public static Pair<ClassDiff, ClassDiff> commute(ClassDiff diff1, ClassDiff diff2) throws ConflictException {
+    if (diff1 == null || diff2 == null) {
+      return Pair.of(diff2, diff1);
+    }
+
     ClassDiff diffPrime2 = new ClassDiff();
     ClassDiff diffPrime1 = new ClassDiff();
 
@@ -362,6 +407,12 @@ public class ClassDiffUtils {
   }
 
   public static void write(ClassDiff diff, CustomDataOutput out) throws IOException {
+    out.writeBoolean(diff == null);
+
+    if (diff == null) {
+      return;
+    }
+
     ListDiffUtils.write(diff.version, out, (element, stream) -> stream.writeInt(element));
     ListDiffUtils.write(diff.access, out, (element, stream) -> stream.writeInt(element));
     ListDiffUtils.write(diff.name, out, (element, stream) -> stream.writeUTF(element));
@@ -404,6 +455,10 @@ public class ClassDiffUtils {
   }
 
   public static ClassDiff read(CustomDataInput in) throws IOException {
+    if (in.readBoolean()) {
+      return null;
+    }
+
     ClassDiff diff = new ClassDiff();
     diff.version = ListDiffUtils.read(in, DataInput::readInt);
     diff.access = ListDiffUtils.read(in, DataInput::readInt);
@@ -444,5 +499,35 @@ public class ClassDiffUtils {
             stream -> MethodDiffUtils.read(in)
     );
     return diff;
+  }
+
+  public static int distance(ClassDiff diff) {
+    if (diff == null) {
+      return 0;
+    }
+
+    return ListDiffUtils.distance(diff.version)
+            + ListDiffUtils.distance(diff.access)
+            + ListDiffUtils.distance(diff.name)
+            + ListDiffUtils.distance(diff.signature)
+            + ListDiffUtils.distance(diff.superName)
+            + ListDiffUtils.distance(diff.interfaces)
+            + ListDiffUtils.distance(diff.sourceFile)
+            + ListDiffUtils.distance(diff.sourceDebug)
+            + KeyedListDiffUtils.distance(diff.module, ModuleDiffUtils::distance)
+            + ListDiffUtils.distance(diff.outerClass)
+            + ListDiffUtils.distance(diff.outerMethod)
+            + ListDiffUtils.distance(diff.outerMethodDesc)
+            + ListDiffUtils.distance(diff.visibleAnnotations)
+            + ListDiffUtils.distance(diff.invisibleAnnotations)
+            + ListDiffUtils.distance(diff.visibleTypeAnnotations)
+            + ListDiffUtils.distance(diff.invisibleTypeAnnotations)
+            + ListDiffUtils.distance(diff.innerClasses)
+            + ListDiffUtils.distance(diff.nestHostClass)
+            + ListDiffUtils.distance(diff.nestMembers)
+            + ListDiffUtils.distance(diff.permittedSubclasses)
+            + KeyedListDiffUtils.distance(diff.recordComponents, RecordComponentDiffUtils::distance)
+            + KeyedListDiffUtils.distance(diff.fields, FieldDiffUtils::distance)
+            + KeyedListDiffUtils.distance(diff.methods, MethodDiffUtils::distance);
   }
 }

@@ -64,10 +64,27 @@ public class FieldDiffUtils {
             AnnotationNodeHelper::equals
     );
     // attributes
+
+    if (diff.access == null
+            && diff.name == null
+            && diff.desc == null
+            && diff.signature == null
+            && diff.value == null
+            && diff.visibleAnnotations == null
+            && diff.invisibleAnnotations == null
+            && diff.visibleTypeAnnotations == null
+            && diff.invisibleTypeAnnotations == null) {
+      return null;
+    }
+
     return diff;
   }
 
   public static FieldNode patch(FieldNode node, FieldDiff diff) {
+    if (diff == null) {
+      return node;
+    }
+
     int access = ListDiffUtils.patchNonNullableValue(node.access, diff.access);
     String name = ListDiffUtils.patchNonNullableValue(node.name, diff.name);
     String desc = ListDiffUtils.patchNonNullableValue(node.desc, diff.desc);
@@ -83,6 +100,10 @@ public class FieldDiffUtils {
   }
 
   public static FieldDiff invert(FieldDiff diff) {
+    if (diff == null) {
+      return null;
+    }
+
     FieldDiff inverted = new FieldDiff();
     inverted.access = ListDiffUtils.invert(diff.access);
     inverted.name = ListDiffUtils.invert(diff.name);
@@ -97,6 +118,14 @@ public class FieldDiffUtils {
   }
 
   public static FieldDiff compose(FieldDiff diff1, FieldDiff diff2) {
+    if (diff1 == null) {
+      return diff2;
+    }
+
+    if (diff2 == null) {
+      return diff1;
+    }
+
     FieldDiff composed = new FieldDiff();
     composed.access = ListDiffUtils.compose(diff1.access, diff2.access, Integer::equals);
     composed.name = ListDiffUtils.compose(diff1.name, diff2.name, String::equals);
@@ -111,6 +140,10 @@ public class FieldDiffUtils {
   }
 
   public static Pair<FieldDiff, FieldDiff> commute(FieldDiff diff1, FieldDiff diff2) throws ConflictException {
+    if (diff1 == null || diff2 == null) {
+      return Pair.of(diff2, diff1);
+    }
+
     FieldDiff diff2Prime = new FieldDiff();
     FieldDiff diff1Prime = new FieldDiff();
 
@@ -154,6 +187,12 @@ public class FieldDiffUtils {
   }
 
   public static void write(FieldDiff diff, CustomDataOutput out) throws IOException {
+    out.writeBoolean(diff == null);
+
+    if (diff == null) {
+      return;
+    }
+
     ListDiffUtils.write(diff.access, out, (d, out2) -> out2.writeInt(d));
     ListDiffUtils.write(diff.name, out, (d, out2) -> out2.writeUTF(d));
     ListDiffUtils.write(diff.desc, out, (d, out2) -> out2.writeUTF(d));
@@ -166,6 +205,10 @@ public class FieldDiffUtils {
   }
 
   public static FieldDiff read(CustomDataInput in) throws IOException {
+    if (in.readBoolean()) {
+      return null;
+    }
+
     FieldDiff diff = new FieldDiff();
     diff.access = ListDiffUtils.read(in, DataInput::readInt);
     diff.name = ListDiffUtils.read(in, DataInput::readUTF);
@@ -183,5 +226,21 @@ public class FieldDiffUtils {
             AnnotationNodeHelper::readTypeAnnotationNode
     );
     return diff;
+  }
+
+  public static int distance(FieldDiff diff) {
+    if (diff == null) {
+      return 0;
+    }
+
+    return ListDiffUtils.distance(diff.access)
+            + ListDiffUtils.distance(diff.name)
+            + ListDiffUtils.distance(diff.desc)
+            + ListDiffUtils.distance(diff.signature)
+            + ListDiffUtils.distance(diff.value)
+            + ListDiffUtils.distance(diff.visibleAnnotations)
+            + ListDiffUtils.distance(diff.invisibleAnnotations)
+            + ListDiffUtils.distance(diff.visibleTypeAnnotations)
+            + ListDiffUtils.distance(diff.invisibleTypeAnnotations);
   }
 }

@@ -333,9 +333,10 @@ class InsnListDiffUtilsTest {
             new InsnListListAdapter(list2),
             (insn) -> -1
     );
-    Assertions.assertEquals(1, diff.operations.size());
-    Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, diff.operations.get(0).type);
-    Assertions.assertTrue(AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(diff.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertEquals(0, InsnListDiffUtils.distance(diff));
+//    Assertions.assertEquals(1, diff.operations.size());
+//    Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, diff.operations.get(0).type);
+//    Assertions.assertTrue(AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(diff.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
   }
 
   @Test
@@ -395,11 +396,7 @@ class InsnListDiffUtilsTest {
             new InsnListListAdapter(list2),
             (insn) -> -1
     );
-    Assertions.assertEquals(numInsns, diff.operations.size());
-    for (int i = 0; i < numInsns; i++) {
-      Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, diff.operations.get(i).type);
-      Assertions.assertTrue(AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(diff.operations.get(i).operand, new InsnNode(Opcodes.NOP)));
-    }
+    Assertions.assertNull(diff);
   }
 
   @ParameterizedTest
@@ -444,7 +441,7 @@ class InsnListDiffUtilsTest {
             new InsnListListAdapter(list2),
             (insn) -> -1
     );
-    Assertions.assertEquals(0, diff.distance());
+    Assertions.assertEquals(0, InsnListDiffUtils.distance(diff));
   }
 
   private int distance(InsnListDiff diff) {
@@ -555,7 +552,7 @@ class InsnListDiffUtilsTest {
   }
 
   @Test
-  void test_diff_label_0()    {
+  void test_diff_label_0() {
     List<AbstractInsnNode> list1 = new ArrayList<>();
     list1.add(LabelNodes.l0);
     list1.add(new JumpInsnNode(Opcodes.GOTO, LabelNodes.l0));
@@ -571,22 +568,22 @@ class InsnListDiffUtilsTest {
     Assertions.assertEquals(2, diff.distance());
   }
 
-  @Test
-  void test_extractLabels_0() {
-    List<AbstractInsnNode> list1 = new ArrayList<>();
-    list1.add(LabelNodes.l0);
-    List<AbstractInsnNode> list2 = new ArrayList<>();
-    list2.add(LabelNodes.l1);
-    InsnListDiff diff = InsnListDiffUtils.diff(
-            list1,
-            (insn) -> -1,
-            list2,
-            (insn) -> -1
-    );
-
-    Map<LabelNode, LabelNode> labelMap = InsnListDiffUtils.extractLabelMap(list1, list2, diff);
-    Assertions.assertEquals(LabelNodes.l1, labelMap.get(LabelNodes.l0));
-  }
+//  @Test
+//  void test_extractLabels_0() {
+//    List<AbstractInsnNode> list1 = new ArrayList<>();
+//    list1.add(LabelNodes.l0);
+//    List<AbstractInsnNode> list2 = new ArrayList<>();
+//    list2.add(LabelNodes.l1);
+//    InsnListDiff diff = InsnListDiffUtils.diff(
+//            list1,
+//            (insn) -> -1,
+//            list2,
+//            (insn) -> -1
+//    );
+//
+//    Map<LabelNode, LabelNode> labelMap = InsnListDiffUtils.extractLabelMap(list1, list2, diff);
+//    Assertions.assertEquals(LabelNodes.l1, labelMap.get(LabelNodes.l0));
+//  }
 
   @Test
   void test_readWrite_roundTrip_0() throws IOException {

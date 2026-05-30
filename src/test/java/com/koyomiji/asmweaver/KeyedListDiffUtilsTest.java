@@ -62,24 +62,54 @@ class KeyedListDiffUtilsTest {
   }
 
   private KeyedObjectDiff diffKeyedObject(KeyedObject o1, KeyedObject o2) {
-    return new KeyedObjectDiff(ListDiffUtils.diff(List.of(o1.value), List.of(o2.value), String::equals));
+    var listDiff = ListDiffUtils.diff(List.of(o1.value), List.of(o2.value), String::equals);
+
+    if (listDiff == null) {
+      return null;
+    }
+
+    return new KeyedObjectDiff(listDiff);
   }
 
   private KeyedObject patchKeyedObject(KeyedObject o, KeyedObjectDiff diff) {
+    if (diff == null) {
+      return o;
+    }
+
     return new KeyedObject(o.key, ListDiffUtils.patchNonNullableValue(o.value, diff.value));
   }
 
   private KeyedObjectDiff invertKeyedObjectDiff(KeyedObjectDiff diff) {
+    if (diff == null) {
+      return null;
+    }
+
     return new KeyedObjectDiff(ListDiffUtils.invert(diff.value));
   }
 
   private Pair<KeyedObjectDiff, KeyedObjectDiff> commuteKeyedObjectDiffs(KeyedObjectDiff diff1, KeyedObjectDiff diff2) throws ConflictException {
+    if (diff1 == null || diff2 == null) {
+      return Pair.of(diff2, diff1);
+    }
+
     var commuted = ListDiffUtils.commute(diff1.value, diff2.value, Objects::equals);
     return Pair.of(new KeyedObjectDiff(commuted.first), new KeyedObjectDiff(commuted.second));
   }
 
   private KeyedObjectDiff composeKeyedObjectDiffs(KeyedObjectDiff diff1, KeyedObjectDiff diff2) {
+    if (diff1 == null) {
+      return diff2;
+    }
+
+    if (diff2 == null) {
+      return diff1;
+    }
+
     return new KeyedObjectDiff(ListDiffUtils.compose(diff1.value, diff2.value, Objects::equals));
+  }
+
+  private int distanceKeyedObjectDiff(KeyedObjectDiff diff) {
+    return ListDiffUtils.distance(diff.value);
   }
 
   private void writeDiff(KeyedObjectDiff diff, CustomDataOutput out) throws IOException {
@@ -104,7 +134,7 @@ class KeyedListDiffUtilsTest {
             this::diffKeyedObject
     );
 
-    Assertions.assertTrue(diff.isEmpty());
+    Assertions.assertNull(diff);
 //    Assertions.assertEquals(3, diff.operations.size());
 //    Assertions.assertEquals(KeyedListDiff.Operation.Type.MATCH, diff.operations.get(0).type);
 //    Assertions.assertTrue(diff.operations.get(0).operandDiff.isEmpty());
@@ -133,9 +163,9 @@ class KeyedListDiffUtilsTest {
 
     Assertions.assertEquals(4, diff.operations.size());
     Assertions.assertEquals(KeyedListDiff.Operation.Type.MATCH, diff.operations.get(0).type);
-    Assertions.assertTrue(diff.operations.get(0).operandDiff.isEmpty());
+    Assertions.assertNull(diff.operations.get(0).operandDiff);
     Assertions.assertEquals(KeyedListDiff.Operation.Type.MATCH, diff.operations.get(1).type);
-    Assertions.assertFalse(diff.operations.get(1).operandDiff.isEmpty());
+    Assertions.assertNotNull(diff.operations.get(1).operandDiff);
     Assertions.assertEquals(KeyedListDiff.Operation.Type.DELETE, diff.operations.get(2).type);
     Assertions.assertEquals(KeyedListDiff.Operation.Type.INSERT, diff.operations.get(3).type);
   }
@@ -197,8 +227,7 @@ class KeyedListDiffUtilsTest {
             this::diffKeyedObject
     );
 
-    Assertions.assertTrue(diff.isEmpty());
-//    Assertions.assertEquals(0, diff.operations.size());
+    Assertions.assertNull(diff);
   }
 
   @Test
@@ -220,7 +249,7 @@ class KeyedListDiffUtilsTest {
             this::diffKeyedObject
     );
 
-    Assertions.assertEquals(0, diff.distance());
+    Assertions.assertEquals(0, KeyedListDiffUtils.distance(diff, this::distanceKeyedObjectDiff));
   }
 
   @Test
@@ -431,8 +460,8 @@ class KeyedListDiffUtilsTest {
     Assertions.assertEquals(KeyedListDiff.Operation.Type.MATCH, diff.operations.get(0).type);
     Assertions.assertEquals(KeyedListDiff.Operation.Type.MATCH, diff.operations.get(1).type);
 
-    Assertions.assertEquals(0, diff.operations.get(0).operandDiff.distance());
-    Assertions.assertEquals(2, diff.operations.get(1).operandDiff.distance());
+    Assertions.assertEquals(0, ListDiffUtils.distance(diff.operations.get(0).operandDiff));
+    Assertions.assertEquals(2, ListDiffUtils.distance(diff.operations.get(1).operandDiff));
 
 //    Assertions.assertEquals(1, diff.operations.get(0).operandDiff.operations.size());
 //    Assertions.assertEquals(2, diff.operations.get(1).operandDiff.operations.size());

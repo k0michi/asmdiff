@@ -87,9 +87,9 @@ public class TestUtils {
         U d = diff.apply(nodes1.get(i), nodes2.get(j));
 
         if (i == j) {
-          Assertions.assertTrue(d.isEmpty(), String.format("i=%d, j=%d", i, j));
+          Assertions.assertNull(d, String.format("i=%d, j=%d", i, j));
         } else {
-          Assertions.assertFalse(d.isEmpty(), String.format("i=%d, j=%d", i, j));
+          Assertions.assertNotNull(d, String.format("i=%d, j=%d", i, j));
         }
       }
     }
