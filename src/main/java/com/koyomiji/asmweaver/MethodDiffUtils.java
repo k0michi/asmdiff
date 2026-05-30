@@ -4,6 +4,7 @@ import com.koyomiji.asmweaver.analysis.DefUse;
 import com.koyomiji.asmweaver.analysis.DefUseChainAnalyzer;
 import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.CustomDataOutput;
+import com.koyomiji.asmweaver.util.AutoIncrementBiHashMap;
 import com.koyomiji.asmweaver.util.UnionFind;
 import com.koyomiji.asmweaver.util.tuple.Pair;
 import com.koyomiji.asmweaver.util.tuple.Triplet;
@@ -591,7 +592,9 @@ public class MethodDiffUtils {
     return Pair.of(diff2Prime, diff1Prime);
   }
 
-  public static void write(MethodDiff diff, CustomDataOutput out, Function<LabelNode, Integer> labelToIndex) throws IOException {
+  public static void write(MethodDiff diff, CustomDataOutput out) throws IOException {
+    Function<LabelNode, Integer> labelToIndex = l -> ((IndexedLabelNode) l).index;
+
     out.writeBoolean(diff.isEmpty);
 
     if (diff.isEmpty) {
@@ -625,11 +628,14 @@ public class MethodDiffUtils {
             (element, stream) -> ListHelper.write(element, stream, AnnotationNodeHelper::write),
             (element, stream) -> ListDiffUtils.write(element, stream, AnnotationNodeHelper::write)
     );
-    InsnListDiffUtils.write(
-            diff.instructions,
-            out,
-            labelToIndex
-    );
+    {
+      // FIXME:
+      InsnListDiffUtils.write(
+              diff.instructions,
+              out,
+              new AutoIncrementBiHashMap<>()::get
+      );
+    }
     ListDiffUtils.write(
             diff.lineNumbers,
             out,
@@ -667,7 +673,10 @@ public class MethodDiffUtils {
     );
   }
 
-  public static MethodDiff read(CustomDataInput in, Function<Integer, LabelNode> labelToIndex) throws IOException {
+  public static MethodDiff read(CustomDataInput in) throws IOException {
+    Map<Integer, IndexedLabelNode> labelMap = new HashMap<>();
+    Function<Integer, LabelNode> indexToLabel = i -> labelMap.computeIfAbsent(i, IndexedLabelNode::new);
+
     if (in.readBoolean()) {
       MethodDiff d = new MethodDiff();
       d.isEmpty = true;
@@ -700,14 +709,18 @@ public class MethodDiffUtils {
             stream -> ListHelper.read(stream, AnnotationNodeHelper::readAnnotationNode),
             stream -> ListDiffUtils.read(stream, AnnotationNodeHelper::readAnnotationNode)
     );
-    diff.instructions = InsnListDiffUtils.read(in, labelToIndex);
-    diff.lineNumbers = ListDiffUtils.read(in, stream -> (LineNumberNode) AbstractInsnNodeHelper.read(stream, labelToIndex));
-    diff.tryCatchBlocks = ListDiffUtils.read(in, stream -> TryCatchBlockNodeHelper.read(stream, labelToIndex));
+    {
+      // FIXME:
+      Map<Integer, LabelNode> map = new HashMap<>();
+      diff.instructions = InsnListDiffUtils.read(in, i -> map.computeIfAbsent(i, k -> new LabelNode()));
+    }
+    diff.lineNumbers = ListDiffUtils.read(in, stream -> (LineNumberNode) AbstractInsnNodeHelper.read(stream, indexToLabel));
+    diff.tryCatchBlocks = ListDiffUtils.read(in, stream -> TryCatchBlockNodeHelper.read(stream, indexToLabel));
     diff.maxStack = ListDiffUtils.read(in, DataInput::readInt);
     diff.maxLocals = ListDiffUtils.read(in, DataInput::readInt);
-    diff.localVariables = ListDiffUtils.read(in, stream -> LocalVariableNodeHelper.read(stream, labelToIndex));
-    diff.visibleLocalVariableAnnotations = ListDiffUtils.read(in, stream -> AnnotationNodeHelper.readLocalVariableAnnotationNode(stream, labelToIndex));
-    diff.invisibleLocalVariableAnnotations = ListDiffUtils.read(in, stream -> AnnotationNodeHelper.readLocalVariableAnnotationNode(stream, labelToIndex));
+    diff.localVariables = ListDiffUtils.read(in, stream -> LocalVariableNodeHelper.read(stream, indexToLabel));
+    diff.visibleLocalVariableAnnotations = ListDiffUtils.read(in, stream -> AnnotationNodeHelper.readLocalVariableAnnotationNode(stream, indexToLabel));
+    diff.invisibleLocalVariableAnnotations = ListDiffUtils.read(in, stream -> AnnotationNodeHelper.readLocalVariableAnnotationNode(stream, indexToLabel));
 
     return diff;
   }

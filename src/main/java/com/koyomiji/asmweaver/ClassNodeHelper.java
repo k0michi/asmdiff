@@ -161,7 +161,7 @@ public class ClassNodeHelper {
     ListHelper.write(
             node.methods,
             out,
-            (element, stream) -> MethodNodeHelper.write(element, stream, labelToIndex)
+            MethodNodeHelper::write
     );
   }
 
@@ -189,7 +189,7 @@ public class ClassNodeHelper {
     node.permittedSubclasses = ListHelper.read(in, DataInput::readUTF);
     node.recordComponents = ListHelper.read(in, RecordComponentNodeHelper::read);
     node.fields = ListHelper.read(in, FieldNodeHelper::read);
-    node.methods = ListHelper.read(in, (input) -> MethodNodeHelper.read(input, labelToIndex));
+    node.methods = ListHelper.read(in, MethodNodeHelper::read);
     return node;
   }
 }

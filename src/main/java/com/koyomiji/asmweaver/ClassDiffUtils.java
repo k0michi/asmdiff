@@ -362,10 +362,6 @@ public class ClassDiffUtils {
   }
 
   public static void write(ClassDiff diff, CustomDataOutput out) throws IOException {
-    write(diff, out, new AutoIncrementBiHashMap<>()::get);
-  }
-
-  public static void write(ClassDiff diff, CustomDataOutput out, Function<LabelNode, Integer> labelToIndex) throws IOException {
     ListDiffUtils.write(diff.version, out, (element, stream) -> stream.writeInt(element));
     ListDiffUtils.write(diff.access, out, (element, stream) -> stream.writeInt(element));
     ListDiffUtils.write(diff.name, out, (element, stream) -> stream.writeUTF(element));
@@ -402,17 +398,12 @@ public class ClassDiffUtils {
     );
     KeyedListDiffUtils.write(diff.methods, out,
             MemberKeyUtils::write,
-            (element, stream) -> MethodNodeHelper.write(element, stream, labelToIndex),
-            (element, stream) -> MethodDiffUtils.write(element, stream, labelToIndex)
+            MethodNodeHelper::write,
+            MethodDiffUtils::write
     );
   }
 
   public static ClassDiff read(CustomDataInput in) throws IOException {
-    Map<Integer, LabelNode> indexToLabel = new HashMap<>();
-    return read(in, i -> indexToLabel.computeIfAbsent(i, k -> new LabelNode()));
-  }
-
-  public static ClassDiff read(CustomDataInput in, Function<Integer, LabelNode> indexToLabel) throws IOException {
     ClassDiff diff = new ClassDiff();
     diff.version = ListDiffUtils.read(in, DataInput::readInt);
     diff.access = ListDiffUtils.read(in, DataInput::readInt);
@@ -449,8 +440,8 @@ public class ClassDiffUtils {
     diff.methods = KeyedListDiffUtils.read(
             in,
             MemberKeyUtils::read,
-            stream -> MethodNodeHelper.read(in, indexToLabel),
-            stream -> MethodDiffUtils.read(in, indexToLabel)
+            stream -> MethodNodeHelper.read(in),
+            stream -> MethodDiffUtils.read(in)
     );
     return diff;
   }

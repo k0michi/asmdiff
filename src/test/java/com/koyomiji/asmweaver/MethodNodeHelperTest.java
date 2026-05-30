@@ -178,8 +178,8 @@ class MethodNodeHelperTest {
 
     TestUtils.verifyRoundTrip(
             MethodNodeHelperTest::generateUnique,
-            (value, out) -> MethodNodeHelper.write(value, out, labels::get),
-            (in) -> MethodNodeHelper.read(in, labels::getKey),
+            MethodNodeHelper::write,
+            MethodNodeHelper::read,
             MethodNodeHelper::equalsNormalizeLabels
     );
   }

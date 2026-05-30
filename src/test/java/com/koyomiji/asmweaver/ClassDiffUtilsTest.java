@@ -157,11 +157,10 @@ class ClassDiffUtilsTest {
         ClassNode node2 = unique2.get(j);
         ClassDiff diff = ClassDiffUtils.diff(node1, node2);
 
-        AutoIncrementBiHashMap<LabelNode> labelMap = new AutoIncrementBiHashMap<>();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ClassDiffUtils.write(diff, new BinaryWriter(baos), labelMap::get);
+        ClassDiffUtils.write(diff, new BinaryWriter(baos));
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-        ClassDiff read = ClassDiffUtils.read(new BinaryReader(bais), labelMap::getKey);
+        ClassDiff read = ClassDiffUtils.read(new BinaryReader(bais));
 
         ClassNode patched = ClassDiffUtils.patch(node1, read);
 

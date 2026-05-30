@@ -29,11 +29,10 @@ class MethodDiffUtilsTest {
         MethodNode node2 = unique2.get(j);
         MethodDiff diff = MethodDiffUtils.diff(node1, node2);
 
-        AutoIncrementBiHashMap<LabelNode> labelMap = new AutoIncrementBiHashMap<>();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        MethodDiffUtils.write(diff, new BinaryWriter(baos), labelMap::get);
+        MethodDiffUtils.write(diff, new BinaryWriter(baos));
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-        MethodDiff read = MethodDiffUtils.read(new BinaryReader(bais), labelMap::getKey);
+        MethodDiff read = MethodDiffUtils.read(new BinaryReader(bais));
 
         MethodNode patched = MethodDiffUtils.patch(node1, read);
 

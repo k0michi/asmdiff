@@ -132,7 +132,10 @@ public class MethodNodeHelper {
             .build();
   }
 
-  public static void write(MethodNode node, CustomDataOutput out, Function<LabelNode, Integer> labelToIndex) throws IOException {
+  public static void write(MethodNode node, CustomDataOutput out) throws IOException {
+    AutoIncrementBiHashMap<LabelNode> labelMap = new AutoIncrementBiHashMap<>();
+    Function<LabelNode, Integer> labelToIndex = labelMap::get;
+
     out.writeInt(node.access);
     out.writeUTF(node.name);
     out.writeUTF(node.desc);
@@ -256,7 +259,10 @@ public class MethodNodeHelper {
     );
   }
 
-  public static MethodNode read(CustomDataInput in, Function<Integer, LabelNode> indexToLabel) throws IOException {
+  public static MethodNode read(CustomDataInput in) throws IOException {
+    Map<Integer, LabelNode> labelMap = new HashMap<>();
+    Function<Integer, LabelNode> indexToLabel = index -> labelMap.computeIfAbsent(index, i -> new LabelNode());
+
     int access = in.readInt();
     String name = in.readUTF();
     String desc = in.readUTF();
