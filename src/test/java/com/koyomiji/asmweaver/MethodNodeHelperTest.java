@@ -159,6 +159,20 @@ class MethodNodeHelperTest {
     node24.instructions.add(new InsnNode(Opcodes.NOP));
     list.add(node24);
 
+    // Jump
+
+    l0 = new LabelNode();
+    l1 = new LabelNode();
+    MethodNode node25 = new MethodNode(0, "method", "()V", null, null);
+    node25.instructions.add(l0);
+    node25.instructions.add(new LineNumberNode(1, l0));
+    node25.instructions.add(new JumpInsnNode(Opcodes.GOTO, l1));
+    node25.instructions.add(new InsnNode(Opcodes.NOP));
+    node25.instructions.add(l1);
+    node25.instructions.add(new LineNumberNode(1, l1));
+    node25.instructions.add(new JumpInsnNode(Opcodes.GOTO, l0));
+    list.add(node25);
+
     return list;
   }
 

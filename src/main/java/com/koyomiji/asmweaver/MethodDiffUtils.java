@@ -4,7 +4,6 @@ import com.koyomiji.asmweaver.analysis.DefUse;
 import com.koyomiji.asmweaver.analysis.DefUseChainAnalyzer;
 import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.CustomDataOutput;
-import com.koyomiji.asmweaver.util.AutoIncrementBiHashMap;
 import com.koyomiji.asmweaver.util.UnionFind;
 import com.koyomiji.asmweaver.util.tuple.Pair;
 import com.koyomiji.asmweaver.util.tuple.Triplet;
@@ -116,6 +115,12 @@ public class MethodDiffUtils {
             split1.first,
             split2.first,
             diff.instructions
+    );
+
+    // FIXME: null case
+    diff.instructions.operations = ListHelper.map(
+            diff.instructions.operations,
+            op -> InsnListDiffUtils.mapLabels(op, labelMap::get)
     );
 
     diff.lineNumbers = ListDiffUtils.diff(
@@ -628,14 +633,11 @@ public class MethodDiffUtils {
             (element, stream) -> ListHelper.write(element, stream, AnnotationNodeHelper::write),
             (element, stream) -> ListDiffUtils.write(element, stream, AnnotationNodeHelper::write)
     );
-    {
-      // FIXME:
-      InsnListDiffUtils.write(
-              diff.instructions,
-              out,
-              new AutoIncrementBiHashMap<>()::get
-      );
-    }
+    InsnListDiffUtils.write(
+            diff.instructions,
+            out,
+            labelToIndex
+    );
     ListDiffUtils.write(
             diff.lineNumbers,
             out,
@@ -709,11 +711,7 @@ public class MethodDiffUtils {
             stream -> ListHelper.read(stream, AnnotationNodeHelper::readAnnotationNode),
             stream -> ListDiffUtils.read(stream, AnnotationNodeHelper::readAnnotationNode)
     );
-    {
-      // FIXME:
-      Map<Integer, LabelNode> map = new HashMap<>();
-      diff.instructions = InsnListDiffUtils.read(in, i -> map.computeIfAbsent(i, k -> new LabelNode()));
-    }
+    diff.instructions = InsnListDiffUtils.read(in, indexToLabel);
     diff.lineNumbers = ListDiffUtils.read(in, stream -> (LineNumberNode) AbstractInsnNodeHelper.read(stream, indexToLabel));
     diff.tryCatchBlocks = ListDiffUtils.read(in, stream -> TryCatchBlockNodeHelper.read(stream, indexToLabel));
     diff.maxStack = ListDiffUtils.read(in, DataInput::readInt);

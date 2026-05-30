@@ -189,14 +189,12 @@ public class InsnListDiffUtils {
     for (InsnListDiff.Operation op : diff.operations) {
       switch (op.type) {
         case MATCH: {
-          List<LabelNode> extracted1 = AbstractInsnNodeHelper.getLabelTargets(list1.get(i));
-          List<LabelNode> extracted2 = AbstractInsnNodeHelper.getLabelTargets(list2.get(j));
+          List<LabelNode> extracted = AbstractInsnNodeHelper.getLabelTargets(list1.get(i));
 
-          for (int k = 0; k < extracted1.size(); k++) {
-            if (!labelMap.containsKey(extracted1.get(k))) {
+          for (int k = 0; k < extracted.size(); k++) {
+            if (!labelMap.containsKey(extracted.get(k))) {
               IndexedLabelNode l = new IndexedLabelNode(index++);
-              labelMap.put(extracted1.get(k), l);
-              labelMap.put(extracted2.get(k), l);
+              labelMap.put(extracted.get(k), l);
             }
           }
 
@@ -227,6 +225,34 @@ public class InsnListDiffUtils {
     for (InsnListDiff.Operation op : diff.operations) {
       switch (op.type) {
         case MATCH: {
+          List<LabelNode> extracted1 = AbstractInsnNodeHelper.getLabelTargets(list1.get(i));
+          List<LabelNode> extracted2 = AbstractInsnNodeHelper.getLabelTargets(list2.get(j));
+
+          for (int k = 0; k < extracted2.size(); k++) {
+            if (!labelMap.containsKey(extracted2.get(k))) {
+              labelMap.put(extracted2.get(k), labelMap.get(extracted1.get(k)));
+            }
+          }
+
+          i++;
+          j++;
+          break;
+        }
+        case INSERT: {
+          j++;
+          break;
+        }
+        case DELETE: {
+          i++;
+          break;
+        }
+      }
+    }
+
+    i = j = 0;
+    for (InsnListDiff.Operation op : diff.operations) {
+      switch (op.type) {
+        case MATCH: {
           i++;
           j++;
           break;
@@ -242,6 +268,10 @@ public class InsnListDiffUtils {
           }
 
           j++;
+          break;
+        }
+        case DELETE: {
+          i++;
           break;
         }
       }
@@ -752,14 +782,12 @@ public class InsnListDiffUtils {
     for (InsnListDiff.Operation op : diff.operations) {
       switch (op.type) {
         case MATCH: {
-          List<LabelNode> extracted1 = AbstractInsnNodeHelper.getLabelTargets(insns.get(i));
-          List<LabelNode> extracted2 = AbstractInsnNodeHelper.getLabelTargets(op.operand);
+          List<LabelNode> extracted = AbstractInsnNodeHelper.getLabelTargets(insns.get(i));
 
-          for (int k = 0; k < extracted1.size(); k++) {
-            if (!labelMap.containsKey(extracted1.get(k))) {
+          for (int k = 0; k < extracted.size(); k++) {
+            if (!labelMap.containsKey(extracted.get(k))) {
               IndexedLabelNode l = new IndexedLabelNode(index++);
-              labelMap.put(extracted1.get(k), l);
-              labelMap.put(extracted2.get(k), l);
+              labelMap.put(extracted.get(k), l);
             }
           }
 
@@ -785,6 +813,34 @@ public class InsnListDiffUtils {
         }
       }
     }
+    i = j = 0;
+    for (InsnListDiff.Operation op : diff.operations) {
+      switch (op.type) {
+        case MATCH: {
+          List<LabelNode> extracted1 = AbstractInsnNodeHelper.getLabelTargets(insns.get(i));
+          List<LabelNode> extracted2 = AbstractInsnNodeHelper.getLabelTargets(op.operand);
+
+          for (int k = 0; k < extracted2.size(); k++) {
+            if (!labelMap.containsKey(extracted2.get(k))) {
+              labelMap.put(extracted2.get(k), labelMap.get(extracted1.get(k)));
+            }
+          }
+
+          i++;
+          j++;
+          break;
+        }
+        case INSERT: {
+          j++;
+          break;
+        }
+        case DELETE: {
+          i++;
+          break;
+        }
+      }
+    }
+    i = j = 0;
     for (InsnListDiff.Operation op : diff.operations) {
       switch (op.type) {
         case MATCH: {
@@ -802,6 +858,11 @@ public class InsnListDiffUtils {
             }
           }
 
+          j++;
+          break;
+        }
+        case DELETE: {
+          i++;
           break;
         }
       }
