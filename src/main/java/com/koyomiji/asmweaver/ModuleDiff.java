@@ -16,31 +16,4 @@ public class ModuleDiff implements IDiff {
   public ListDiff<ModuleOpenNode> opens;
   public ListDiff<String> uses;
   public ListDiff<ModuleProvideNode> provides;
-
-  @Override
-  public boolean isEmpty() {
-    return name.isEmpty()
-            && access.isEmpty()
-            && version.isEmpty()
-            && mainClass.isEmpty()
-            && packages.isEmpty()
-            && requires.isEmpty()
-            && exports.isEmpty()
-            && opens.isEmpty()
-            && uses.isEmpty()
-            && provides.isEmpty();
-  }
-
-  @Override
-  public int distance() {
-    return name.distance()
-            + access.distance()
-            + version.distance()
-            + mainClass.distance()
-            + packages.distance()
-            + requires.distance()
-            + exports.distance()
-            + opens.distance()
-            + provides.distance();
-  }
 }

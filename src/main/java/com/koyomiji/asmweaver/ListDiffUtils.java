@@ -13,6 +13,24 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 
 public class ListDiffUtils {
+  public static <T> ListDiff<T> unchangedToNull(ListDiff<T> diff) {
+    boolean isEmpty = true;
+
+    for (ListDiff.Operation<T> op : diff.operations) {
+      if (op.type != ListDiff.Operation.Type.MATCH
+      ) {
+        isEmpty = false;
+        break;
+      }
+    }
+
+    if (isEmpty) {
+      return null;
+    }
+
+    return diff;
+  }
+
   public static <T> ListDiff<T> invert(ListDiff<T> diff) {
     if (diff == null) {
       return null;
@@ -170,26 +188,13 @@ public class ListDiffUtils {
       j--;
     }
 
-    boolean isEmpty = true;
-
-    for (ListDiff.Operation<T> op : operations) {
-      if (op.type != ListDiff.Operation.Type.MATCH) {
-        isEmpty = false;
-        break;
-      }
-    }
-
-    if (isEmpty) {
-      return null;
-    }
-
     List<ListDiff.Operation<T>> reversedOperations = new ArrayList<>();
 
     for (int k = operations.size() - 1; k >= 0; k--) {
       reversedOperations.add(operations.get(k));
     }
 
-    return new ListDiff<>(reversedOperations);
+    return unchangedToNull(new ListDiff<>(reversedOperations));
   }
 
   public static <T> ListDiff<T> diffNullableValue(T element1, T element2, BiPredicate<T, T> compare) {
@@ -335,7 +340,7 @@ public class ListDiffUtils {
 
     IteratorHelper.throwIfNext(itQ, () -> new IllegalDiffException("Composition Error: q has remaining operations after p is exhausted."));
 
-    return new ListDiff<>(result);
+    return unchangedToNull(new ListDiff<>(result));
   }
 
   public static <T> ListDiff<T> mapOperands(ListDiff<T> diff, Function<T, T> mapper) {

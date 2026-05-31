@@ -11,6 +11,20 @@ import java.io.DataInput;
 import java.io.IOException;
 
 public class RecordComponentDiffUtils {
+  public static RecordComponentDiff unchangedToNull(RecordComponentDiff diff) {
+    if (diff.name == null
+            && diff.descriptor == null
+            && diff.signature == null
+            && diff.visibleAnnotations == null
+            && diff.invisibleAnnotations == null
+            && diff.visibleTypeAnnotations == null
+            && diff.invisibleTypeAnnotations == null) {
+      return null;
+    }
+
+    return diff;
+  }
+
   public static RecordComponentDiff diff(RecordComponentNode node1, RecordComponentNode node2) {
     RecordComponentDiff diff = new RecordComponentDiff();
     diff.name = ListDiffUtils.diffNonNullableValue(node1.name, node2.name, String::equals);
@@ -38,18 +52,7 @@ public class RecordComponentDiffUtils {
     );
     // attrs
 
-    if (diff.name == null
-            && diff.descriptor == null
-            && diff.signature == null
-            && diff.visibleAnnotations == null
-            && diff.invisibleAnnotations == null
-            && diff.visibleTypeAnnotations == null
-            && diff.invisibleTypeAnnotations == null
-    ) {
-      return null;
-    }
-
-    return diff;
+    return unchangedToNull(diff);
   }
 
   public static RecordComponentNode patch(RecordComponentNode node, RecordComponentDiff diff) {
@@ -138,7 +141,7 @@ public class RecordComponentDiffUtils {
             diff2.invisibleTypeAnnotations,
             AnnotationNodeHelper::equals
     );
-    return composed;
+    return unchangedToNull(composed);
   }
 
   public static Pair<RecordComponentDiff, RecordComponentDiff> commute(RecordComponentDiff diff1, RecordComponentDiff diff2) throws ConflictException {
@@ -235,7 +238,7 @@ public class RecordComponentDiffUtils {
 
     return ListDiffUtils.distance(diff.name)
             + ListDiffUtils.distance(diff.descriptor)
-            +  ListDiffUtils.distance(diff.signature)
+            + ListDiffUtils.distance(diff.signature)
             + ListDiffUtils.distance(diff.visibleAnnotations)
             + ListDiffUtils.distance(diff.invisibleAnnotations)
             + ListDiffUtils.distance(diff.visibleTypeAnnotations)

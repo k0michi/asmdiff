@@ -9,6 +9,36 @@ import java.io.DataInput;
 import java.io.IOException;
 
 public class ClassDiffUtils {
+  public static ClassDiff unchangedToNull(ClassDiff diff) {
+    if (diff.version == null
+            && diff.access == null
+            && diff.name == null
+            && diff.signature == null
+            && diff.superName == null
+            && diff.interfaces == null
+            && diff.sourceFile == null
+            && diff.sourceDebug == null
+            && diff.module == null
+            && diff.outerClass == null
+            && diff.outerMethod == null
+            && diff.outerMethodDesc == null
+            && diff.visibleAnnotations == null
+            && diff.invisibleAnnotations == null
+            && diff.visibleTypeAnnotations == null
+            && diff.invisibleTypeAnnotations == null
+            && diff.innerClasses == null
+            && diff.nestHostClass == null
+            && diff.nestMembers == null
+            && diff.permittedSubclasses == null
+            && diff.recordComponents == null
+            && diff.fields == null
+            && diff.methods == null
+    ) {
+      return null;
+    }
+
+    return diff;
+  }
 
   public static ClassDiff diff(ClassNode class1, ClassNode class2) {
     ClassDiff diff = new ClassDiff();
@@ -41,35 +71,7 @@ public class ClassDiffUtils {
     diff.fields = KeyedListDiffUtils.diff(class1.fields, class2.fields, (f) -> new MemberKey(f.name, f.desc), FieldDiffUtils::diff);
     diff.methods = KeyedListDiffUtils.diff(class1.methods, class2.methods, (m) -> new MemberKey(m.name, m.desc), MethodDiffUtils::diff);
 
-    if (diff.version == null
-            && diff.access == null
-            && diff.name == null
-            && diff.signature == null
-            && diff.superName == null
-            && diff.interfaces == null
-            && diff.sourceFile == null
-            && diff.sourceDebug == null
-            && diff.module == null
-            && diff.outerClass == null
-            && diff.outerMethod == null
-            && diff.outerMethodDesc == null
-            && diff.visibleAnnotations == null
-            && diff.invisibleAnnotations == null
-            && diff.visibleTypeAnnotations == null
-            && diff.invisibleTypeAnnotations == null
-            && diff.innerClasses == null
-            && diff.nestHostClass == null
-            && diff.nestMembers == null
-            && diff.permittedSubclasses == null
-            && diff.recordComponents == null
-            && diff.fields == null
-            && diff.methods == null
-    ) {
-      return null;
-    }
-
-
-    return diff;
+    return unchangedToNull(diff);
   }
 
   public static ClassNode patch(ClassNode node, ClassDiff diff) {
@@ -280,7 +282,7 @@ public class ClassDiffUtils {
             MethodDiffUtils::patch,
             MethodDiffUtils::invert
     );
-    return composed;
+    return unchangedToNull(composed);
   }
 
   public static Pair<ClassDiff, ClassDiff> commute(ClassDiff diff1, ClassDiff diff2) throws ConflictException {

@@ -325,7 +325,7 @@ class ListDiffUtilsTest {
     var diff23 = ListDiffUtils.diff(list2, list3, Integer::equals);
 
     var composed = ListDiffUtils.compose(diff12, diff23, Integer::equals);
-    Assertions.assertEquals(0, composed.operations.size());
+    Assertions.assertNull(composed);
   }
 
   @Test
@@ -337,7 +337,7 @@ class ListDiffUtilsTest {
     var diff12Inverted = ListDiffUtils.invert(diff12);
     var composed = ListDiffUtils.compose(diff12, diff12Inverted, Integer::equals);
 
-    Assertions.assertTrue(composed.isEmpty());
+    Assertions.assertNull(composed);
 
     var patched = ListDiffUtils.patch(list1, composed);
 

@@ -11,30 +11,6 @@ public class InsnListDiff implements IDiff {
     this.operations = operations;
   }
 
-  @Override
-  public boolean isEmpty() {
-    for (Operation op : operations) {
-      if (op.type != Operation.Type.MATCH) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  @Override
-  public int distance() {
-    int distance = 0;
-
-    for (Operation op : operations) {
-      if (op.type != Operation.Type.MATCH) {
-        distance++;
-      }
-    }
-
-    return distance;
-  }
-
   public static class Operation {
     public enum Type {
       MATCH,

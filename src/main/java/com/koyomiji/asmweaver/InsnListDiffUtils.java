@@ -17,6 +17,23 @@ import java.util.*;
 import java.util.function.Function;
 
 public class InsnListDiffUtils {
+  public static InsnListDiff unchangedToNull(InsnListDiff diff) {
+    boolean empty = true;
+
+    for (InsnListDiff.Operation op : diff.operations) {
+      if (op.type != InsnListDiff.Operation.Type.MATCH) {
+        empty = false;
+        break;
+      }
+    }
+
+    if (empty) {
+      return null;
+    }
+
+    return diff;
+  }
+
   public static InsnListDiff invert(InsnListDiff diff) {
     if (diff == null) {
       return null;
@@ -167,7 +184,7 @@ public class InsnListDiffUtils {
       }
     }
 
-    return new InsnListDiff(result);
+    return unchangedToNull(new InsnListDiff(result));
   }
 
 //  public static Map<LabelNode, LabelNode> extractLabelMap(List<AbstractInsnNode> list1, List<AbstractInsnNode> list2, InsnListDiff diff) {
@@ -603,18 +620,8 @@ public class InsnListDiffUtils {
 
         List<InsnListDiff.Operation> operations = new ArrayList<>();
 
-        boolean empty = true;
-
         for (State s = current; s.previous != null; s = s.previous) {
           operations.add(s.operation);
-
-          if (s.operation.type != InsnListDiff.Operation.Type.MATCH) {
-            empty = false;
-          }
-        }
-
-        if (empty) {
-          return null;
         }
 
         Collections.reverse(operations);
@@ -651,7 +658,7 @@ public class InsnListDiffUtils {
           operations2.add(mapLabels(op, label -> labelMap.getOrDefault(label, label)));
         }
 
-        return new InsnListDiff(operations2);
+        return unchangedToNull(new InsnListDiff(operations2));
       }
 
       var currentKey = new StateKey(current.idxA, current.idxB, current.labelMap.forwardMap(), current.duAToB, current.duBToA);
@@ -839,7 +846,7 @@ public class InsnListDiffUtils {
         }
       }
 
-      List<AbstractInsnNode> mapped = new  ArrayList<>();
+      List<AbstractInsnNode> mapped = new ArrayList<>();
 
       for (AbstractInsnNode insn : insns) {
         mapped.add(AbstractInsnNodeHelper.mapLabelTargets(insn, labelMap::get));

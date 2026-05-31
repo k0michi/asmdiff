@@ -9,6 +9,24 @@ import java.io.DataInput;
 import java.io.IOException;
 
 public class ModuleDiffUtils {
+  public static ModuleDiff unchangedToNull(ModuleDiff diff) {
+    if (diff.name == null
+            && diff.access == null
+            && diff.version == null
+            && diff.mainClass == null
+            && diff.packages == null
+            && diff.requires == null
+            && diff.exports == null
+            && diff.opens == null
+            && diff.uses == null
+            && diff.provides == null
+    ) {
+      return null;
+    }
+
+    return diff;
+  }
+
   public static ModuleDiff diff(ModuleNode node1, ModuleNode node2) {
     ModuleDiff diff = new ModuleDiff();
     diff.name = ListDiffUtils.diff(
@@ -62,21 +80,7 @@ public class ModuleDiffUtils {
             ModuleProvideNodeHelper::equals
     );
 
-    if (diff.name == null
-            && diff.access == null
-            && diff.version == null
-            && diff.mainClass == null
-            && diff.packages == null
-            && diff.requires == null
-            && diff.exports == null
-            && diff.opens == null
-            && diff.uses == null
-            && diff.provides == null
-    ) {
-      return null;
-    }
-
-    return diff;
+    return unchangedToNull(diff);
   }
 
   public static ModuleNode patch(ModuleNode node, ModuleDiff diff) {
@@ -155,7 +159,7 @@ public class ModuleDiffUtils {
     composedDiff.opens = ListDiffUtils.compose(diff1.opens, diff2.opens, ModuleOpenNodeHelper::equals);
     composedDiff.uses = ListDiffUtils.compose(diff1.uses, diff2.uses, String::equals);
     composedDiff.provides = ListDiffUtils.compose(diff1.provides, diff2.provides, ModuleProvideNodeHelper::equals);
-    return composedDiff;
+    return unchangedToNull(composedDiff);
   }
 
   public static Pair<ModuleDiff, ModuleDiff> commute(ModuleDiff diff1, ModuleDiff diff2) throws ConflictException {

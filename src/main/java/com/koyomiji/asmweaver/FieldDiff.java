@@ -14,31 +14,4 @@ public class FieldDiff implements IDiff {
   public ListDiff<TypeAnnotationNode> visibleTypeAnnotations;
   public ListDiff<TypeAnnotationNode> invisibleTypeAnnotations;
   // attributes
-
-  @Override
-  public boolean isEmpty() {
-    return access.isEmpty()
-            && name.isEmpty()
-            && desc.isEmpty()
-            && signature.isEmpty()
-            && value.isEmpty()
-            && visibleAnnotations.isEmpty()
-            && invisibleAnnotations.isEmpty()
-            && visibleTypeAnnotations.isEmpty()
-            && invisibleTypeAnnotations.isEmpty();
-  }
-
-  @Override
-  public int distance() {
-    return access.distance()
-            + name.distance()
-            + desc.distance()
-            + signature.distance()
-            + value.distance()
-            + visibleAnnotations.distance()
-            + visibleTypeAnnotations.distance()
-            + invisibleAnnotations.distance()
-            + visibleAnnotations.distance()
-            + invisibleTypeAnnotations.distance();
-  }
 }

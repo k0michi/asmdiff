@@ -12,26 +12,4 @@ public class RecordComponentDiff implements IDiff {
   public ListDiff<TypeAnnotationNode> visibleTypeAnnotations;
   public ListDiff<TypeAnnotationNode> invisibleTypeAnnotations;
   // attrs
-
-  @Override
-  public boolean isEmpty() {
-    return name.isEmpty()
-            && descriptor.isEmpty()
-            && signature.isEmpty()
-            && visibleAnnotations.isEmpty()
-            && invisibleAnnotations.isEmpty()
-            && visibleTypeAnnotations.isEmpty()
-            && invisibleTypeAnnotations.isEmpty();
-  }
-
-  @Override
-  public int distance() {
-    return name.distance()
-            + descriptor.distance()
-            + signature.distance()
-            + visibleAnnotations.distance()
-            + invisibleAnnotations.distance()
-            + visibleTypeAnnotations.distance()
-            + invisibleTypeAnnotations.distance();
-  }
 }

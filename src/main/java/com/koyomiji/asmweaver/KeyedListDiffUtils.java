@@ -13,6 +13,23 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class KeyedListDiffUtils {
+  public static <Key, Value, Diff extends IDiff> KeyedListDiff<Key, Value, Diff> unchangedToNull(KeyedListDiff<Key, Value, Diff> diff) {
+    boolean isEmpty = true;
+
+    for (KeyedListDiff.Operation<Key, Value, Diff> op : diff.operations) {
+      if (op.type != KeyedListDiff.Operation.Type.MATCH || op.operandDiff != null) {
+        isEmpty = false;
+        break;
+      }
+    }
+
+    if (isEmpty) {
+      return null;
+    }
+
+    return diff;
+  }
+
   public static <Key, Value, Diff extends IDiff> KeyedListDiff<Key, Value, Diff> invert(KeyedListDiff<Key, Value, Diff> diff, Function<Diff, Diff> invert) {
     if (diff == null) {
       return null;
@@ -88,26 +105,13 @@ public class KeyedListDiffUtils {
       j--;
     }
 
-    boolean isEmpty = true;
-
-    for (KeyedListDiff.Operation<Key, Value, Diff> op : operations) {
-      if (op.type != KeyedListDiff.Operation.Type.MATCH || op.operandDiff != null) {
-        isEmpty = false;
-        break;
-      }
-    }
-
-    if (isEmpty) {
-      return null;
-    }
-
     List<KeyedListDiff.Operation<Key, Value, Diff>> reversedOperations = new ArrayList<>();
 
     for (int k = operations.size() - 1; k >= 0; k--) {
       reversedOperations.add(operations.get(k));
     }
 
-    return new KeyedListDiff<>(reversedOperations);
+    return unchangedToNull(new KeyedListDiff<>(reversedOperations));
   }
 
   public static <Value, Diff extends IDiff> KeyedListDiff<Integer, Value, Diff> diffIndexed(
@@ -479,7 +483,7 @@ public class KeyedListDiffUtils {
     result.addAll(mergeInsertionSlot(ins1, ins2));
 
     IteratorHelper.throwIfNext(itQ, () -> new IllegalDiffException("Composition Error: q has remaining operations after p is exhausted."));
-    return new KeyedListDiff<>(result);
+    return unchangedToNull(new KeyedListDiff<>(result));
   }
 
   public static <Key, Value, Diff extends IDiff> int distance(KeyedListDiff<Key, Value, Diff> diff, Function<Diff, Integer> diffDistance) {

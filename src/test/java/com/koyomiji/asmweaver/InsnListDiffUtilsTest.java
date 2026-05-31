@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 class InsnListDiffUtilsTest {
@@ -155,9 +154,7 @@ class InsnListDiffUtilsTest {
             new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.NOP))
     ));
     InsnListDiff composed = InsnListDiffUtils.compose(diff1, diff2);
-    Assertions.assertEquals(1, composed.operations.size());
-    Assertions.assertEquals(InsnListDiff.Operation.Type.MATCH, composed.operations.get(0).type);
-    Assertions.assertTrue(AbstractInsnNodeHelper.equalsIgnoreLabelsExactLocals(composed.operations.get(0).operand, new InsnNode(Opcodes.NOP)));
+    Assertions.assertNull(composed);
   }
 
   @Test
@@ -214,7 +211,7 @@ class InsnListDiffUtilsTest {
             new InsnListDiff.Operation(InsnListDiff.Operation.Type.DELETE, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.NOP))
     ));
     InsnListDiff composed = InsnListDiffUtils.compose(diff1, diff2);
-    Assertions.assertEquals(0, composed.operations.size());
+    Assertions.assertNull(composed);
   }
 
   // delete -> insert
@@ -270,7 +267,7 @@ class InsnListDiffUtilsTest {
     ));
     InsnListDiff diff2 = InsnListDiffUtils.invert(diff1);
     InsnListDiff composed = InsnListDiffUtils.compose(diff1, diff2);
-    Assertions.assertEquals(0, composed.operations.size());
+    Assertions.assertNull(composed);
   }
 //
 //  @Test
@@ -565,7 +562,8 @@ class InsnListDiffUtilsTest {
             list2,
             (insn) -> -1
     );
-    Assertions.assertEquals(2, diff.distance());
+//    Assertions.assertEquals(2, diff.distance());
+    Assertions.assertEquals(2, InsnListDiffUtils.distance(diff));
   }
 
 //  @Test

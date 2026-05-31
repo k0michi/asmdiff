@@ -11,6 +11,22 @@ import java.io.DataInput;
 import java.io.IOException;
 
 public class FieldDiffUtils {
+  public static FieldDiff unchangedToNull(FieldDiff diff) {
+    if (diff.access == null
+            && diff.name == null
+            && diff.desc == null
+            && diff.signature == null
+            && diff.value == null
+            && diff.visibleAnnotations == null
+            && diff.invisibleAnnotations == null
+            && diff.visibleTypeAnnotations == null
+            && diff.invisibleTypeAnnotations == null) {
+      return null;
+    }
+
+    return diff;
+  }
+
   public static FieldDiff diff(FieldNode node1, FieldNode node2) {
     FieldDiff diff = new FieldDiff();
 //    diff.access = ListDiffUtils.diff(ListHelper.ofNullable(node1.access), ListHelper.ofNullable(node2.access), Integer::equals);
@@ -65,19 +81,7 @@ public class FieldDiffUtils {
     );
     // attributes
 
-    if (diff.access == null
-            && diff.name == null
-            && diff.desc == null
-            && diff.signature == null
-            && diff.value == null
-            && diff.visibleAnnotations == null
-            && diff.invisibleAnnotations == null
-            && diff.visibleTypeAnnotations == null
-            && diff.invisibleTypeAnnotations == null) {
-      return null;
-    }
-
-    return diff;
+    return unchangedToNull(diff);
   }
 
   public static FieldNode patch(FieldNode node, FieldDiff diff) {
@@ -136,7 +140,7 @@ public class FieldDiffUtils {
     composed.invisibleAnnotations = ListDiffUtils.compose(diff1.invisibleAnnotations, diff2.invisibleAnnotations, AnnotationNodeHelper::equals);
     composed.visibleTypeAnnotations = ListDiffUtils.compose(diff1.visibleTypeAnnotations, diff2.visibleTypeAnnotations, AnnotationNodeHelper::equals);
     composed.invisibleTypeAnnotations = ListDiffUtils.compose(diff1.invisibleTypeAnnotations, diff2.invisibleTypeAnnotations, AnnotationNodeHelper::equals);
-    return composed;
+    return unchangedToNull(composed);
   }
 
   public static Pair<FieldDiff, FieldDiff> commute(FieldDiff diff1, FieldDiff diff2) throws ConflictException {

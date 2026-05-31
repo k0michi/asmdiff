@@ -9,36 +9,6 @@ public class KeyedListDiff<Key, Value, Diff extends IDiff> implements IDiff {
     this.operations = operations;
   }
 
-  @Override
-  public boolean isEmpty() {
-    for (Operation<Key, Value, Diff> op : operations) {
-      if (op.type != Operation.Type.MATCH) {
-        return false;
-      }
-
-      if (!op.operandDiff.isEmpty()) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  @Override
-  public int distance() {
-    int distance = 0;
-
-    for (Operation<Key, Value, Diff> op : operations) {
-      if (op.type != Operation.Type.MATCH) {
-        distance++;
-      } else {
-        distance += op.operandDiff.distance();
-      }
-    }
-
-    return distance;
-  }
-
   public static class Operation<Key, Value, Diff extends IDiff> {
     public enum Type {
       MATCH,

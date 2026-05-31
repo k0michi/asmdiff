@@ -47,8 +47,7 @@ class ClassDiffUtilsTest {
     node2.visit(Opcodes.V9, 0, "TestClass", null, "java/lang/Object", null);
     node2.visitEnd();
     ClassDiff diff = ClassDiffUtils.diff(node1, node2);
-    Assertions.assertFalse(diff.isEmpty());
-    Assertions.assertFalse(diff.version.isEmpty());
+    Assertions.assertNotNull(diff.version);
   }
 
   @Test
