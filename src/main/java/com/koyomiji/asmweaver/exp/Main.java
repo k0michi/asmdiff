@@ -7,18 +7,15 @@ import com.koyomiji.asmweaver.ClassDiffUtils;
 import com.koyomiji.asmweaver.exp.log.Logger;
 import com.koyomiji.asmweaver.io.BinaryReader;
 import com.koyomiji.asmweaver.io.BinaryWriter;
-import com.koyomiji.asmweaver.io.TextWriter;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceClassVisitor;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
-import java.nio.file.FileSystem;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -28,6 +25,8 @@ public class Main {
   // 【開発者用設定領域】 実験に関する設定はすべてここに記述します
   // =========================================================================
   private static final String EVACUATE_ROOT_DIR = "./compiled";
+
+  public static final String RAM_DISK_DIR = "/Volumes/RAMDisk";
 
   private static final int WARMUP_ITERATIONS = 10;
   private static final int MEASUREMENT_ITERATIONS = 11;
@@ -63,6 +62,13 @@ public class Main {
       return;
     }
 
+    try {
+      Files.createDirectories(Paths.get(RAM_DISK_DIR));
+    } catch (IOException e) {
+      Logger.error("RAMディスク用フォルダの作成に失敗しました: " + e.getMessage());
+      return;
+    }
+
     Path finalEvacuateLogPath = Paths.get(EVACUATE_ROOT_DIR, CONFIG.getRepoName());
 
     Logger.info("=== 実験ベンチマークランナー ===");
@@ -89,7 +95,6 @@ public class Main {
             PrintWriter csvWriter = new PrintWriter(bw, true)
     ) {
       if (new File(CONFIG.getCsvPath()).length() == 0) {
-        // 💡 【修正】CSVヘッダーに SrcSizeBytesBefore と SrcSizeBytesAfter を追加
         csvWriter.println("CommitHash,Describe,ClassPath,MethodName,SrcSizeBytesBefore,SrcSizeBytesAfter,DurationNs,DiffSizeBytes,AsmTreeMatch,Status");
       }
 
@@ -144,25 +149,22 @@ public class Main {
             Path classFileY = tempDirY.resolve(relativeClassPath);
 
             Logger.info("  -> クラス解析中: " + relativeClassPath);
-            byte[] bytesBefore = Files.readAllBytes(classFileY); // 変更前（X_{i-1}）のバイト配列
-            byte[] bytesAfter = Files.readAllBytes(classFileX);   // 変更後（X_i）のバイト配列
+            byte[] bytesBefore = Files.readAllBytes(classFileY);
+            byte[] bytesAfter = Files.readAllBytes(classFileX);
 
             for (BytecodeDiffMethod method : DIFF_METHODS) {
               try {
                 MeasurementResult result = measurePerformance(method, bytesBefore, bytesAfter);
 
-                // 💡 【修正】CSVに元のファイルの容量（前、後）を書き出し
                 csvWriter.printf("%s,\"%s\",%s,%s,%d,%d,%d,%d,%b,%s\n",
                         commitX, commitDesc, relativeClassPath, method.getName(),
                         bytesBefore.length, bytesAfter.length,
                         result.medianDurationNs, result.diffSizeBytes, result.isAsmMatched, "SUCCESS");
 
-                // 💡 【修正】コンソール出力ログに元のサイズ情報を視覚的に追加
                 Logger.infof("     [%s] 元サイズ(前/後): %d/%d bytes, 時間(中央値): %d ns, パッチ: %d bytes, ASM一致: %b",
                         method.getName(), bytesBefore.length, bytesAfter.length, result.medianDurationNs, result.diffSizeBytes, result.isAsmMatched);
 
               } catch (Exception e) {
-                // 💡 【修正】メソッド実行エラー時もCSVの列数がズレないようにダミーサイズ(Before/Afterの長さ)を保持
                 csvWriter.printf("%s,\"%s\",%s,%s,%d,%d,0,0,false,ERROR_%s\n",
                         commitX, commitDesc, relativeClassPath, method.getName(),
                         bytesBefore.length, bytesAfter.length, e.getClass().getSimpleName());
@@ -173,7 +175,6 @@ public class Main {
 
         } catch (Exception e) {
           Logger.errorf("  -> コミット %s の解析中にエラーが発生しました: %s", commitX, e.getMessage());
-          // 💡 【修正】コミット全体のエラー時もCSVの列数（計10列）を維持するためダミーの0を2つ追加
           csvWriter.printf("%s,\"%s\",NONE,NONE,0,0,0,0,false,ERROR_COMMIT_%s\n",
                   commitX, commitDesc, e.getClass().getSimpleName());
         }
@@ -194,15 +195,38 @@ public class Main {
     }
   }
 
+  private static void clearRamDisk() {
+    Path ramDiskPath = Paths.get(RAM_DISK_DIR);
+    if (!Files.exists(ramDiskPath)) return;
+    try {
+      try (var stream = Files.walk(ramDiskPath)) {
+        stream.sorted(Comparator.reverseOrder())
+                .filter(p -> !p.equals(ramDiskPath))
+                .map(Path::toFile)
+                .forEach(File::delete);
+      }
+    } catch (IOException e) {
+      Logger.error("警告: RAMディスクのクレンジングに失敗しました: " + e.getMessage());
+    }
+  }
+
+  /**
+   * マイクロベンチマーク測定コアメソッド
+   */
   private static MeasurementResult measurePerformance(BytecodeDiffMethod method, byte[] bytesBefore, byte[] bytesAfter) throws Exception {
+    // 1. ウォームアップフェーズ
     for (int i = 0; i < WARMUP_ITERATIONS; i++) {
+      clearRamDisk(); // 💡 【要件】計測（ループ）ごとにRAMディスクを完全にクリア
       method.computeDiff(bytesBefore, bytesAfter);
     }
 
     List<Long> durations = new ArrayList<>(MEASUREMENT_ITERATIONS);
     byte[] finalPatch = null;
 
+    // 2. 本計測フェーズ
     for (int i = 0; i < MEASUREMENT_ITERATIONS; i++) {
+      clearRamDisk(); // 💡 【要件】計測（ループ）ごとにRAMディスクを完全にクリア
+
       long startTime = System.nanoTime();
       byte[] patch = method.computeDiff(bytesBefore, bytesAfter);
       long endTime = System.nanoTime();
@@ -218,6 +242,8 @@ public class Main {
     long medianDurationNs = durations.get(durations.size() / 2);
     long diffSizeBytes = (finalPatch != null) ? finalPatch.length : 0;
 
+    // パッチ適用前にも一応クレンジング
+    clearRamDisk();
     byte[] restoredBytes = method.applyPatch(bytesBefore, finalPatch);
     boolean isAsmMatched = compareAsmTree(bytesAfter, restoredBytes);
 
@@ -344,7 +370,6 @@ public class Main {
   }
 
   private static String getAsmStructureText(byte[] classBytes) {
-    // 依存関係（org.objectweb.asm.tree.ClassNode / Sort）を想定した既存ロジック
     ClassNode classNode = new ClassNode();
     ClassReader cr = new ClassReader(classBytes);
     cr.accept(classNode, 0);
@@ -420,92 +445,99 @@ public class Main {
 
 interface BytecodeDiffMethod {
   String getName();
-
   byte[] computeDiff(byte[] classBefore, byte[] classAfter) throws Exception;
-
   byte[] applyPatch(byte[] classBefore, byte[] patch) throws Exception;
 }
 
 class DiffMethodASMWeaver implements BytecodeDiffMethod {
-  @Override
-  public String getName() {
-    return "ASMWeaver";
-  }
+  @Override public String getName() { return "ASMWeaver"; }
 
   @Override
   public byte[] computeDiff(byte[] classBefore, byte[] classAfter) throws Exception {
+    Path ramPath = Paths.get(Main.RAM_DISK_DIR);
+    Path beforeFile = Files.createTempFile(ramPath, "asmw_b_", ".class");
+    Path afterFile  = Files.createTempFile(ramPath, "asmw_a_", ".class");
+    Path patchFile  = Files.createTempFile(ramPath, "asmw_p_", ".bin");
+
+    // 💡 削除を伴う try-finally 構造を全廃
+    Files.write(beforeFile, classBefore);
+    Files.write(afterFile, classAfter);
+
+    byte[] readBefore = Files.readAllBytes(beforeFile);
+    byte[] readAfter  = Files.readAllBytes(afterFile);
+
     ClassNode classNodeBefore = new ClassNode();
     ClassNode classNodeAfter = new ClassNode();
-    ClassReader classReaderBefore = new ClassReader(classBefore);
-    classReaderBefore.accept(classNodeBefore, 0);
-    ClassReader classReaderAfter = new ClassReader(classAfter);
-    classReaderAfter.accept(classNodeAfter, 0);
+    new ClassReader(readBefore).accept(classNodeBefore, 0);
+    new ClassReader(readAfter).accept(classNodeAfter, 0);
 
     ClassDiff diff = ClassDiffUtils.diff(classNodeBefore, classNodeAfter);
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     ClassDiffUtils.write(diff, new BinaryWriter(baos));
-    return baos.toByteArray();
+
+    Files.write(patchFile, baos.toByteArray());
+    return Files.readAllBytes(patchFile);
   }
 
   @Override
   public byte[] applyPatch(byte[] classBefore, byte[] patch) throws Exception {
-    ClassNode classNodeBefore = new ClassNode();
-    ClassReader classReader = new ClassReader(classBefore);
-    classReader.accept(classNodeBefore, 0);
+    Path ramPath = Paths.get(Main.RAM_DISK_DIR);
+    Path beforeFile = Files.createTempFile(ramPath, "asmw_patch_b_", ".class");
+    Path patchFile  = Files.createTempFile(ramPath, "asmw_patch_p_", ".bin");
+    Path restoredFile = Files.createTempFile(ramPath, "asmw_patch_r_", ".class");
 
-    ByteArrayInputStream bais = new ByteArrayInputStream(patch);
+    Files.write(beforeFile, classBefore);
+    Files.write(patchFile, patch);
+
+    ClassNode classNodeBefore = new ClassNode();
+    new ClassReader(Files.readAllBytes(beforeFile)).accept(classNodeBefore, 0);
+
+    ByteArrayInputStream bais = new ByteArrayInputStream(Files.readAllBytes(patchFile));
     ClassDiff diff = ClassDiffUtils.read(new BinaryReader(bais));
     ClassNode patchedNode = ClassDiffUtils.patch(classNodeBefore, diff);
     ClassWriter classWriter = new ClassWriter(0);
     patchedNode.accept(classWriter);
-    return classWriter.toByteArray();
+
+    Files.write(restoredFile, classWriter.toByteArray());
+    return Files.readAllBytes(restoredFile);
   }
 }
 
+/**
+ * 💡 2. Aspa方式（測定区間内からのdelete処理を完全排除）
+ */
 class DiffMethodAspa implements BytecodeDiffMethod {
-  @Override
-  public String getName() {
-    return "Aspa";
-  }
+  @Override public String getName() { return "Aspa"; }
 
   @Override
   public byte[] computeDiff(byte[] classBefore, byte[] classAfter) throws Exception {
-    {
-      // From aspa.jvm.ClassFile
+    Path ramPath = Paths.get(Main.RAM_DISK_DIR);
+    String fSrc = Files.createTempFile(ramPath, "aspa_src_", ".class").toString();
+    String fTgt = Files.createTempFile(ramPath, "aspa_tgt_", ".class").toString();
+    String fDiff = Files.createTempFile(ramPath, "aspa_diff_", ".bin").toString();
 
-      // FIXME: IO
-      String fSrc = Files.createTempFile("aspa_src_", ".class").toString();
-      String fTgt = Files.createTempFile("aspa_tgt_", ".class").toString();
-      String fDiff = Files.createTempFile("aspa_diff_", ".bin").toString();
-      Files.write(Paths.get(fSrc), classBefore);
-      Files.write(Paths.get(fTgt), classAfter);
-      ClassFile cSrc = new ClassFile(fSrc);
-      ClassFile cTgt = new ClassFile(fTgt);
-      Stream diff = new Stream(fDiff, "rw");
-      cTgt.diff(cSrc, diff, cTgt.getPool());
-      diff.close();
-      File fObj = new File(fDiff);
-      long patchLength = fObj.length();
-      if (patchLength == 0L) {
-        fObj.delete();
-//        System.err.printf("No differences found. Patch file '%s' not generated.\n", fDiff);
-      } else {
-//        System.err.printf("Patch '%s' generated (%s bytes).\n", fDiff, patchLength);
-      }
+    Files.write(Paths.get(fSrc), classBefore);
+    Files.write(Paths.get(fTgt), classAfter);
 
-      return Files.readAllBytes(Paths.get(fDiff));
-    }
+    ClassFile cSrc = new ClassFile(fSrc);
+    ClassFile cTgt = new ClassFile(fTgt);
+    Stream diff = new Stream(fDiff, "rw");
+    cTgt.diff(cSrc, diff, cTgt.getPool());
+    diff.close();
+
+    return Files.readAllBytes(Paths.get(fDiff));
   }
 
   @Override
   public byte[] applyPatch(byte[] classBefore, byte[] patch) throws Exception {
-    // From aspa.jvm.ClassFile
+    Path ramPath = Paths.get(Main.RAM_DISK_DIR);
+    String fSrc = Files.createTempFile(ramPath, "aspa_patch_src_", ".class").toString();
+    String fDiff = Files.createTempFile(ramPath, "aspa_patch_diff_", ".bin").toString();
+    String fTgt = Files.createTempFile(ramPath, "aspa_patch_tgt_", ".class").toString();
 
-    String fSrc = Files.createTempFile("aspa_patch_src_", ".class").toString();
     Files.write(Paths.get(fSrc), classBefore);
-    String fDiff = Files.createTempFile("aspa_patch_diff_", ".bin").toString();
     Files.write(Paths.get(fDiff), patch);
-    String fTgt = Files.createTempFile("aspa_patch_tgt_", ".class").toString();
+
     ClassFile c = new ClassFile(fSrc);
     Stream diff = new Stream(fDiff, "r");
     c.patch(diff, c.getPool());
@@ -513,53 +545,43 @@ class DiffMethodAspa implements BytecodeDiffMethod {
     c.write(out, null);
     diff.close();
     out.close();
-    System.err.printf("JVM class file '%s' generated (%s bytes)\n", fTgt, new File(fTgt).length());
+
     return Files.readAllBytes(Paths.get(fTgt));
   }
 }
 
+/**
+ * 💡 3. Bsdiff方式（測定区間内からのdelete処理を完全排除）
+ */
 class BsdiffMethod implements BytecodeDiffMethod {
-  @Override
-  public String getName() {
-    return "Bsdiff";
-  }
+  @Override public String getName() { return "Bsdiff"; }
 
   @Override
   public byte[] computeDiff(byte[] classBefore, byte[] classAfter) throws Exception {
-    Path before = Files.createTempFile("bsdiff_b_", ".class");
-    Path after = Files.createTempFile("bsdiff_a_", ".class");
-    Path patch = Files.createTempFile("bsdiff_p_", ".bin");
-    try {
-      Files.write(before, classBefore);
-      Files.write(after, classAfter);
+    Path ramPath = Paths.get(Main.RAM_DISK_DIR);
+    Path before = Files.createTempFile(ramPath, "bsdiff_b_", ".class");
+    Path after  = Files.createTempFile(ramPath, "bsdiff_a_", ".class");
+    Path patch  = Files.createTempFile(ramPath, "bsdiff_p_", ".bin");
 
-      // bsdiff <before> <after> <patch>
-      ProcessUtils.runProcess(before.getParent().toFile(), "bsdiff", before.toString(), after.toString(), patch.toString());
-      return Files.readAllBytes(patch);
-    } finally {
-      Files.deleteIfExists(before);
-      Files.deleteIfExists(after);
-      Files.deleteIfExists(patch);
-    }
+    Files.write(before, classBefore);
+    Files.write(after, classAfter);
+
+    ProcessUtils.runProcess(before.getParent().toFile(), "bsdiff", before.toString(), after.toString(), patch.toString());
+    return Files.readAllBytes(patch);
   }
 
   @Override
   public byte[] applyPatch(byte[] classBefore, byte[] patchData) throws Exception {
-    Path before = Files.createTempFile("bsdiff_b_", ".class");
-    Path patch = Files.createTempFile("bsdiff_p_", ".bin");
-    Path restored = Files.createTempFile("bsdiff_r_", ".class");
-    try {
-      Files.write(before, classBefore);
-      Files.write(patch, patchData);
+    Path ramPath = Paths.get(Main.RAM_DISK_DIR);
+    Path before   = Files.createTempFile(ramPath, "bsdiff_b_", ".class");
+    Path patch    = Files.createTempFile(ramPath, "bsdiff_p_", ".bin");
+    Path restored = Files.createTempFile(ramPath, "bsdiff_r_", ".class");
 
-      // bspatch <before> <restored> <patch>
-      ProcessUtils.runProcess(before.getParent().toFile(), "bspatch", before.toString(), restored.toString(), patch.toString());
-      return Files.readAllBytes(restored);
-    } finally {
-      Files.deleteIfExists(before);
-      Files.deleteIfExists(patch);
-      Files.deleteIfExists(restored);
-    }
+    Files.write(before, classBefore);
+    Files.write(patch, patchData);
+
+    ProcessUtils.runProcess(before.getParent().toFile(), "bspatch", before.toString(), restored.toString(), patch.toString());
+    return Files.readAllBytes(restored);
   }
 }
 
@@ -572,7 +594,7 @@ class RepositoryConfig {
   private final String startCommit;
   private final String csvPath;
   private final int maxHistory;
-  private final boolean filterBySrcDir; // 💡 追加
+  private final boolean filterBySrcDir;
 
   private final String[] buildCommand;
   private final String sourceDir;
@@ -583,14 +605,14 @@ class RepositoryConfig {
   private final List<PathMatcher> includeMatchers = new ArrayList<>();
   private final List<PathMatcher> excludeMatchers = new ArrayList<>();
 
-  public RepositoryConfig(String repoPath, String startCommit, int maxHistory, boolean filterBySrcDir, // 💡 引数に追加
+  public RepositoryConfig(String repoPath, String startCommit, int maxHistory, boolean filterBySrcDir,
                           String[] buildCommand, String sourceDir, String classDir,
                           Map<String, String> env,
                           String[] includes, String[] excludes) {
     this.repoPath = repoPath;
     this.startCommit = startCommit;
     this.maxHistory = maxHistory;
-    this.filterBySrcDir = filterBySrcDir; // 💡 保持
+    this.filterBySrcDir = filterBySrcDir;
     this.buildCommand = buildCommand;
     this.sourceDir = sourceDir;
     this.classDir = classDir;
@@ -630,46 +652,16 @@ class RepositoryConfig {
     return true;
   }
 
-  // ゲッター群
-  public String getRepoPath() {
-    return repoPath;
-  }
-
-  public String getRepoName() {
-    return repoName;
-  }
-
-  public String getStartCommit() {
-    return startCommit;
-  }
-
-  public String getCsvPath() {
-    return csvPath;
-  }
-
-  public int getMaxHistory() {
-    return maxHistory;
-  }
-
-  public boolean isFilterBySrcDir() {
-    return filterBySrcDir;
-  } // 💡 追加
-
-  public String[] getBuildCommand() {
-    return buildCommand;
-  }
-
-  public String getSourceDir() {
-    return sourceDir;
-  }
-
-  public String getClassDir() {
-    return classDir;
-  }
-
-  public Map<String, String> getEnv() {
-    return env;
-  }
+  public String getRepoPath() { return repoPath; }
+  public String getRepoName() { return repoName; }
+  public String getStartCommit() { return startCommit; }
+  public String getCsvPath() { return csvPath; }
+  public int getMaxHistory() { return maxHistory; }
+  public boolean isFilterBySrcDir() { return filterBySrcDir; }
+  public String[] getBuildCommand() { return buildCommand; }
+  public String getSourceDir() { return sourceDir; }
+  public String getClassDir() { return classDir; }
+  public Map<String, String> getEnv() { return env; }
 }
 
 class ProcessUtils {
