@@ -173,6 +173,11 @@ class MethodNodeHelperTest {
     node25.instructions.add(new JumpInsnNode(Opcodes.GOTO, l0));
     list.add(node25);
 
+    // no localVariable
+
+    MethodNode node26 = new MethodNode(Opcodes.ACC_ABSTRACT, "method", "()V", null, null);
+    list.add(node26);
+
     return list;
   }
 

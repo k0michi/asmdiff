@@ -225,7 +225,7 @@ public class MethodNodeHelper {
     out.writeInt(node.maxStack);
     out.writeInt(node.maxLocals);
     ListHelper.write(
-            node.localVariables,
+            ListHelper.nullToEmpty(node.localVariables),
             out,
             (element, stream) -> {
               LocalVariableNodeHelper.write(
