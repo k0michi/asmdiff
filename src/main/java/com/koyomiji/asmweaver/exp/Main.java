@@ -56,8 +56,10 @@ public class Main {
   // =========================================================================
 
   public static void main(String[] args) {
-    File repoDir = new File(CONFIG.getRepoPath());
-    if (!repoDir.exists() || !repoDir.isDirectory()) {
+    // 💡 Git操作を担当するリポジトリコンテキストをインスタンス化
+    GitRepository repo = new GitRepository(CONFIG);
+
+    if (!repo.exists()) {
       Logger.error("エラー: 設定された REPO_PATH が存在しないか、ディレクトリではありません。: " + CONFIG.getRepoPath());
       return;
     }
@@ -80,10 +82,7 @@ public class Main {
 
     String originalHead = null;
     try {
-      originalHead = executeCommand(repoDir, "git", "rev-parse", "--abbrev-ref", "HEAD");
-      if ("HEAD".equals(originalHead)) {
-        originalHead = executeCommand(repoDir, "git", "rev-parse", "HEAD");
-      }
+      originalHead = repo.resolveHead(); // 💡 引っ越し先から呼び出し
     } catch (Exception e) {
       Logger.error("初期状態の取得に失敗しました。実験を中断します: " + e.getMessage());
       return;
@@ -95,27 +94,26 @@ public class Main {
             PrintWriter csvWriter = new PrintWriter(bw, true)
     ) {
       if (new File(CONFIG.getCsvPath()).length() == 0) {
-        // 💡 CSVヘッダーに DiffDurationNs と PatchDurationNs を定義
         csvWriter.println("CommitHash,Describe,ClassPath,MethodName,SrcSizeBytesBefore,SrcSizeBytesAfter,DiffDurationNs,PatchDurationNs,DiffSizeBytes,AsmTreeMatch,Status");
       }
 
-      List<String> commitHistory = getCommitHistory(repoDir, CONFIG.getStartCommit(), CONFIG.getMaxHistory());
+      List<String> commitHistory = repo.getCommitHistory(CONFIG.getStartCommit(), CONFIG.getMaxHistory()); // 💡 委譲
       Logger.info(commitHistory.size() + " 件のコミットを解析対象として抽出しました。");
 
       for (int i = 0; i < commitHistory.size(); i++) {
         String commitX = commitHistory.get(i);
 
-        String commitDesc = getCommitDescribe(repoDir, commitX);
-        String commitMsg = getCommitMessage(repoDir, commitX);
+        String commitDesc = repo.getCommitDescribe(commitX); // 💡 委譲
+        String commitMsg = repo.getCommitMessage(commitX);   // 💡 委譲
 
         Logger.infof("[%d/%d] ----------------------------------------", i + 1, commitHistory.size());
         Logger.infof("  コミット: %s (%s)", commitX, commitDesc);
         Logger.infof("  概要    : %s", commitMsg);
 
         try {
-          String commitY = executeCommand(repoDir, "git", "rev-parse", commitX + "~1");
+          String commitY = repo.resolveRev(commitX + "~1"); // 💡 委譲
 
-          if (CONFIG.isFilterBySrcDir() && !hasChangesInDirectory(repoDir, commitY, commitX, CONFIG.getSourceDir())) {
+          if (CONFIG.isFilterBySrcDir() && !repo.hasChangesInDirectory(commitY, commitX, CONFIG.getSourceDir())) { // 💡 委譲
             Logger.info("  -> [SKIP] 指定されたソースディレクトリ (" + CONFIG.getSourceDir() + ") 内に変更がないためスキップします。");
             continue;
           }
@@ -123,19 +121,19 @@ public class Main {
           Path tempDirX = Paths.get(EVACUATE_ROOT_DIR, CONFIG.getRepoName(), commitX);
           if (!Files.exists(tempDirX)) {
             Logger.info("  -> コミット X_i (" + commitX + ") をビルド中...");
-            executeCommand(repoDir, "git", "checkout", "-f", commitX);
-            clearOutputDirectory(repoDir, CONFIG.getClassDir());
-            executeCommand(repoDir, CONFIG.getBuildCommand());
-            tempDirX = evacuateClassFiles(repoDir, commitX);
+            repo.checkout(commitX); // 💡 委譲
+            clearOutputDirectory(Paths.get(CONFIG.getRepoPath()).resolve(CONFIG.getClassDir()));
+            repo.build();           // 💡 委譲
+            tempDirX = repo.evacuateClassFiles(commitX, EVACUATE_ROOT_DIR); // 💡 委譲
           }
 
           Path tempDirY = Paths.get(EVACUATE_ROOT_DIR, CONFIG.getRepoName(), commitY);
           if (!Files.exists(tempDirY)) {
             Logger.info("  -> コミット X_i-1 (" + commitY + ") をビルド中...");
-            executeCommand(repoDir, "git", "checkout", "-f", commitY);
-            clearOutputDirectory(repoDir, CONFIG.getClassDir());
-            executeCommand(repoDir, CONFIG.getBuildCommand());
-            tempDirY = evacuateClassFiles(repoDir, commitY);
+            repo.checkout(commitY); // 💡 委譲
+            clearOutputDirectory(Paths.get(CONFIG.getRepoPath()).resolve(CONFIG.getClassDir()));
+            repo.build();           // 💡 委譲
+            tempDirY = repo.evacuateClassFiles(commitY, EVACUATE_ROOT_DIR); // 💡 委譲
           }
 
           List<String> modifiedClassPaths = getModifiedClassFiles(tempDirX, tempDirY);
@@ -157,7 +155,6 @@ public class Main {
               try {
                 MeasurementResult result = measurePerformance(method, bytesBefore, bytesAfter);
 
-                // 💡 計測結果を出力（引数の数とフォーマットを調整）
                 csvWriter.printf("%s,\"%s\",%s,%s,%d,%d,%d,%d,%d,%b,%s\n",
                         commitX, commitDesc, relativeClassPath, method.getName(),
                         bytesBefore.length, bytesAfter.length,
@@ -167,7 +164,6 @@ public class Main {
                         method.getName(), bytesBefore.length, bytesAfter.length, result.medianDiffDurationNs, result.medianPatchDurationNs, result.diffSizeBytes, result.isAsmMatched);
 
               } catch (Exception e) {
-                // 💡 エラー時のプレースホルダー（0, 0, 0）を調整
                 csvWriter.printf("%s,\"%s\",%s,%s,%d,%d,0,0,0,false,ERROR_%s\n",
                         commitX, commitDesc, relativeClassPath, method.getName(),
                         bytesBefore.length, bytesAfter.length, e.getClass().getSimpleName());
@@ -191,7 +187,7 @@ public class Main {
     } finally {
       try {
         Logger.info("リポジトリのコミット状態を元に戻しています...");
-        executeCommand(repoDir, "git", "checkout", "-f", originalHead);
+        repo.checkout(originalHead); // 💡 委譲
       } catch (Exception e) {
         Logger.error("警告: 元のブランチの復元に失敗しました: " + e.getMessage());
       }
@@ -213,15 +209,11 @@ public class Main {
     }
   }
 
-  /**
-   * マイクロベンチマーク測定コアメソッド
-   */
   private static MeasurementResult measurePerformance(BytecodeDiffMethod method, byte[] bytesBefore, byte[] bytesAfter) throws Exception {
-    // 1. ウォームアップフェーズ
     for (int i = 0; i < WARMUP_ITERATIONS; i++) {
       clearRamDisk();
       byte[] patch = method.computeDiff(bytesBefore, bytesAfter);
-      clearRamDisk(); // 💡 パッチ適用前にもクレンジングを入れる
+      clearRamDisk();
       method.applyPatch(bytesBefore, patch);
     }
 
@@ -230,18 +222,14 @@ public class Main {
     byte[] finalPatch = null;
     byte[] finalRestoredBytes = null;
 
-    // 2. 本計測フェーズ
     for (int i = 0; i < MEASUREMENT_ITERATIONS; i++) {
-
-      // --- Diff 計測 ---
       clearRamDisk();
       long startDiff = System.nanoTime();
       byte[] patch = method.computeDiff(bytesBefore, bytesAfter);
       long endDiff = System.nanoTime();
       diffDurations.add(endDiff - startDiff);
 
-      // --- Patch 計測 ---
-      clearRamDisk(); // 💡 I/O条件を揃えるため、Patch前にもRAMディスクを完全クリア
+      clearRamDisk();
       long startPatch = System.nanoTime();
       byte[] restored = method.applyPatch(bytesBefore, patch);
       long endPatch = System.nanoTime();
@@ -253,21 +241,17 @@ public class Main {
       }
     }
 
-    // それぞれの中央値を算出
     Collections.sort(diffDurations);
     Collections.sort(patchDurations);
     long medianDiffDurationNs = diffDurations.get(diffDurations.size() / 2);
     long medianPatchDurationNs = patchDurations.get(patchDurations.size() / 2);
 
     long diffSizeBytes = (finalPatch != null) ? finalPatch.length : 0;
-
-    // 本計測内の最後の検証結果をもとにASMツリーを比較
     boolean isAsmMatched = compareAsmTree(bytesAfter, finalRestoredBytes);
 
     return new MeasurementResult(medianDiffDurationNs, medianPatchDurationNs, diffSizeBytes, isAsmMatched);
   }
 
-  // 💡 結果格納用クラスのフィールドを分割
   private static class MeasurementResult {
     final long medianDiffDurationNs;
     final long medianPatchDurationNs;
@@ -280,21 +264,6 @@ public class Main {
       this.diffSizeBytes = diffSizeBytes;
       this.isAsmMatched = isAsmMatched;
     }
-  }
-
-  private static boolean hasChangesInDirectory(File repoDir, String commitY, String commitX, String targetDir) throws IOException {
-    ProcessBuilder pb = new ProcessBuilder("git", "diff", "--name-only", commitY, commitX);
-    pb.directory(repoDir);
-    Process p = pb.start();
-    try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
-      String line;
-      while ((line = reader.readLine()) != null) {
-        if (line.trim().startsWith(targetDir)) {
-          return true;
-        }
-      }
-    }
-    return false;
   }
 
   private static List<String> getModifiedClassFiles(Path dirX, Path dirY) throws IOException {
@@ -338,39 +307,6 @@ public class Main {
     }
   }
 
-  private static void clearOutputDirectory(File repoDir, String relativeClassDir) {
-    clearOutputDirectory(repoDir.toPath().resolve(relativeClassDir));
-  }
-
-  private static Path evacuateClassFiles(File repoDir, String commitHash) throws IOException {
-    Path targetDir = Paths.get(EVACUATE_ROOT_DIR, CONFIG.getRepoName(), commitHash);
-    if (Files.exists(targetDir)) {
-      return targetDir;
-    }
-    Files.createDirectories(targetDir);
-
-    Path sourceDir = repoDir.toPath().resolve(CONFIG.getClassDir());
-    if (!Files.exists(sourceDir)) {
-      return targetDir;
-    }
-
-    try (var stream = Files.walk(sourceDir)) {
-      List<Path> sourcePaths = stream.toList();
-      for (Path source : sourcePaths) {
-        Path relative = sourceDir.relativize(source);
-        Path dest = targetDir.resolve(relative);
-
-        if (Files.isDirectory(source)) {
-          Files.createDirectories(dest);
-        } else {
-          Files.createDirectories(dest.getParent());
-          Files.copy(source, dest, StandardCopyOption.REPLACE_EXISTING);
-        }
-      }
-    }
-    return targetDir;
-  }
-
   private static boolean compareAsmTree(byte[] original, byte[] restored) {
     if (original == null || restored == null) return false;
     try {
@@ -400,29 +336,57 @@ public class Main {
     classNode.accept(tcv);
     return sw.toString();
   }
+}
 
-  private static String executeCommand(File directory, String... command) throws Exception {
-    ProcessBuilder pb = new ProcessBuilder(command);
-    pb.directory(directory);
-    pb.redirectErrorStream(true);
-    pb.environment().putAll(CONFIG.getEnv());
+class GitRepository {
+  private final File repoDir;
+  private final RepositoryConfig config;
+
+  public GitRepository(RepositoryConfig config) {
+    this.config = config;
+    this.repoDir = new File(config.getRepoPath());
+  }
+
+  public boolean exists() {
+    return repoDir.exists() && repoDir.isDirectory();
+  }
+
+  public String resolveHead() throws Exception {
+    String originalHead = executeCommand("git", "rev-parse", "--abbrev-ref", "HEAD");
+    if ("HEAD".equals(originalHead)) {
+      originalHead = executeCommand("git", "rev-parse", "HEAD");
+    }
+    return originalHead;
+  }
+
+  public String resolveRev(String revisionExpression) throws Exception {
+    return executeCommand("git", "rev-parse", revisionExpression);
+  }
+
+  public void checkout(String commitOrBranch) throws Exception {
+    executeCommand("git", "checkout", "-f", commitOrBranch);
+  }
+
+  public void build() throws Exception {
+    executeCommand(config.getBuildCommand());
+  }
+
+  public boolean hasChangesInDirectory(String commitY, String commitX, String targetDir) throws IOException {
+    ProcessBuilder pb = new ProcessBuilder("git", "diff", "--name-only", commitY, commitX);
+    pb.directory(repoDir);
     Process p = pb.start();
-
-    StringBuilder output = new StringBuilder();
     try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
       String line;
       while ((line = reader.readLine()) != null) {
-        output.append(line).append("\n");
+        if (line.trim().startsWith(targetDir)) {
+          return true;
+        }
       }
     }
-    int exitCode = p.waitFor();
-    if (exitCode != 0) {
-      throw new RuntimeException("コマンドが異常終了しました (ExitCode: " + exitCode + "). 出力:\n" + output);
-    }
-    return output.toString().trim();
+    return false;
   }
 
-  private static List<String> getCommitHistory(File repoDir, String startCommit, int maxCount) throws IOException {
+  public List<String> getCommitHistory(String startCommit, int maxCount) throws IOException {
     List<String> commits = new ArrayList<>();
     ProcessBuilder pb = new ProcessBuilder("git", "log", "--format=%H", "--first-parent", "-n", String.valueOf(maxCount), startCommit);
     pb.directory(repoDir);
@@ -440,7 +404,7 @@ public class Main {
     return commits;
   }
 
-  private static String getCommitDescribe(File repoDir, String commitHash) throws IOException {
+  public String getCommitDescribe(String commitHash) throws IOException {
     ProcessBuilder pb = new ProcessBuilder("git", "describe", "--tags", "--always", commitHash);
     pb.directory(repoDir);
     Process p = pb.start();
@@ -451,7 +415,7 @@ public class Main {
     }
   }
 
-  private static String getCommitMessage(File repoDir, String commitHash) throws IOException {
+  public String getCommitMessage(String commitHash) throws IOException {
     ProcessBuilder pb = new ProcessBuilder("git", "log", "-1", "--format=%s", commitHash);
     pb.directory(repoDir);
     Process p = pb.start();
@@ -460,6 +424,56 @@ public class Main {
       String line = reader.readLine();
       return (line != null) ? line.trim() : "No message";
     }
+  }
+
+  public Path evacuateClassFiles(String commitHash, String evacuateRootDir) throws IOException {
+    Path targetDir = Paths.get(evacuateRootDir, config.getRepoName(), commitHash);
+    if (Files.exists(targetDir)) {
+      return targetDir;
+    }
+    Files.createDirectories(targetDir);
+
+    Path sourceDir = repoDir.toPath().resolve(config.getClassDir());
+    if (!Files.exists(sourceDir)) {
+      return targetDir;
+    }
+
+    try (var stream = Files.walk(sourceDir)) {
+      List<Path> sourcePaths = stream.toList();
+      for (Path source : sourcePaths) {
+        Path relative = sourceDir.relativize(source);
+        Path dest = targetDir.resolve(relative);
+
+        if (Files.isDirectory(source)) {
+          Files.createDirectories(dest);
+        } else {
+          Files.createDirectories(dest.getParent());
+          Files.copy(source, dest, StandardCopyOption.REPLACE_EXISTING);
+        }
+      }
+    }
+    return targetDir;
+  }
+
+  private String executeCommand(String... command) throws Exception {
+    ProcessBuilder pb = new ProcessBuilder(command);
+    pb.directory(repoDir);
+    pb.redirectErrorStream(true);
+    pb.environment().putAll(config.getEnv());
+    Process p = pb.start();
+
+    StringBuilder output = new StringBuilder();
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
+      String line;
+      while ((line = reader.readLine()) != null) {
+        output.append(line).append("\n");
+      }
+    }
+    int exitCode = p.waitFor();
+    if (exitCode != 0) {
+      throw new RuntimeException("コマンドが異常終了しました (ExitCode: " + exitCode + "). 出力:\n" + output);
+    }
+    return output.toString().trim();
   }
 }
 
