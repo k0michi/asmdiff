@@ -83,25 +83,25 @@ public class KeyedListDiffUtils {
 
     while (i > 0 && j > 0) {
       if (keyExtractor.apply(list1.get(i - 1)).equals(keyExtractor.apply(list2.get(j - 1)))) {
-        operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.MATCH, KeyedListDiff.Operation.Mode.BETWEEN, keyExtractor.apply(list1.get(i - 1)), null, diffFunction.apply(list1.get(i - 1), list2.get(j - 1))));
+        operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.MATCH, KeyedListDiff.Operation.Mode.BETWEEN, null, null, diffFunction.apply(list1.get(i - 1), list2.get(j - 1))));
         i--;
         j--;
       } else if (dp[i][j] == dp[i][j - 1] + 1) {
-        operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.INSERT, KeyedListDiff.Operation.Mode.BETWEEN, keyExtractor.apply(list2.get(j - 1)), list2.get(j - 1), null));
+        operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.INSERT, KeyedListDiff.Operation.Mode.BETWEEN, null, list2.get(j - 1), null));
         j--;
       } else {
-        operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.DELETE, KeyedListDiff.Operation.Mode.BETWEEN, keyExtractor.apply(list1.get(i - 1)), list1.get(i - 1), null));
+        operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.DELETE, KeyedListDiff.Operation.Mode.BETWEEN, null, list1.get(i - 1), null));
         i--;
       }
     }
 
     while (i > 0) {
-      operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.DELETE, KeyedListDiff.Operation.Mode.BETWEEN, keyExtractor.apply(list1.get(i - 1)), list1.get(i - 1), null));
+      operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.DELETE, KeyedListDiff.Operation.Mode.BETWEEN, null, list1.get(i - 1), null));
       i--;
     }
 
     while (j > 0) {
-      operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.INSERT, KeyedListDiff.Operation.Mode.BETWEEN, keyExtractor.apply(list2.get(j - 1)), list2.get(j - 1), null));
+      operations.add(new KeyedListDiff.Operation<>(KeyedListDiff.Operation.Type.INSERT, KeyedListDiff.Operation.Mode.BETWEEN, null, list2.get(j - 1), null));
       j--;
     }
 
@@ -223,7 +223,7 @@ public class KeyedListDiffUtils {
             (element, stream) -> {
               stream.writeByte(element.type.ordinal());
 //              stream.writeByte(element.mode.ordinal());
-              keyWriter.write(element.operandKey, stream);
+//              keyWriter.write(element.operandKey, stream);
               NullableHelper.write(element.operandValue, stream, valueWriter);
               NullableHelper.write(element.operandDiff, stream, diffWriter);
             }
@@ -247,7 +247,8 @@ public class KeyedListDiffUtils {
                       KeyedListDiff.Operation.Type.values()[stream.readByte()],
 //                      KeyedListDiff.Operation.Mode.values()[stream.readByte()],
                       KeyedListDiff.Operation.Mode.BETWEEN,
-                      keyReader.read(stream),
+//                      keyReader.read(stream),
+                      null,
                       NullableHelper.read(stream, valueReader),
                       NullableHelper.read(stream, diffReader)
               );
@@ -300,9 +301,9 @@ public class KeyedListDiffUtils {
         KeyedListDiff.Operation<Key, Value, Diff> opQBase = itQ.next();
 
         // キーによるノードの同一性検証
-        if (!opP.operandKey.equals(opQBase.operandKey)) {
-          throw new IllegalDiffException("p and q disagree on node identity");
-        }
+//        if (!opP.operandKey.equals(opQBase.operandKey)) {
+//          throw new IllegalDiffException("p and q disagree on node identity");
+//        }
 
         if (opP.type == KeyedListDiff.Operation.Type.MATCH) {
           if (opQBase.type == KeyedListDiff.Operation.Type.MATCH) {
@@ -412,7 +413,7 @@ public class KeyedListDiffUtils {
                 () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B.")
         );
 
-        validateKey(opP, opQ);
+//        validateKey(opP, opQ);
 
         if (opQ.type == KeyedListDiff.Operation.Type.MATCH) {
           // insert -> match のパターン
@@ -443,7 +444,7 @@ public class KeyedListDiffUtils {
                 () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B.")
         );
 
-        validateKey(opP, opQ);
+//        validateKey(opP, opQ);
 
         result.addAll(mergeInsertionSlot(ins1, ins2));
         ins1.clear();
