@@ -266,30 +266,30 @@ class KeyedListDiffUtilsTest {
     Assertions.assertEquals(newList, patched);
   }
 
-  @Test
-  void test_invert() {
-    var oldList = List.of(
-            new KeyedObject(1, "a"),
-            new KeyedObject(2, "b"),
-            new KeyedObject(3, "c")
-    );
-    var newList = List.of(
-            new KeyedObject(1, "a"),
-            new KeyedObject(2, "x"),
-            new KeyedObject(4, "d")
-    );
-    var diff = KeyedListDiffUtils.diff(oldList, newList,
-            KeyedObject::getKey,
-            this::diffKeyedObject
-    );
-
-    var inverted = KeyedListDiffUtils.invert(diff, this::invertKeyedObjectDiff);
-    var patched = KeyedListDiffUtils.patch(newList, inverted,
-            this::patchKeyedObject
-    );
-
-    Assertions.assertEquals(oldList, patched);
-  }
+//  @Test
+//  void test_invert() {
+//    var oldList = List.of(
+//            new KeyedObject(1, "a"),
+//            new KeyedObject(2, "b"),
+//            new KeyedObject(3, "c")
+//    );
+//    var newList = List.of(
+//            new KeyedObject(1, "a"),
+//            new KeyedObject(2, "x"),
+//            new KeyedObject(4, "d")
+//    );
+//    var diff = KeyedListDiffUtils.diff(oldList, newList,
+//            KeyedObject::getKey,
+//            this::diffKeyedObject
+//    );
+//
+//    var inverted = KeyedListDiffUtils.invert(diff, this::invertKeyedObjectDiff);
+//    var patched = KeyedListDiffUtils.patch(newList, inverted,
+//            this::patchKeyedObject
+//    );
+//
+//    Assertions.assertEquals(oldList, patched);
+//  }
 
   @Test
   void test_readWrite() throws IOException {

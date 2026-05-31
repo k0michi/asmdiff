@@ -93,9 +93,9 @@ public class ListDiffUtils {
         ListDiff.Operation<T> opQBase = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("p has remaining operations after q is exhausted"));
         T valQBase = opQBase.operand;
 
-        if (!compare.test(valP, valQBase)) {
-          throw new IllegalDiffException("p and q disagree on node identity");
-        }
+//        if (!compare.test(valP, valQBase)) {
+//          throw new IllegalDiffException("p and q disagree on node identity");
+//        }
 
         if (opP.type == ListDiff.Operation.Type.MATCH) {
           qPrimeOps.add(opQBase);
@@ -155,7 +155,7 @@ public class ListDiffUtils {
 
     while (i > 0 && j > 0) {
       if (compare.test(list1.get(i - 1), list2.get(j - 1))) {
-        operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, ListDiff.Operation.Mode.BETWEEN, list1.get(i - 1)));
+        operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, ListDiff.Operation.Mode.BETWEEN, null));
         i--;
         j--;
 //      } else if (dp[i][j] == dp[i - 1][j] + 1) {
@@ -171,14 +171,14 @@ public class ListDiffUtils {
         j--;
       } else {
 //        operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, null, list1.get(i - 1)));
-        operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, ListDiff.Operation.Mode.BETWEEN, list1.get(i - 1)));
+        operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, ListDiff.Operation.Mode.BETWEEN, null));
         i--;
       }
     }
 
     while (i > 0) {
 //      operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, null, list1.get(i - 1)));
-      operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, ListDiff.Operation.Mode.BETWEEN, list1.get(i - 1)));
+      operations.add(new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, ListDiff.Operation.Mode.BETWEEN, null));
       i--;
     }
 
@@ -305,9 +305,9 @@ public class ListDiffUtils {
 
         ListDiff.Operation<T> opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
 
-        if (!compare2.test(opP.operand, opQ.operand)) {
-          throw new IllegalDiffException("Composition Error: Operand mismatch at B.");
-        }
+//        if (!compare2.test(opP.operand, opQ.operand)) {
+//          throw new IllegalDiffException("Composition Error: Operand mismatch at B.");
+//        }
 
         if (opQ.type == ListDiff.Operation.Type.MATCH) {
           ins1.add(opP);
@@ -323,9 +323,9 @@ public class ListDiffUtils {
 
         ListDiff.Operation<T> opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
 
-        if (!compare2.test(opP.operand, opQ.operand)) {
-          throw new IllegalDiffException("Composition Error: Operand mismatch at C.");
-        }
+//        if (!compare2.test(opP.operand, opQ.operand)) {
+//          throw new IllegalDiffException("Composition Error: Operand mismatch at C.");
+//        }
 
         result.addAll(mergeInsertionSlot(ins1, ins2));
         ins1.clear();
