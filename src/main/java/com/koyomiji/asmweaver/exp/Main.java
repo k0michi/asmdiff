@@ -95,7 +95,8 @@ public class Main {
             PrintWriter csvWriter = new PrintWriter(bw, true)
     ) {
       if (new File(CONFIG.getCsvPath()).length() == 0) {
-        csvWriter.println("CommitHash,Describe,ClassPath,MethodName,SrcSizeBytesBefore,SrcSizeBytesAfter,DurationNs,DiffSizeBytes,AsmTreeMatch,Status");
+        // 💡 CSVヘッダーに DiffDurationNs と PatchDurationNs を定義
+        csvWriter.println("CommitHash,Describe,ClassPath,MethodName,SrcSizeBytesBefore,SrcSizeBytesAfter,DiffDurationNs,PatchDurationNs,DiffSizeBytes,AsmTreeMatch,Status");
       }
 
       List<String> commitHistory = getCommitHistory(repoDir, CONFIG.getStartCommit(), CONFIG.getMaxHistory());
@@ -156,16 +157,18 @@ public class Main {
               try {
                 MeasurementResult result = measurePerformance(method, bytesBefore, bytesAfter);
 
-                csvWriter.printf("%s,\"%s\",%s,%s,%d,%d,%d,%d,%b,%s\n",
+                // 💡 計測結果を出力（引数の数とフォーマットを調整）
+                csvWriter.printf("%s,\"%s\",%s,%s,%d,%d,%d,%d,%d,%b,%s\n",
                         commitX, commitDesc, relativeClassPath, method.getName(),
                         bytesBefore.length, bytesAfter.length,
-                        result.medianDurationNs, result.diffSizeBytes, result.isAsmMatched, "SUCCESS");
+                        result.medianDiffDurationNs, result.medianPatchDurationNs, result.diffSizeBytes, result.isAsmMatched, "SUCCESS");
 
-                Logger.infof("     [%s] 元サイズ(前/後): %d/%d bytes, 時間(中央値): %d ns, パッチ: %d bytes, ASM一致: %b",
-                        method.getName(), bytesBefore.length, bytesAfter.length, result.medianDurationNs, result.diffSizeBytes, result.isAsmMatched);
+                Logger.infof("     [%s] 元サイズ(前/後): %d/%d bytes, Diff時間(中央値): %d ns, Patch時間(中央値): %d ns, パッチ: %d bytes, ASM一致: %b",
+                        method.getName(), bytesBefore.length, bytesAfter.length, result.medianDiffDurationNs, result.medianPatchDurationNs, result.diffSizeBytes, result.isAsmMatched);
 
               } catch (Exception e) {
-                csvWriter.printf("%s,\"%s\",%s,%s,%d,%d,0,0,false,ERROR_%s\n",
+                // 💡 エラー時のプレースホルダー（0, 0, 0）を調整
+                csvWriter.printf("%s,\"%s\",%s,%s,%d,%d,0,0,0,false,ERROR_%s\n",
                         commitX, commitDesc, relativeClassPath, method.getName(),
                         bytesBefore.length, bytesAfter.length, e.getClass().getSimpleName());
                 e.printStackTrace();
@@ -175,7 +178,7 @@ public class Main {
 
         } catch (Exception e) {
           Logger.errorf("  -> コミット %s の解析中にエラーが発生しました: %s", commitX, e.getMessage());
-          csvWriter.printf("%s,\"%s\",NONE,NONE,0,0,0,0,false,ERROR_COMMIT_%s\n",
+          csvWriter.printf("%s,\"%s\",NONE,NONE,0,0,0,0,0,false,ERROR_COMMIT_%s\n",
                   commitX, commitDesc, e.getClass().getSimpleName());
         }
       }
@@ -216,47 +219,64 @@ public class Main {
   private static MeasurementResult measurePerformance(BytecodeDiffMethod method, byte[] bytesBefore, byte[] bytesAfter) throws Exception {
     // 1. ウォームアップフェーズ
     for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-      clearRamDisk(); // 💡 【要件】計測（ループ）ごとにRAMディスクを完全にクリア
-      method.computeDiff(bytesBefore, bytesAfter);
+      clearRamDisk();
+      byte[] patch = method.computeDiff(bytesBefore, bytesAfter);
+      clearRamDisk(); // 💡 パッチ適用前にもクレンジングを入れる
+      method.applyPatch(bytesBefore, patch);
     }
 
-    List<Long> durations = new ArrayList<>(MEASUREMENT_ITERATIONS);
+    List<Long> diffDurations = new ArrayList<>(MEASUREMENT_ITERATIONS);
+    List<Long> patchDurations = new ArrayList<>(MEASUREMENT_ITERATIONS);
     byte[] finalPatch = null;
+    byte[] finalRestoredBytes = null;
 
     // 2. 本計測フェーズ
     for (int i = 0; i < MEASUREMENT_ITERATIONS; i++) {
-      clearRamDisk(); // 💡 【要件】計測（ループ）ごとにRAMディスクを完全にクリア
 
-      long startTime = System.nanoTime();
+      // --- Diff 計測 ---
+      clearRamDisk();
+      long startDiff = System.nanoTime();
       byte[] patch = method.computeDiff(bytesBefore, bytesAfter);
-      long endTime = System.nanoTime();
+      long endDiff = System.nanoTime();
+      diffDurations.add(endDiff - startDiff);
 
-      durations.add(endTime - startTime);
+      // --- Patch 計測 ---
+      clearRamDisk(); // 💡 I/O条件を揃えるため、Patch前にもRAMディスクを完全クリア
+      long startPatch = System.nanoTime();
+      byte[] restored = method.applyPatch(bytesBefore, patch);
+      long endPatch = System.nanoTime();
+      patchDurations.add(endPatch - startPatch);
 
       if (i == MEASUREMENT_ITERATIONS - 1) {
         finalPatch = patch;
+        finalRestoredBytes = restored;
       }
     }
 
-    Collections.sort(durations);
-    long medianDurationNs = durations.get(durations.size() / 2);
+    // それぞれの中央値を算出
+    Collections.sort(diffDurations);
+    Collections.sort(patchDurations);
+    long medianDiffDurationNs = diffDurations.get(diffDurations.size() / 2);
+    long medianPatchDurationNs = patchDurations.get(patchDurations.size() / 2);
+
     long diffSizeBytes = (finalPatch != null) ? finalPatch.length : 0;
 
-    // パッチ適用前にも一応クレンジング
-    clearRamDisk();
-    byte[] restoredBytes = method.applyPatch(bytesBefore, finalPatch);
-    boolean isAsmMatched = compareAsmTree(bytesAfter, restoredBytes);
+    // 本計測内の最後の検証結果をもとにASMツリーを比較
+    boolean isAsmMatched = compareAsmTree(bytesAfter, finalRestoredBytes);
 
-    return new MeasurementResult(medianDurationNs, diffSizeBytes, isAsmMatched);
+    return new MeasurementResult(medianDiffDurationNs, medianPatchDurationNs, diffSizeBytes, isAsmMatched);
   }
 
+  // 💡 結果格納用クラスのフィールドを分割
   private static class MeasurementResult {
-    final long medianDurationNs;
+    final long medianDiffDurationNs;
+    final long medianPatchDurationNs;
     final long diffSizeBytes;
     final boolean isAsmMatched;
 
-    MeasurementResult(long medianDurationNs, long diffSizeBytes, boolean isAsmMatched) {
-      this.medianDurationNs = medianDurationNs;
+    MeasurementResult(long medianDiffDurationNs, long medianPatchDurationNs, long diffSizeBytes, boolean isAsmMatched) {
+      this.medianDiffDurationNs = medianDiffDurationNs;
+      this.medianPatchDurationNs = medianPatchDurationNs;
       this.diffSizeBytes = diffSizeBytes;
       this.isAsmMatched = isAsmMatched;
     }
