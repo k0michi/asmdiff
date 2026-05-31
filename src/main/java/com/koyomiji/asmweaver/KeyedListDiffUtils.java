@@ -222,7 +222,7 @@ public class KeyedListDiffUtils {
             out,
             (element, stream) -> {
               stream.writeByte(element.type.ordinal());
-              stream.writeByte(element.mode.ordinal());
+//              stream.writeByte(element.mode.ordinal());
               keyWriter.write(element.operandKey, stream);
               NullableHelper.write(element.operandValue, stream, valueWriter);
               NullableHelper.write(element.operandDiff, stream, diffWriter);
@@ -245,7 +245,8 @@ public class KeyedListDiffUtils {
             stream -> {
               return new KeyedListDiff.Operation<>(
                       KeyedListDiff.Operation.Type.values()[stream.readByte()],
-                      KeyedListDiff.Operation.Mode.values()[stream.readByte()],
+//                      KeyedListDiff.Operation.Mode.values()[stream.readByte()],
+                      KeyedListDiff.Operation.Mode.BETWEEN,
                       keyReader.read(stream),
                       NullableHelper.read(stream, valueReader),
                       NullableHelper.read(stream, diffReader)

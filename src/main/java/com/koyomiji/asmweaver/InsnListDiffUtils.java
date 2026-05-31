@@ -987,7 +987,7 @@ public class InsnListDiffUtils {
             out,
             (element, stream) -> {
               stream.writeByte(element.type.ordinal());
-              stream.writeByte(element.mode.ordinal());
+//              stream.writeByte(element.mode.ordinal());
               NullableHelper.write(element.operand, stream, (o, outStream) -> AbstractInsnNodeHelper.write(o, outStream, labelToIndex));
             }
     );
@@ -1002,7 +1002,8 @@ public class InsnListDiffUtils {
             in,
             stream -> {
               InsnListDiff.Operation.Type type = InsnListDiff.Operation.Type.values()[stream.readByte()];
-              InsnListDiff.Operation.Mode mode = InsnListDiff.Operation.Mode.values()[stream.readByte()];
+//              InsnListDiff.Operation.Mode mode = InsnListDiff.Operation.Mode.values()[stream.readByte()];
+              InsnListDiff.Operation.Mode mode = InsnListDiff.Operation.Mode.BETWEEN;
               AbstractInsnNode operand = NullableHelper.read(stream, (inStream) -> AbstractInsnNodeHelper.read(inStream, indexToLabel));
               return new InsnListDiff.Operation(type, mode, operand);
             }

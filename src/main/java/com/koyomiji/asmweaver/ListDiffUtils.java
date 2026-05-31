@@ -370,7 +370,7 @@ public class ListDiffUtils {
             out,
             (element, stream) -> {
               stream.writeByte(element.type.ordinal());
-              stream.writeByte(element.mode.ordinal());
+//              stream.writeByte(element.mode.ordinal());
               NullableHelper.write(element.operand, stream, elementWriter);
             }
     );
@@ -385,7 +385,8 @@ public class ListDiffUtils {
             in,
             stream -> new ListDiff.Operation<>(
                     ListDiff.Operation.Type.values()[stream.readByte()],
-                    ListDiff.Operation.Mode.values()[stream.readByte()],
+//                    ListDiff.Operation.Mode.values()[stream.readByte()],
+                    ListDiff.Operation.Mode.BETWEEN,
                     NullableHelper.read(stream, elementReader)
             )
     );
