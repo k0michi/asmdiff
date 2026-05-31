@@ -2,7 +2,7 @@ package com.koyomiji.asmweaver;
 
 import org.objectweb.asm.tree.*;
 
-public class ClassDiff implements IDiff {
+public class ClassDiff {
   public ListDiff<Integer> version;
   public ListDiff<Integer> access;
   public ListDiff<String> name;

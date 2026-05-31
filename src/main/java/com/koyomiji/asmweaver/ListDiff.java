@@ -2,7 +2,7 @@ package com.koyomiji.asmweaver;
 
 import java.util.List;
 
-public class ListDiff<T> implements IDiff {
+public class ListDiff<T> {
   public List<Operation<T>> operations;
 
   public ListDiff(List<Operation<T>> operations) {

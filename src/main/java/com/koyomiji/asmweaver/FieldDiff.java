@@ -3,7 +3,7 @@ package com.koyomiji.asmweaver;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.TypeAnnotationNode;
 
-public class FieldDiff implements IDiff {
+public class FieldDiff {
   public ListDiff<Integer> access;
   public ListDiff<String> name;
   public ListDiff<String> desc;

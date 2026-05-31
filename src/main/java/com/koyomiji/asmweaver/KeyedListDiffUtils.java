@@ -13,7 +13,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class KeyedListDiffUtils {
-  public static <Key, Value, Diff extends IDiff> KeyedListDiff<Key, Value, Diff> unchangedToNull(KeyedListDiff<Key, Value, Diff> diff) {
+  public static <Key, Value, Diff> KeyedListDiff<Key, Value, Diff> unchangedToNull(KeyedListDiff<Key, Value, Diff> diff) {
     boolean isEmpty = true;
 
     for (KeyedListDiff.Operation<Key, Value, Diff> op : diff.operations) {
@@ -30,7 +30,7 @@ public class KeyedListDiffUtils {
     return diff;
   }
 
-  public static <Key, Value, Diff extends IDiff> KeyedListDiff<Key, Value, Diff> invert(KeyedListDiff<Key, Value, Diff> diff, Function<Diff, Diff> invert) {
+  public static <Key, Value, Diff> KeyedListDiff<Key, Value, Diff> invert(KeyedListDiff<Key, Value, Diff> diff, Function<Diff, Diff> invert) {
     if (diff == null) {
       return null;
     }
@@ -55,7 +55,7 @@ public class KeyedListDiffUtils {
   }
 
   // FIXME: Myers
-  public static <Key, Value, Diff extends IDiff> KeyedListDiff<Key, Value, Diff> diff(List<Value> list1, List<Value> list2, Function<Value, Key> keyExtractor, BiFunction<Value, Value, Diff> diffFunction) {
+  public static <Key, Value, Diff> KeyedListDiff<Key, Value, Diff> diff(List<Value> list1, List<Value> list2, Function<Value, Key> keyExtractor, BiFunction<Value, Value, Diff> diffFunction) {
     int[][] dp = new int[list1.size() + 1][list2.size() + 1];
 
     for (int i = 0; i <= list1.size(); i++) {
@@ -114,7 +114,7 @@ public class KeyedListDiffUtils {
     return unchangedToNull(new KeyedListDiff<>(reversedOperations));
   }
 
-  public static <Value, Diff extends IDiff> KeyedListDiff<Integer, Value, Diff> diffIndexed(
+  public static <Value, Diff> KeyedListDiff<Integer, Value, Diff> diffIndexed(
           List<Value> list1,
           List<Value> list2,
           BiFunction<Value, Value, Diff> diffFunction
@@ -157,7 +157,7 @@ public class KeyedListDiffUtils {
     return new KeyedListDiff<>(unwrappedOps);
   }
 
-  public static <Value, Diff extends IDiff> KeyedListDiff<Integer, Value, Diff> diffNullableValue(
+  public static <Value, Diff> KeyedListDiff<Integer, Value, Diff> diffNullableValue(
           Value value1,
           Value value2,
           BiFunction<Value, Value, Diff> diffFunction
@@ -169,7 +169,7 @@ public class KeyedListDiffUtils {
     );
   }
 
-  public static <Key, Value, Diff extends IDiff> List<Value> patch(List<Value> original, KeyedListDiff<Key, Value, Diff> diff, BiFunction<Value, Diff, Value> elementPatch) {
+  public static <Key, Value, Diff> List<Value> patch(List<Value> original, KeyedListDiff<Key, Value, Diff> diff, BiFunction<Value, Diff, Value> elementPatch) {
     if (diff == null) {
       return original;
     }
@@ -195,7 +195,7 @@ public class KeyedListDiffUtils {
     return result;
   }
 
-  public static <Value, Diff extends IDiff> Value patchNullableValue(Value original, KeyedListDiff<Integer, Value, Diff> diff, BiFunction<Value, Diff, Value> elementPatch) {
+  public static <Value, Diff> Value patchNullableValue(Value original, KeyedListDiff<Integer, Value, Diff> diff, BiFunction<Value, Diff, Value> elementPatch) {
     return ListHelper.getOrNull(
             patch(
                     ListHelper.ofNullable(original),
@@ -204,7 +204,7 @@ public class KeyedListDiffUtils {
             ), 0);
   }
 
-  public static <Key, Value, Diff extends IDiff> void write(
+  public static <Key, Value, Diff> void write(
           KeyedListDiff<Key, Value, Diff> diff,
           CustomDataOutput out,
           ListHelper.ElementWriter<Key> keyWriter,
@@ -230,7 +230,7 @@ public class KeyedListDiffUtils {
     );
   }
 
-  public static <Key, Value, Diff extends IDiff> KeyedListDiff<Key, Value, Diff> read(
+  public static <Key, Value, Diff> KeyedListDiff<Key, Value, Diff> read(
           CustomDataInput in,
           ListHelper.ElementReader<Key> keyReader,
           ListHelper.ElementReader<Value> valueReader,
@@ -256,8 +256,7 @@ public class KeyedListDiffUtils {
     return new KeyedListDiff<>(ops);
   }
 
-  public static <Key, Value, Diff extends
-          IDiff> Pair<KeyedListDiff<Key, Value, Diff>, KeyedListDiff<Key, Value, Diff>> commute(
+  public static <Key, Value, Diff> Pair<KeyedListDiff<Key, Value, Diff>, KeyedListDiff<Key, Value, Diff>> commute(
           KeyedListDiff<Key, Value, Diff> p,
           KeyedListDiff<Key, Value, Diff> q,
           CommuteFunction<Diff> commuteDiff,
@@ -350,8 +349,7 @@ public class KeyedListDiffUtils {
     return Pair.of(new KeyedListDiff<>(qPrimeOps), new KeyedListDiff<>(pPrimeOps));
   }
 
-  private static <Key, Value, Diff extends
-          IDiff> List<KeyedListDiff.Operation<Key, Value, Diff>> collectInsertions(PeekableIterator<KeyedListDiff.Operation<Key, Value, Diff>> it) {
+  private static <Key, Value, Diff> List<KeyedListDiff.Operation<Key, Value, Diff>> collectInsertions(PeekableIterator<KeyedListDiff.Operation<Key, Value, Diff>> it) {
     List<KeyedListDiff.Operation<Key, Value, Diff>> insertions = new ArrayList<>();
 
     while (it.hasNext() && it.peek().type == KeyedListDiff.Operation.Type.INSERT) {
@@ -361,8 +359,7 @@ public class KeyedListDiffUtils {
     return insertions;
   }
 
-  private static <Key, Value, Diff extends
-          IDiff> List<KeyedListDiff.Operation<Key, Value, Diff>> mergeInsertionSlot(
+  private static <Key, Value, Diff> List<KeyedListDiff.Operation<Key, Value, Diff>> mergeInsertionSlot(
           List<KeyedListDiff.Operation<Key, Value, Diff>> ins1,
           List<KeyedListDiff.Operation<Key, Value, Diff>> ins2
   ) {
@@ -371,7 +368,7 @@ public class KeyedListDiffUtils {
     return merged;
   }
 
-  private static <Key, Value, Diff extends IDiff> void validateKey(
+  private static <Key, Value, Diff> void validateKey(
           KeyedListDiff.Operation<Key, Value, Diff> opP,
           KeyedListDiff.Operation<Key, Value, Diff> opQ
   ) {
@@ -380,7 +377,7 @@ public class KeyedListDiffUtils {
     }
   }
 
-  public static <Key, Value, Diff extends IDiff> KeyedListDiff<Key, Value, Diff> compose(
+  public static <Key, Value, Diff> KeyedListDiff<Key, Value, Diff> compose(
           KeyedListDiff<Key, Value, Diff> p,
           KeyedListDiff<Key, Value, Diff> q,
           BiFunction<Diff, Diff, Diff> composeDiff,
@@ -486,7 +483,7 @@ public class KeyedListDiffUtils {
     return unchangedToNull(new KeyedListDiff<>(result));
   }
 
-  public static <Key, Value, Diff extends IDiff> int distance(KeyedListDiff<Key, Value, Diff> diff, Function<Diff, Integer> diffDistance) {
+  public static <Key, Value, Diff> int distance(KeyedListDiff<Key, Value, Diff> diff, Function<Diff, Integer> diffDistance) {
     if (diff == null) {
       return 0;
     }

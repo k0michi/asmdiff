@@ -78,7 +78,7 @@ public class TestUtils {
     }
   }
 
-  public static <T, U extends IDiff> void verifyDiffEmpty(Supplier<List<T>> nodesSupplier, BiFunction<T, T, U> diff) {
+  public static <T, U> void verifyDiffEmpty(Supplier<List<T>> nodesSupplier, BiFunction<T, T, U> diff) {
     List<T> nodes1 = nodesSupplier.get();
     List<T> nodes2 = nodesSupplier.get();
 

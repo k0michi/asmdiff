@@ -4,7 +4,7 @@ import org.objectweb.asm.tree.*;
 
 import java.util.List;
 
-public class MethodDiff implements IDiff {
+public class MethodDiff {
   public ListDiff<Integer> access;
   public ListDiff<String> name;
   public ListDiff<String> desc;

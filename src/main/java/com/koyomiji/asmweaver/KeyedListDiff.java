@@ -2,14 +2,14 @@ package com.koyomiji.asmweaver;
 
 import java.util.List;
 
-public class KeyedListDiff<Key, Value, Diff extends IDiff> implements IDiff {
+public class KeyedListDiff<Key, Value, Diff> {
   public List<Operation<Key, Value, Diff>> operations;
 
   public KeyedListDiff(List<Operation<Key, Value, Diff>> operations) {
     this.operations = operations;
   }
 
-  public static class Operation<Key, Value, Diff extends IDiff> {
+  public static class Operation<Key, Value, Diff> {
     public enum Type {
       MATCH,
       INSERT,

@@ -3,7 +3,7 @@ package com.koyomiji.asmweaver;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.TypeAnnotationNode;
 
-public class RecordComponentDiff implements IDiff {
+public class RecordComponentDiff {
   public ListDiff<String> name;
   public ListDiff<String> descriptor;
   public ListDiff<String> signature;

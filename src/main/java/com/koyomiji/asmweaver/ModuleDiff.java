@@ -5,7 +5,7 @@ import org.objectweb.asm.tree.ModuleOpenNode;
 import org.objectweb.asm.tree.ModuleProvideNode;
 import org.objectweb.asm.tree.ModuleRequireNode;
 
-public class ModuleDiff implements IDiff {
+public class ModuleDiff {
   public ListDiff<String> name;
   public ListDiff<Integer> access;
   public ListDiff<String> version;

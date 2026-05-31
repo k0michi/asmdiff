@@ -43,7 +43,7 @@ class KeyedListDiffUtilsTest {
     }
   }
 
-  class KeyedObjectDiff implements IDiff {
+  class KeyedObjectDiff {
     ListDiff<String> value;
 
     public KeyedObjectDiff(ListDiff<String> value) {

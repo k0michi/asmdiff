@@ -4,7 +4,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 
 import java.util.List;
 
-public class InsnListDiff implements IDiff {
+public class InsnListDiff {
   public List<Operation> operations;
 
   public InsnListDiff(List<Operation> operations) {
