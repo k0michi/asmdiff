@@ -231,23 +231,6 @@ public class ListDiffUtils {
     return patched.get(0);
   }
 
-  private static <T> List<ListDiff.Operation<T>> mergeInsertionSlot(List<ListDiff.Operation<T>> ins1, List<ListDiff.Operation<T>> ins2) {
-    List<ListDiff.Operation<T>> result = new ArrayList<>();
-    result.addAll(ins1);
-    result.addAll(ins2);
-    return result;
-  }
-
-  private static <T> List<ListDiff.Operation<T>> collectInsertions(PeekableIterator<ListDiff.Operation<T>> it) {
-    List<ListDiff.Operation<T>> insertions = new ArrayList<>();
-
-    while (it.hasNext() && it.peek().type == ListDiff.Operation.Type.INSERT) {
-      insertions.add(it.next());
-    }
-
-    return insertions;
-  }
-
   public static <T> ListDiff<T> compose(ListDiff<T> p, ListDiff<T> q, BiPredicate<T, T> compare2) {
     if (p == null) {
       return q;
