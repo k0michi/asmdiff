@@ -12,12 +12,12 @@ import java.util.List;
 public class ModuleDiffUtilsTest {
   @Test
   void test_diff() {
-    TestUtils.verifyDiffEmpty(ModuleNodeHelperTest::generateUnique, ModuleDiffUtils::diff);
+    TestUtils.verifyDiffEmpty(ModuleNodes::generateUnique, ModuleDiffUtils::diff);
   }
 
   @Test
   void test_patch() {
-    List<ModuleNode> unique = ModuleNodeHelperTest.generateUnique();
+    List<ModuleNode> unique = ModuleNodes.generateUnique();
 
     for (int i = 0; i < unique.size(); i++) {
       for (int j = 0; j < unique.size(); j++) {
@@ -30,7 +30,7 @@ public class ModuleDiffUtilsTest {
 
   @Test
   void test_readWrite() throws IOException {
-    List<ModuleNode> unique = ModuleNodeHelperTest.generateUnique();
+    List<ModuleNode> unique = ModuleNodes.generateUnique();
 
     for (int i = 0; i < unique.size(); i++) {
       for (int j = 0; j < unique.size(); j++) {
