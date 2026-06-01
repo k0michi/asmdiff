@@ -30,15 +30,15 @@ class ClassNodeHelperTest {
     list.add(temp);
 
     temp = new ClassNode();
-    temp.visit(1, 0, "A", "A", "java/lang/Object", null);
+    temp.visit(0, 0, "A", "A", "java/lang/Object", null);
     list.add(temp);
 
     temp = new ClassNode();
-    temp.visit(1, 0, "A", null, null, null);
+    temp.visit(0, 0, "A", null, null, null);
     list.add(temp);
 
     temp = new ClassNode();
-    temp.visit(1, 0, "A", null, "java/lang/Object", new String[]{"java/io/Serializable"});
+    temp.visit(0, 0, "A", null, "java/lang/Object", new String[]{"java/io/Serializable"});
     list.add(temp);
 
     temp = new ClassNode();

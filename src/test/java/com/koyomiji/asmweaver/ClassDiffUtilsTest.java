@@ -10,7 +10,6 @@ import org.objectweb.asm.tree.ClassNode;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 
 class ClassDiffUtilsTest {
   static ClassNode base;
@@ -231,5 +230,27 @@ class ClassDiffUtilsTest {
     var commuted = ClassDiffUtils.commute(diff12, diff23);
     var patched = ClassDiffUtils.patch(ClassDiffUtils.patch(node1, commuted.first), commuted.second);
     Assertions.assertTrue(ClassNodeHelper.equalsNormalizeLabels(node3, patched));
+  }
+
+  @Test
+  void test_merge() {
+    var unique1 = ClassNodeHelperTest.generateUnique();
+    var unique2 = ClassNodeHelperTest.generateUnique();
+
+    // Disjoint insertions
+    for (int i = 1; i < unique1.size(); i++) {
+      for (int j = 1; j < unique2.size(); j++) {
+        if (i != j) {
+          ClassNode node1 = unique1.get(0);
+          ClassNode node2 = unique1.get(i);
+          ClassNode node3 = unique2.get(j);
+
+          ClassDiff diff12 = ClassDiffUtils.diff(node1, node2);
+          ClassDiff diff13 = ClassDiffUtils.diff(node1, node3);
+
+          Assertions.assertDoesNotThrow(() -> ClassDiffUtils.merge(diff12, diff13));
+        }
+      }
+    }
   }
 }
