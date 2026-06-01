@@ -10,6 +10,7 @@ import org.objectweb.asm.tree.ClassNode;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 
 class ClassDiffUtilsTest {
   static ClassNode base;
@@ -214,5 +215,21 @@ class ClassDiffUtilsTest {
 
       Assertions.assertNull(composed, "i=" + i);
     }
+  }
+
+  @Test
+  void test_commute_0() throws ConflictException {
+    ClassNode node1 = new ClassNode();
+    node1.visit(0, 0, "A", null, "java/lang/Object", null);
+    ClassNode node2 = new ClassNode();
+    node2.visit(0, 0, "A", "A", "java/lang/Object", null);
+    ClassNode node3 = new ClassNode();
+    node3.visit(0, 0, "A", "A", "java/lang/Object", new String[]{"B"});
+
+    ClassDiff diff12 = ClassDiffUtils.diff(node1, node2);
+    ClassDiff diff23 = ClassDiffUtils.diff(node2, node3);
+    var commuted = ClassDiffUtils.commute(diff12, diff23);
+    var patched = ClassDiffUtils.patch(ClassDiffUtils.patch(node1, commuted.first), commuted.second);
+    Assertions.assertTrue(ClassNodeHelper.equalsNormalizeLabels(node3, patched));
   }
 }
