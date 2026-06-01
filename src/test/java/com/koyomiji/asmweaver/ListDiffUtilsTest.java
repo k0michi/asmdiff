@@ -357,4 +357,77 @@ class ListDiffUtilsTest {
 //
 //    Assertions.assertEquals(list1, patched);
 //  }
+
+  @Test
+  void test_commute_not_commutable_0() {
+    var list1 = List.of(1);
+    var list2 = List.<Integer>of();
+    var list3 = List.of(2);
+
+    var diff12 = ListDiffUtils.diff(list1, list2, Integer::equals);
+    var diff23 = ListDiffUtils.diff(list2, list3, Integer::equals);
+
+    // Undecidable: 1 2 or 2 1
+    Assertions.assertThrows(ConflictException.class, () -> ListDiffUtils.commute(diff12, diff23, Integer::equals));
+  }
+
+  @Test
+  void test_commute_not_commutable_1() {
+    var list1 = List.<Integer>of();
+    var list2 = List.of(0);
+    var list3 = List.<Integer>of();
+
+    var diff12 = ListDiffUtils.diff(list1, list2, Integer::equals);
+    var diff23 = ListDiffUtils.diff(list2, list3, Integer::equals);
+
+    Assertions.assertThrows(ConflictException.class, () -> ListDiffUtils.commute(diff12, diff23, Integer::equals));
+  }
+
+  @Test
+  void test_commute_5() {
+    var list1 = List.<Integer>of(1,3,2);
+    var list2 = List.of(1, 2);
+    var list3 = List.of(1, 4, 2);
+
+    var diff12 = ListDiffUtils.diff(list1, list2, Integer::equals);
+    var diff23 = ListDiffUtils.diff(list2, list3, Integer::equals);
+
+    Assertions.assertDoesNotThrow(() -> ListDiffUtils.commute(diff12, diff23, Integer::equals));
+  }
+
+  @Test
+  void test_commute_6() {
+    var list1 = List.<Integer>of();
+    var list2 = List.of(1, 2);
+    var list3 = List.of(1, 3, 2);
+
+    var diff12 = ListDiffUtils.diff(list1, list2, Integer::equals);
+    var diff23 = ListDiffUtils.diff(list2, list3, Integer::equals);
+
+    Assertions.assertDoesNotThrow(() -> ListDiffUtils.commute(diff12, diff23, Integer::equals));
+  }
+
+  @Test
+  void test_commute_7() {
+    var list1 = List.<Integer>of(1, 2);
+    var list2 = List.of(1, 3, 2);
+    var list3 = List.of(3);
+
+    var diff12 = ListDiffUtils.diff(list1, list2, Integer::equals);
+    var diff23 = ListDiffUtils.diff(list2, list3, Integer::equals);
+
+    Assertions.assertDoesNotThrow(() -> ListDiffUtils.commute(diff12, diff23, Integer::equals));
+  }
+
+  @Test
+  void test_commute_8() {
+    var list1 = List.of(1, 2, 3);
+    var list2 = List.<Integer>of();
+    var list3 = List.of(1, 2, 3);
+
+    var diff12 = ListDiffUtils.diff(list1, list2, Integer::equals);
+    var diff23 = ListDiffUtils.diff(list2, list3, Integer::equals);
+
+    Assertions.assertThrows(ConflictException.class, () -> ListDiffUtils.commute(diff12, diff23, Integer::equals));
+  }
 }

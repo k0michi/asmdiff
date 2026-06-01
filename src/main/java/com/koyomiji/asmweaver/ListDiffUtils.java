@@ -2,7 +2,6 @@ package com.koyomiji.asmweaver;
 
 import com.koyomiji.asmweaver.io.CustomDataInput;
 import com.koyomiji.asmweaver.io.CustomDataOutput;
-import com.koyomiji.asmweaver.util.PeekableIterator;
 import com.koyomiji.asmweaver.util.tuple.Pair;
 
 import java.io.IOException;
@@ -68,12 +67,14 @@ public class ListDiffUtils {
     List<ListDiff.Operation<T>> pPrimeOps = new ArrayList<>();
     ListDiffPairIterator<T> it = new ListDiffPairIterator<>(p, q);
 
-    // 直前のイベントが delete / insert だったか（MATCH/MATCH のアンカーで両方リセット）。
-    // delete されるノードと insert されるノードが同一ギャップで隣接すると、commute 後の
-    // 両者の前後関係が一意に定まらず merge(a,b) == merge(b,a) を満たせないため、向きに
-    // 関わらず例外とする。アンカーが間に挟まれば挿入位置が確定するので衝突ではない。
-    boolean prevWasDelete = false;
-    boolean prevWasInsert = false;
+    // 現ギャップ（最後の生存 MATCH/MATCH アンカー以降）に、
+    //  - p が削除したノード（B から消え、q から見えない孤児）
+    //  - q が挿入したノード（A に無く、p から見えない孤児）
+    // が同居したか。この2つだけが、互いの前後を決める生存アンカーを持たず順序不定になる。
+    // （q-DELETE × p-INSERT は両ノードとも B に実在し順序確定、insert×insert も
+    //   q が p の出力を見ているため確定 → いずれも衝突ではない）
+    boolean gapPDelete = false;
+    boolean gapQInsert = false;
 
     while (it.hasNext()) {
       Pair<ListDiff.Operation<T>, ListDiff.Operation<T>> pair = it.next();
@@ -82,27 +83,27 @@ public class ListDiffUtils {
 
       boolean isAnchor = opP != null && opP.type == ListDiff.Operation.Type.MATCH
               && opQ != null && opQ.type == ListDiff.Operation.Type.MATCH;
-      boolean isDeleteEvent = (opP != null && opP.type == ListDiff.Operation.Type.DELETE)
-              || (opP != null && opP.type == ListDiff.Operation.Type.MATCH
-              && opQ != null && opQ.type == ListDiff.Operation.Type.DELETE);
-      boolean isInsertEvent = (opP != null && opP.type == ListDiff.Operation.Type.INSERT)
-              || (opQ != null && opQ.type == ListDiff.Operation.Type.INSERT);
+      if (isAnchor) {
+        gapPDelete = false;
+        gapQInsert = false;
+      } else {
+        if (opP != null && opP.type == ListDiff.Operation.Type.DELETE) gapPDelete = true;
+        if (opQ != null && opQ.type == ListDiff.Operation.Type.INSERT) gapQInsert = true;
 
-      // delete と insert が同一ギャップで隣接 = 並行編集の順序が定まらない → 失敗
-      if ((isInsertEvent && prevWasDelete) || (isDeleteEvent && prevWasInsert)) {
-        throw new ConflictException("intermediate state is not unique");
+        if (gapPDelete && gapQInsert) {
+          throw new ConflictException(
+                  "ambiguous parallel edit: a node deleted by p and a node inserted by q share a gap "
+                          + "with no surviving anchor; merge order is not unique");
+        }
       }
 
       if (opP != null && opP.type == ListDiff.Operation.Type.DELETE) {
-        // DELETEの場合、operand1が対象。q'ではその要素をMATCH（維持）させる
         qPrimeOps.add(new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, opP.mode, opP.operand));
         pPrimeOps.add(new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, opP.mode, opP.operand));
       } else if (opQ != null && opQ.type == ListDiff.Operation.Type.INSERT) {
         qPrimeOps.add(opQ);
-        // qが挿入した要素を、p'側ではMATCH（維持）として扱う
         pPrimeOps.add(new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, opQ.mode, opQ.operand));
       } else {
-        // opP が MATCH または INSERT、opQ が MATCH または DELETE の1対1対応
         if (opP.type == ListDiff.Operation.Type.MATCH) {
           qPrimeOps.add(opQ);
           if (opQ.type == ListDiff.Operation.Type.MATCH) {
@@ -113,18 +114,8 @@ public class ListDiffUtils {
           if (opQ.type == ListDiff.Operation.Type.DELETE) {
             throw new ConflictException("p inserts a node that q deletes");
           }
-          // pが挿入しようとしている要素をp'でもそのまま挿入
           pPrimeOps.add(new ListDiff.Operation<>(ListDiff.Operation.Type.INSERT, opP.mode, opP.operand));
         }
-      }
-
-      // 次反復のために状態更新（アンカーは両方リセットしてギャップを区切る）
-      if (isAnchor) {
-        prevWasDelete = false;
-        prevWasInsert = false;
-      } else {
-        prevWasDelete = isDeleteEvent;
-        prevWasInsert = isInsertEvent;
       }
     }
     return Pair.of(new ListDiff<>(qPrimeOps), new ListDiff<>(pPrimeOps));
