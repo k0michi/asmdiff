@@ -248,16 +248,6 @@ public class ListDiffUtils {
     return insertions;
   }
 
-  /**
-   * Compose two diffs.
-   *
-   * @param p        Diff from list 1 to list 2.
-   * @param q        Diff from list 2 to list 3.
-   * @param compare2 Compare element in list 2 and element in list 2.
-   * @param <T>
-   * @return
-   * @throws ConflictException
-   */
   public static <T> ListDiff<T> compose(ListDiff<T> p, ListDiff<T> q, BiPredicate<T, T> compare2) {
     if (p == null) {
       return q;
@@ -269,54 +259,39 @@ public class ListDiffUtils {
 
     List<ListDiff.Operation<T>> result = new ArrayList<>();
 
-    PeekableIterator<ListDiff.Operation<T>> itP = new PeekableIterator<>(p.operations.iterator());
-    PeekableIterator<ListDiff.Operation<T>> itQ = new PeekableIterator<>(q.operations.iterator());
+    ListDiffPairIterator<T> it = new ListDiffPairIterator<>(p, q);
 
-    List<ListDiff.Operation<T>> ins1 = new ArrayList<>();
-    List<ListDiff.Operation<T>> ins2 = new ArrayList<>();
+    while (it.hasNext()) {
+      Pair<ListDiff.Operation<T>, ListDiff.Operation<T>> pair = it.next();
+      ListDiff.Operation<T> opP = pair.first;
+      ListDiff.Operation<T> opQ = pair.second;
 
-    while (itP.hasNext()) {
-      ListDiff.Operation<T> opP = itP.next();
-
-      if (opP.type == ListDiff.Operation.Type.INSERT) {
-        ins2.addAll(collectInsertions(itQ));
-
-        ListDiff.Operation<T> opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
-
-//        if (!compare2.test(opP.operand, opQ.operand)) {
-//          throw new IllegalDiffException("Composition Error: Operand mismatch at B.");
-//        }
-
-        if (opQ.type == ListDiff.Operation.Type.MATCH) {
-          ins1.add(opP);
-        }
-      } else if (opP.type == ListDiff.Operation.Type.DELETE) {
-        result.addAll(mergeInsertionSlot(ins1, ins2));
-        ins1.clear();
-        ins2.clear();
-
+      // パターン1: P が単独で DELETE
+      if (opP != null && opQ == null) {
         result.add(opP);
-      } else { // MATCH
-        ins2.addAll(collectInsertions(itQ));
-
-        ListDiff.Operation<T> opQ = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("Composition Error: q is shorter than intermediate B."));
-
+      }
+      // パターン2: Q が単独で INSERT
+      else if (opP == null && opQ != null) {
+        result.add(opQ);
+      }
+      // パターン3: 両方のタイムラインが揃った
+      else if (opP != null && opQ != null) {
 //        if (!compare2.test(opP.operand, opQ.operand)) {
-//          throw new IllegalDiffException("Composition Error: Operand mismatch at C.");
+//          throw new IllegalDiffException("Composition Error: Operand mismatch at intermediate state B.");
 //        }
 
-        result.addAll(mergeInsertionSlot(ins1, ins2));
-        ins1.clear();
-        ins2.clear();
-
-        result.add(new ListDiff.Operation<>(opQ.type, opQ.mode, opP.operand));
+        if (opP.type == ListDiff.Operation.Type.INSERT) {
+          // PのINSERTをQがMATCHで通したなら、ここでPのINSERT（X）がresultに積まれる
+          if (opQ.type == ListDiff.Operation.Type.MATCH) {
+            result.add(opP);
+          }
+          // QがDELETEなら相殺されてresultには何も入らない
+        } else { // opP.type == MATCH
+          // ベース操作同士の合成
+          result.add(new ListDiff.Operation<>(opQ.type, opQ.mode, opP.operand));
+        }
       }
     }
-
-    ins2.addAll(collectInsertions(itQ));
-    result.addAll(mergeInsertionSlot(ins1, ins2));
-
-    IteratorHelper.throwIfNext(itQ, () -> new IllegalDiffException("Composition Error: q has remaining operations after p is exhausted."));
 
     return unchangedToNull(new ListDiff<>(result));
   }
