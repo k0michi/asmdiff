@@ -7,7 +7,6 @@ import com.koyomiji.asmweaver.util.tuple.Pair;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
@@ -69,57 +68,36 @@ public class ListDiffUtils {
     List<ListDiff.Operation<T>> qPrimeOps = new ArrayList<>();
     List<ListDiff.Operation<T>> pPrimeOps = new ArrayList<>();
 
-    Iterator<ListDiff.Operation<T>> itP = p.operations.iterator();
-    PeekableIterator<ListDiff.Operation<T>> itQ = new PeekableIterator<>(q.operations.iterator());
+    ListDiffPairIterator<T> it = new ListDiffPairIterator<>(p, q);
 
-    while (itP.hasNext()) {
-      ListDiff.Operation<T> opP = itP.next();
+    while (it.hasNext()) {
+      Pair<ListDiff.Operation<T>, ListDiff.Operation<T>> pair = it.next();
+      ListDiff.Operation<T> opP = pair.first;
+      ListDiff.Operation<T> opQ = pair.second;
 
-      if (opP.type == ListDiff.Operation.Type.DELETE) {
+      if (opP != null && opP.type == ListDiff.Operation.Type.DELETE) {
         // DELETEの場合、operand1が対象。q'ではその要素をMATCH（維持）させる
         qPrimeOps.add(new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, opP.mode, opP.operand));
         pPrimeOps.add(new ListDiff.Operation<>(ListDiff.Operation.Type.DELETE, opP.mode, opP.operand));
+      } else if (opQ != null && opQ.type == ListDiff.Operation.Type.INSERT) {
+        qPrimeOps.add(opQ);
+        // qが挿入した要素を、p'側ではMATCH（維持）として扱う
+        pPrimeOps.add(new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, opQ.mode, opQ.operand));
       } else {
-        // opP が MATCH または INSERT の場合
-        T valP = opP.operand;
-
-        while (itQ.hasNext() && itQ.peek().type == ListDiff.Operation.Type.INSERT) {
-          ListDiff.Operation<T> opQIns = itQ.next();
-          qPrimeOps.add(opQIns);
-          // qが挿入した要素を、p'側ではMATCH（維持）として扱う
-          pPrimeOps.add(new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, opQIns.mode, opQIns.operand));
-        }
-
-        ListDiff.Operation<T> opQBase = IteratorHelper.nextOrThrow(itQ, () -> new IllegalDiffException("p has remaining operations after q is exhausted"));
-        T valQBase = opQBase.operand;
-
-//        if (!compare.test(valP, valQBase)) {
-//          throw new IllegalDiffException("p and q disagree on node identity");
-//        }
-
+        // opP が MATCH または INSERT、opQ が MATCH または DELETE の1対1対応
         if (opP.type == ListDiff.Operation.Type.MATCH) {
-          qPrimeOps.add(opQBase);
-          if (opQBase.type == ListDiff.Operation.Type.MATCH) {
+          qPrimeOps.add(opQ);
+          if (opQ.type == ListDiff.Operation.Type.MATCH) {
             pPrimeOps.add(new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, opP.mode, opP.operand));
           }
         } else {
           // opP.type == INSERT
-          if (opQBase.type == ListDiff.Operation.Type.DELETE) {
+          if (opQ.type == ListDiff.Operation.Type.DELETE) {
             throw new ConflictException("p inserts a node that q deletes");
           }
           // pが挿入しようとしている要素をp'でもそのまま挿入
           pPrimeOps.add(new ListDiff.Operation<>(ListDiff.Operation.Type.INSERT, opP.mode, opP.operand));
         }
-      }
-    }
-
-    while (itQ.hasNext()) {
-      ListDiff.Operation<T> opQ = itQ.next();
-      if (opQ.type == ListDiff.Operation.Type.INSERT) {
-        qPrimeOps.add(opQ);
-        pPrimeOps.add(new ListDiff.Operation<>(ListDiff.Operation.Type.MATCH, opQ.mode, opQ.operand));
-      } else {
-        throw new IllegalDiffException("q has remaining operations after p is exhausted");
       }
     }
 
