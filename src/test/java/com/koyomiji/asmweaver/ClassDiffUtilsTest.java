@@ -248,7 +248,9 @@ class ClassDiffUtilsTest {
           ClassDiff diff12 = ClassDiffUtils.diff(node1, node2);
           ClassDiff diff13 = ClassDiffUtils.diff(node1, node3);
 
-          Assertions.assertDoesNotThrow(() -> ClassDiffUtils.merge(diff12, diff13));
+          var merged = Assertions.assertDoesNotThrow(() -> ClassDiffUtils.merge(diff12, diff13));
+          Assertions.assertNotNull(merged, "i=" + i + ", j=" + j);
+          Assertions.assertTrue(ClassDiffUtils.distance(merged) > 0, "i=" + i + ", j=" + j);
         }
       }
     }
