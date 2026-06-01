@@ -16,6 +16,7 @@ import org.objectweb.asm.util.TraceClassVisitor;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.nio.file.FileSystem;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -56,7 +57,6 @@ public class Main {
   // =========================================================================
 
   public static void main(String[] args) {
-    // 💡 Git操作を担当するリポジトリコンテキストをインスタンス化
     GitRepository repo = new GitRepository(CONFIG);
 
     if (!repo.exists()) {
@@ -82,38 +82,65 @@ public class Main {
 
     String originalHead = null;
     try {
-      originalHead = repo.resolveHead(); // 💡 引っ越し先から呼び出し
+      originalHead = repo.resolveHead();
+
+      List<String> commitHistory = repo.getCommitHistory(CONFIG.getStartCommit(), CONFIG.getMaxHistory());
+      Logger.info(commitHistory.size() + " 件のコミットを解析対象として抽出しました。");
+
+      // 💡 1つ目の実験：Diff/Patchベンチマーク実験の実行
+      Logger.info("----------------------------------------");
+      Logger.info(">>> Diff/Patchのベンチマーク実験を開始します");
+      runDiffPatchExperiment(repo, commitHistory);
+
+      // 💡 2つ目の実験：マージを伴うシナリオ実験の実行
+//      Logger.info("----------------------------------------");
+//      Logger.info(">>> マージシナリオの検証実験を開始します");
+//      runMergeScenarioExperiment(repo, commitHistory);
+
+      Logger.info("----------------------------------------");
+      Logger.info("実験ベンチマークがすべて正常に完了しました。");
+
     } catch (Exception e) {
-      Logger.error("初期状態の取得に失敗しました。実験を中断します: " + e.getMessage());
-      return;
+      Logger.error("致命的なエラーが発生しました: " + e.getMessage());
+      e.printStackTrace();
+    } finally {
+      try {
+        Logger.info("リポジトリのコミット状態を元に戻しています...");
+        repo.checkout(originalHead);
+      } catch (Exception e) {
+        Logger.error("警告: 元のブランチの復元に失敗しました: " + e.getMessage());
+      }
     }
+  }
+
+  private static void runDiffPatchExperiment(GitRepository repo, List<String> commitHistory) {
+    // 💡 関数内部で独自のタイムスタンプとCSVパスを動的に算出
+    String timestamp = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss").format(LocalDateTime.now());
+    String csvPath = "./benchmark_diffpatch_" + CONFIG.getRepoName() + "_" + timestamp + ".csv";
+    Logger.info("Diff/Patch CSV出力先: " + csvPath);
 
     try (
-            FileWriter fw = new FileWriter(CONFIG.getCsvPath(), StandardCharsets.UTF_8, true);
+            FileWriter fw = new FileWriter(csvPath, StandardCharsets.UTF_8, true);
             BufferedWriter bw = new BufferedWriter(fw);
             PrintWriter csvWriter = new PrintWriter(bw, true)
     ) {
-      if (new File(CONFIG.getCsvPath()).length() == 0) {
+      if (new File(csvPath).length() == 0) {
         csvWriter.println("CommitHash,Describe,ClassPath,MethodName,SrcSizeBytesBefore,SrcSizeBytesAfter,DiffDurationNs,PatchDurationNs,DiffSizeBytes,AsmTreeMatch,Status");
       }
 
-      List<String> commitHistory = repo.getCommitHistory(CONFIG.getStartCommit(), CONFIG.getMaxHistory()); // 💡 委譲
-      Logger.info(commitHistory.size() + " 件のコミットを解析対象として抽出しました。");
-
       for (int i = 0; i < commitHistory.size(); i++) {
         String commitX = commitHistory.get(i);
-
-        String commitDesc = repo.getCommitDescribe(commitX); // 💡 委譲
-        String commitMsg = repo.getCommitMessage(commitX);   // 💡 委譲
+        String commitDesc = repo.getCommitDescribe(commitX);
+        String commitMsg = repo.getCommitMessage(commitX);
 
         Logger.infof("[%d/%d] ----------------------------------------", i + 1, commitHistory.size());
         Logger.infof("  コミット: %s (%s)", commitX, commitDesc);
         Logger.infof("  概要    : %s", commitMsg);
 
         try {
-          String commitY = repo.resolveRev(commitX + "~1"); // 💡 委譲
+          String commitY = repo.resolveRev(commitX + "~1");
 
-          if (CONFIG.isFilterBySrcDir() && !repo.hasChangesInDirectory(commitY, commitX, CONFIG.getSourceDir())) { // 💡 委譲
+          if (CONFIG.isFilterBySrcDir() && !repo.hasChangesInDirectory(commitY, commitX, CONFIG.getSourceDir())) {
             Logger.info("  -> [SKIP] 指定されたソースディレクトリ (" + CONFIG.getSourceDir() + ") 内に変更がないためスキップします。");
             continue;
           }
@@ -121,19 +148,19 @@ public class Main {
           Path tempDirX = Paths.get(EVACUATE_ROOT_DIR, CONFIG.getRepoName(), commitX);
           if (!Files.exists(tempDirX)) {
             Logger.info("  -> コミット X_i (" + commitX + ") をビルド中...");
-            repo.checkout(commitX); // 💡 委譲
+            repo.checkout(commitX);
             clearOutputDirectory(Paths.get(CONFIG.getRepoPath()).resolve(CONFIG.getClassDir()));
-            repo.build();           // 💡 委譲
-            tempDirX = repo.evacuateClassFiles(commitX, EVACUATE_ROOT_DIR); // 💡 委譲
+            repo.build();
+            tempDirX = repo.evacuateClassFiles(commitX, EVACUATE_ROOT_DIR);
           }
 
           Path tempDirY = Paths.get(EVACUATE_ROOT_DIR, CONFIG.getRepoName(), commitY);
           if (!Files.exists(tempDirY)) {
             Logger.info("  -> コミット X_i-1 (" + commitY + ") をビルド中...");
-            repo.checkout(commitY); // 💡 委譲
+            repo.checkout(commitY);
             clearOutputDirectory(Paths.get(CONFIG.getRepoPath()).resolve(CONFIG.getClassDir()));
-            repo.build();           // 💡 委譲
-            tempDirY = repo.evacuateClassFiles(commitY, EVACUATE_ROOT_DIR); // 💡 委譲
+            repo.build();
+            tempDirY = repo.evacuateClassFiles(commitY, EVACUATE_ROOT_DIR);
           }
 
           List<String> modifiedClassPaths = getModifiedClassFiles(tempDirX, tempDirY);
@@ -174,23 +201,113 @@ public class Main {
 
         } catch (Exception e) {
           Logger.errorf("  -> コミット %s の解析中にエラーが発生しました: %s", commitX, e.getMessage());
-          csvWriter.printf("%s,\"%s\",NONE,NONE,0,0,0,0,0,false,ERROR_COMMIT_%s\n",
-                  commitX, commitDesc, e.getClass().getSimpleName());
+//          csvWriter.printf("%s,\"%s\",NONE,NONE,0,0,0,0,0,false,ERROR_COMMIT_%s\n",
+//                  commitX, commitDesc, e.getClass().getSimpleName());
         }
       }
-
-      Logger.info("----------------------------------------");
-      Logger.info("実験ベンチマークがすべて正常に完了しました。");
-
     } catch (IOException e) {
       Logger.error("CSVファイルの制御で致命的なエラーが発生しました: " + e.getMessage());
-    } finally {
-      try {
-        Logger.info("リポジトリのコミット状態を元に戻しています...");
-        repo.checkout(originalHead); // 💡 委譲
-      } catch (Exception e) {
-        Logger.error("警告: 元のブランチの復元に失敗しました: " + e.getMessage());
+    }
+  }
+
+  /**
+   * 💡 【新規拡張】 マージ実験専用のCSVを関数内で算出して出力する機構を追加
+   */
+  private static void runMergeScenarioExperiment(GitRepository repo, List<String> commitHistory) {
+    // 💡 関数内部でマージ実験専用のCSVパスを動的に算出
+    String timestamp = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss").format(LocalDateTime.now());
+    String csvPath = "./benchmark_merge_" + CONFIG.getRepoName() + "_" + timestamp + ".csv";
+    Logger.info("Merge CSV出力先: " + csvPath);
+
+    try (
+            FileWriter fw = new FileWriter(csvPath, StandardCharsets.UTF_8, true);
+            BufferedWriter bw = new BufferedWriter(fw);
+            PrintWriter csvWriter = new PrintWriter(bw, true)
+    ) {
+      if (new File(csvPath).length() == 0) {
+        csvWriter.println("CommitHash,ClassPath,MethodName,AsmTreeMatch,Status");
       }
+
+      for (int i = 0; i < commitHistory.size(); i++) {
+        String commitXi = commitHistory.get(i);
+
+        try {
+          String commitXi_1 = repo.resolveRev(commitXi + "~1");
+
+          if (CONFIG.isFilterBySrcDir() && !repo.hasChangesInDirectory(commitXi_1, commitXi, CONFIG.getSourceDir())) {
+            continue;
+          }
+
+          Path tempDirXi = Paths.get(EVACUATE_ROOT_DIR, CONFIG.getRepoName(), commitXi);
+          Path tempDirXi_1 = Paths.get(EVACUATE_ROOT_DIR, CONFIG.getRepoName(), commitXi_1);
+
+          List<String> modifiedClassPaths = getModifiedClassFiles(tempDirXi, tempDirXi_1);
+          if (modifiedClassPaths.isEmpty()) continue;
+
+          for (String relativeClassPath : modifiedClassPaths) {
+            String classId = relativeClassPath.replace(".class", "").replace("/", "_");
+            String relativeJavaPath = CONFIG.getSourceDir() + relativeClassPath.replace(".class", ".java");
+
+            String commitXk = repo.findLastCommitModifyingFile(commitXi_1 + "~1", relativeJavaPath);
+            if (commitXk == null) {
+              Logger.infof("    -> [SKIP] %s の過去の変更コミット(Xk)が見つかりません。", relativeClassPath);
+              continue;
+            }
+
+            repo.checkout(commitXi_1);
+            boolean revertSuccess = repo.applyDiffBetweenCommits(commitXk, commitXk + "~1", relativeJavaPath);
+            if (!revertSuccess) {
+              Logger.infof("    -> [SKIP] %s に対する Xk (%s) の Revert パッチ適用に失敗しました。", relativeClassPath, commitXk);
+              continue;
+            }
+
+            clearOutputDirectory(Paths.get(CONFIG.getRepoPath()).resolve(CONFIG.getClassDir()));
+            repo.build();
+            Path tempDirY = repo.evacuateClassFilesTo(commitXi + "_" + commitXk + "_" + classId + "_Y", Paths.get(EVACUATE_ROOT_DIR));
+
+            boolean cpSuccess = repo.applyDiffBetweenCommits(commitXi_1, commitXi, relativeJavaPath);
+            if (!cpSuccess) {
+              Logger.infof("    -> [SKIP] %s に対する Xi (%s) の Cherry-pick パッチ適用に失敗しました。", relativeClassPath, commitXi);
+              continue;
+            }
+
+            clearOutputDirectory(Paths.get(CONFIG.getRepoPath()).resolve(CONFIG.getClassDir()));
+            repo.build();
+            Path tempDirZ = repo.evacuateClassFilesTo(commitXi + "_" + commitXk + "_" + classId + "_Z", Paths.get(EVACUATE_ROOT_DIR));
+
+            byte[] bytesY = Files.readAllBytes(tempDirY.resolve(relativeClassPath));
+            byte[] bytesXi_1 = Files.readAllBytes(tempDirXi_1.resolve(relativeClassPath));
+            byte[] bytesZ = Files.readAllBytes(tempDirZ.resolve(relativeClassPath));
+            byte[] bytesXi = Files.readAllBytes(tempDirXi.resolve(relativeClassPath));
+
+            for (BytecodeDiffMethod method : DIFF_METHODS) {
+              try {
+                clearRamDisk();
+                byte[] p = method.computeMerge(bytesY, bytesXi_1, bytesZ);
+
+                byte[] restoredBytes = method.applyPatch(bytesY, p);
+                boolean isAsmMatched = compareAsmTree(bytesXi, restoredBytes);
+
+                // 💡 実験結果をマージ専用のCSVに記録
+                csvWriter.printf("%s,%s,%s,%b,%s\n", commitXi, relativeClassPath, method.getName(), isAsmMatched, "SUCCESS");
+
+                Logger.infof("       [%s - マージテスト骨組み] クラス: %s, 一致検証: %b",
+                        method.getName(), relativeClassPath, isAsmMatched);
+
+              } catch (Exception e) {
+                // 💡 エラー時の例外レコード
+                csvWriter.printf("%s,%s,%s,false,ERROR_%s\n", commitXi, relativeClassPath, method.getName(), e.getClass().getSimpleName());
+                Logger.errorf("       [%s - マージテスト] エラーを記録しました: %s", method.getName(), e.getMessage());
+                e.printStackTrace();
+              }
+            }
+          }
+        } catch (Exception e) {
+          Logger.errorf("  -> マージシナリオ %s の処理中に例外が発生しました: %s", commitXi, e.getMessage());
+        }
+      }
+    } catch (IOException e) {
+      Logger.error("CSVファイルの制御で致命的なエラーが発生しました: " + e.getMessage());
     }
   }
 
@@ -312,13 +429,13 @@ public class Main {
     try {
       String orgText = getAsmStructureText(original);
       String resText = getAsmStructureText(restored);
-      if (!orgText.equals(resText)) {
-        Logger.info("--- Original ASM Structure ---");
-        Logger.info(orgText);
-        Logger.info("--- Restored ASM Structure ---");
-        Logger.info(resText);
-        Logger.info("--- End of ASM Structures ---");
-      }
+//      if (!orgText.equals(resText)) {
+//        Logger.info("--- Original ASM Structure ---");
+//        Logger.info(orgText);
+//        Logger.info("--- Restored ASM Structure ---");
+//        Logger.info(resText);
+//        Logger.info("--- End of ASM Structures ---");
+//      }
       return orgText.equals(resText);
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -338,6 +455,9 @@ public class Main {
   }
 }
 
+// =========================================================================
+// 💡 Git 操作をカプセル化するドメインクラス（マージ用の新機能をプレースホルダとして追加）
+// =========================================================================
 class GitRepository {
   private final File repoDir;
   private final RepositoryConfig config;
@@ -378,12 +498,53 @@ class GitRepository {
     try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
       String line;
       while ((line = reader.readLine()) != null) {
-        if (line.trim().startsWith(targetDir)) {
-          return true;
-        }
+        if (line.trim().startsWith(targetDir)) return true;
       }
     }
     return false;
+  }
+
+  /**
+   * 💡 【新規追加】 指定されたコミット(Xi-1)より過去に、特定のファイル(C_j)を修正した直近のコミットハッシュ(Xk)を引く
+   */
+  public String findLastCommitModifyingFile(String startCommitExpression, String relativeFilePath) throws Exception {
+    String hash = executeCommand("git", "log", "-1", "--format=%H", startCommitExpression, "--", relativeFilePath);
+    return hash.isEmpty() ? null : hash;
+  }
+
+  /**
+   * 💡 【新規追加】 2つのコミット間の「特定のファイルのみ」の差分を作業コピーに無理やり適用する。
+   * Revert（Xk -> Xk~1）や Cherry-pick（Xi-1 -> Xi）のファイル限定エミュレート用。
+   */
+  public boolean applyDiffBetweenCommits(String fromCommit, String toCommit, String relativeFilePath) {
+    try {
+      // パイプラインを安全に模擬するため、git diff の内容を一度文字列としてキャプチャ
+      ProcessBuilder diffPb = new ProcessBuilder("git", "diff", "--binary", fromCommit, toCommit, "--", relativeFilePath);
+      diffPb.directory(repoDir);
+      Process diffProcess = diffPb.start();
+
+      byte[] diffBytes;
+      try (InputStream is = diffProcess.getInputStream()) {
+        diffBytes = is.readAllBytes();
+      }
+      diffProcess.waitFor();
+
+      if (diffBytes.length == 0) return true; // 差分がなければ成功とみなす
+
+      // キャプチャしたパッチデータを git apply に標準入力経由で流し込む
+      ProcessBuilder applyPb = new ProcessBuilder("git", "apply", "-");
+      applyPb.directory(repoDir);
+      Process applyProcess = applyPb.start();
+
+      try (OutputStream os = applyProcess.getOutputStream()) {
+        os.write(diffBytes);
+        os.flush();
+      }
+      int exitCode = applyProcess.waitFor();
+      return exitCode == 0; // コンフリクトせず適用できたら true
+    } catch (Exception e) {
+      return false;
+    }
   }
 
   public List<String> getCommitHistory(String startCommit, int maxCount) throws IOException {
@@ -391,14 +552,11 @@ class GitRepository {
     ProcessBuilder pb = new ProcessBuilder("git", "log", "--format=%H", "--first-parent", "-n", String.valueOf(maxCount), startCommit);
     pb.directory(repoDir);
     Process p = pb.start();
-
     try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
       String line;
       while ((line = reader.readLine()) != null) {
         String hash = line.trim();
-        if (!hash.isEmpty()) {
-          commits.add(hash);
-        }
+        if (!hash.isEmpty()) commits.add(hash);
       }
     }
     return commits;
@@ -408,7 +566,6 @@ class GitRepository {
     ProcessBuilder pb = new ProcessBuilder("git", "describe", "--tags", "--always", commitHash);
     pb.directory(repoDir);
     Process p = pb.start();
-
     try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
       String line = reader.readLine();
       return (line != null) ? line.trim() : "unknown";
@@ -419,7 +576,6 @@ class GitRepository {
     ProcessBuilder pb = new ProcessBuilder("git", "log", "-1", "--format=%s", commitHash);
     pb.directory(repoDir);
     Process p = pb.start();
-
     try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
       String line = reader.readLine();
       return (line != null) ? line.trim() : "No message";
@@ -427,23 +583,25 @@ class GitRepository {
   }
 
   public Path evacuateClassFiles(String commitHash, String evacuateRootDir) throws IOException {
-    Path targetDir = Paths.get(evacuateRootDir, config.getRepoName(), commitHash);
-    if (Files.exists(targetDir)) {
-      return targetDir;
-    }
+    return evacuateClassFilesTo(commitHash, Paths.get(evacuateRootDir));
+  }
+
+  /**
+   * 💡 【新規拡張】 退避先の親ディレクトリ（RAMディスク等）を外部から動的に指定できる形式
+   */
+  public Path evacuateClassFilesTo(String uniqueDirName, Path targetBaseDir) throws IOException {
+    Path targetDir = targetBaseDir.resolve(config.getRepoName()).resolve(uniqueDirName);
+    if (Files.exists(targetDir)) return targetDir;
     Files.createDirectories(targetDir);
 
     Path sourceDir = repoDir.toPath().resolve(config.getClassDir());
-    if (!Files.exists(sourceDir)) {
-      return targetDir;
-    }
+    if (!Files.exists(sourceDir)) return targetDir;
 
     try (var stream = Files.walk(sourceDir)) {
       List<Path> sourcePaths = stream.toList();
       for (Path source : sourcePaths) {
         Path relative = sourceDir.relativize(source);
         Path dest = targetDir.resolve(relative);
-
         if (Files.isDirectory(source)) {
           Files.createDirectories(dest);
         } else {
@@ -461,13 +619,10 @@ class GitRepository {
     pb.redirectErrorStream(true);
     pb.environment().putAll(config.getEnv());
     Process p = pb.start();
-
     StringBuilder output = new StringBuilder();
     try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
       String line;
-      while ((line = reader.readLine()) != null) {
-        output.append(line).append("\n");
-      }
+      while ((line = reader.readLine()) != null) output.append(line).append("\n");
     }
     int exitCode = p.waitFor();
     if (exitCode != 0) {
@@ -479,26 +634,36 @@ class GitRepository {
 
 interface BytecodeDiffMethod {
   String getName();
+
   byte[] computeDiff(byte[] classBefore, byte[] classAfter) throws Exception;
+
   byte[] applyPatch(byte[] classBefore, byte[] patch) throws Exception;
+
+  // 💡 【新規拡張】 3-way merge のためのプレースホルダメソッドを新設（既存の手法を壊さないため default 実装）
+  default byte[] computeMerge(byte[] bytesBase, byte[] bytesLocal, byte[] bytesRemote) throws Exception {
+    return new byte[0]; // 次フェーズの本実装のためのダミープラスホルダー
+  }
 }
 
 class DiffMethodASMWeaver implements BytecodeDiffMethod {
-  @Override public String getName() { return "ASMWeaver"; }
+  @Override
+  public String getName() {
+    return "ASMWeaver";
+  }
 
   @Override
   public byte[] computeDiff(byte[] classBefore, byte[] classAfter) throws Exception {
     Path ramPath = Paths.get(Main.RAM_DISK_DIR);
     Path beforeFile = Files.createTempFile(ramPath, "asmw_b_", ".class");
-    Path afterFile  = Files.createTempFile(ramPath, "asmw_a_", ".class");
-    Path patchFile  = Files.createTempFile(ramPath, "asmw_p_", ".bin");
+    Path afterFile = Files.createTempFile(ramPath, "asmw_a_", ".class");
+    Path patchFile = Files.createTempFile(ramPath, "asmw_p_", ".bin");
 
     // 💡 削除を伴う try-finally 構造を全廃
     Files.write(beforeFile, classBefore);
     Files.write(afterFile, classAfter);
 
     byte[] readBefore = Files.readAllBytes(beforeFile);
-    byte[] readAfter  = Files.readAllBytes(afterFile);
+    byte[] readAfter = Files.readAllBytes(afterFile);
 
     ClassNode classNodeBefore = new ClassNode();
     ClassNode classNodeAfter = new ClassNode();
@@ -517,7 +682,7 @@ class DiffMethodASMWeaver implements BytecodeDiffMethod {
   public byte[] applyPatch(byte[] classBefore, byte[] patch) throws Exception {
     Path ramPath = Paths.get(Main.RAM_DISK_DIR);
     Path beforeFile = Files.createTempFile(ramPath, "asmw_patch_b_", ".class");
-    Path patchFile  = Files.createTempFile(ramPath, "asmw_patch_p_", ".bin");
+    Path patchFile = Files.createTempFile(ramPath, "asmw_patch_p_", ".bin");
     Path restoredFile = Files.createTempFile(ramPath, "asmw_patch_r_", ".class");
 
     Files.write(beforeFile, classBefore);
@@ -535,13 +700,45 @@ class DiffMethodASMWeaver implements BytecodeDiffMethod {
     Files.write(restoredFile, classWriter.toByteArray());
     return Files.readAllBytes(restoredFile);
   }
+
+  @Override
+  public byte[] computeMerge(byte[] bytesBase, byte[] bytesLocal, byte[] bytesRemote) throws Exception {
+    Path ramPath = Paths.get(Main.RAM_DISK_DIR);
+    Path baseFile = Files.createTempFile(ramPath, "asmw_base_", ".class");
+    Path localFile = Files.createTempFile(ramPath, "asmw_local_", ".class");
+    Path remoteFile = Files.createTempFile(ramPath, "asmw_remote_", ".class");
+    Files.write(baseFile, bytesBase);
+    Files.write(localFile, bytesLocal);
+    Files.write(remoteFile, bytesRemote);
+
+    ClassNode classNodeBase = new ClassNode();
+    new ClassReader(Files.readAllBytes(baseFile)).accept(classNodeBase, 0);
+    ClassNode classNodeLocal = new ClassNode();
+    new ClassReader(Files.readAllBytes(localFile)).accept(classNodeLocal, 0);
+    ClassNode classNodeRemote = new ClassNode();
+    new ClassReader(Files.readAllBytes(remoteFile)).accept(classNodeRemote, 0);
+
+    ClassDiff diff12 = ClassDiffUtils.diff(classNodeBase, classNodeLocal);
+    ClassDiff diff13 = ClassDiffUtils.diff(classNodeBase, classNodeRemote);
+
+    ClassDiff merged = ClassDiffUtils.merge(diff12, diff13);
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    ClassDiffUtils.write(merged, new BinaryWriter(baos));
+
+    Path mergedFile = Files.createTempFile(ramPath, "asmw_merged_", ".class");
+    Files.write(mergedFile, baos.toByteArray());
+    return Files.readAllBytes(mergedFile);
+  }
 }
 
 /**
  * 💡 2. Aspa方式（測定区間内からのdelete処理を完全排除）
  */
 class DiffMethodAspa implements BytecodeDiffMethod {
-  @Override public String getName() { return "Aspa"; }
+  @Override
+  public String getName() {
+    return "Aspa";
+  }
 
   @Override
   public byte[] computeDiff(byte[] classBefore, byte[] classAfter) throws Exception {
@@ -588,14 +785,17 @@ class DiffMethodAspa implements BytecodeDiffMethod {
  * 💡 3. Bsdiff方式（測定区間内からのdelete処理を完全排除）
  */
 class BsdiffMethod implements BytecodeDiffMethod {
-  @Override public String getName() { return "Bsdiff"; }
+  @Override
+  public String getName() {
+    return "Bsdiff";
+  }
 
   @Override
   public byte[] computeDiff(byte[] classBefore, byte[] classAfter) throws Exception {
     Path ramPath = Paths.get(Main.RAM_DISK_DIR);
     Path before = Files.createTempFile(ramPath, "bsdiff_b_", ".class");
-    Path after  = Files.createTempFile(ramPath, "bsdiff_a_", ".class");
-    Path patch  = Files.createTempFile(ramPath, "bsdiff_p_", ".bin");
+    Path after = Files.createTempFile(ramPath, "bsdiff_a_", ".class");
+    Path patch = Files.createTempFile(ramPath, "bsdiff_p_", ".bin");
 
     Files.write(before, classBefore);
     Files.write(after, classAfter);
@@ -607,8 +807,8 @@ class BsdiffMethod implements BytecodeDiffMethod {
   @Override
   public byte[] applyPatch(byte[] classBefore, byte[] patchData) throws Exception {
     Path ramPath = Paths.get(Main.RAM_DISK_DIR);
-    Path before   = Files.createTempFile(ramPath, "bsdiff_b_", ".class");
-    Path patch    = Files.createTempFile(ramPath, "bsdiff_p_", ".bin");
+    Path before = Files.createTempFile(ramPath, "bsdiff_b_", ".class");
+    Path patch = Files.createTempFile(ramPath, "bsdiff_p_", ".bin");
     Path restored = Files.createTempFile(ramPath, "bsdiff_r_", ".class");
 
     Files.write(before, classBefore);
@@ -686,16 +886,45 @@ class RepositoryConfig {
     return true;
   }
 
-  public String getRepoPath() { return repoPath; }
-  public String getRepoName() { return repoName; }
-  public String getStartCommit() { return startCommit; }
-  public String getCsvPath() { return csvPath; }
-  public int getMaxHistory() { return maxHistory; }
-  public boolean isFilterBySrcDir() { return filterBySrcDir; }
-  public String[] getBuildCommand() { return buildCommand; }
-  public String getSourceDir() { return sourceDir; }
-  public String getClassDir() { return classDir; }
-  public Map<String, String> getEnv() { return env; }
+  public String getRepoPath() {
+    return repoPath;
+  }
+
+  public String getRepoName() {
+    return repoName;
+  }
+
+  public String getStartCommit() {
+    return startCommit;
+  }
+
+  public String getCsvPath() {
+    return csvPath;
+  }
+
+  public int getMaxHistory() {
+    return maxHistory;
+  }
+
+  public boolean isFilterBySrcDir() {
+    return filterBySrcDir;
+  }
+
+  public String[] getBuildCommand() {
+    return buildCommand;
+  }
+
+  public String getSourceDir() {
+    return sourceDir;
+  }
+
+  public String getClassDir() {
+    return classDir;
+  }
+
+  public Map<String, String> getEnv() {
+    return env;
+  }
 }
 
 class ProcessUtils {

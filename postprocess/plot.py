@@ -80,10 +80,10 @@ def main():
     df["PatchDurationMs"] = df["PatchDurationNs"] / 1_000_000
     df["TotalDurationMs"] = df["DiffDurationMs"] + df["PatchDurationMs"]
 
-    # 💡 パッチサイズ比率（%）の計算（変更後クラスサイズに対するパッチの割合）
+    # パッチサイズ比率（%）の計算
     df["PatchSizeRatio%"] = (df["DiffSizeBytes"] / df["SrcSizeBytesAfter"]) * 100
 
-    # 総処理時間（中央値）の短い順に手法の並び順を固定
+    # 総処理時間の短い順に手法の並び順を固定
     method_order = (
         df.groupby("MethodName")["TotalDurationMs"]
         .median()
@@ -99,7 +99,6 @@ def main():
     positions = np.arange(len(method_order))
     markers = ["o", "s", "^", "D", "v", "<", ">", "p", "*", "h"]
 
-    # 厳密な成功判定基準の定義
     df["IsSuccess"] = (df["Status"].astype(str).str.upper() == "SUCCESS") & (
         df["AsmTreeMatch"].astype(str).str.lower() == "true"
     )
@@ -120,7 +119,9 @@ def main():
     for patch in box2["boxes"]: patch.set_facecolor("#aec7e8")
 
     ax1.legend(handles=[mpatches.Patch(color="#1f77b4", label="Diff Duration"), mpatches.Patch(color="#aec7e8", label="Patch Duration")], fontsize=11)
-    ax1.set_ylabel("Duration (ms) [Log Scale]", fontsize=12)
+
+    # 💡 修正: 単位を角かっこ [ms] に、Log表記を後ろに綺麗に統合
+    ax1.set_ylabel("Duration [ms] (Log Scale)", fontsize=12)
     ax1.set_yscale("log")
     ax1.set_xlabel("Method Name", fontsize=12)
     ax1.set_title("Execution Time Distribution", fontsize=14, pad=15)
@@ -140,7 +141,9 @@ def main():
     box3 = ax2.boxplot(size_data, positions=positions, widths=0.5, patch_artist=True, flierprops=flier_props, medianprops=median_props)
 
     for patch in box3["boxes"]: patch.set_facecolor("#2ca02c")
-    ax2.set_ylabel("Size (Bytes) [Log Scale]", fontsize=12)
+
+    # 💡 修正: 単位を角かっこ [bytes] に変更
+    ax2.set_ylabel("Patch Size [bytes] (Log Scale)", fontsize=12)
     ax2.set_yscale("log")
     ax2.set_xlabel("Method Name", fontsize=12)
     ax2.set_title("Patch Size Distribution", fontsize=14, pad=15)
@@ -160,13 +163,12 @@ def main():
     class_data = [df_unique_classes["SrcSizeBytesBefore"], df_unique_classes["SrcSizeBytesAfter"]]
     box4 = ax3.boxplot(class_data, positions=[0, 1], widths=0.4, patch_artist=True, flierprops=flier_props, medianprops=median_props)
 
-    box4["boxes"][0].set_facecolor("#7f7f7f")
-    box4["boxes"][1].set_facecolor("#ff7f0e")
-    ax3.set_ylabel("Size (Bytes) [Log Scale]", fontsize=12)
+    # 💡 修正: 単位を角かっこ [bytes] に変更
+    ax3.set_ylabel("Class Size [bytes] (Log Scale)", fontsize=12)
     ax3.set_yscale("log")
     ax3.set_title("Original Class File Size Distribution", fontsize=14, pad=15)
     ax3.set_xticks([0, 1])
-    ax3.set_xticklabels(["Before (X_i-1)", "After (X_i)"], fontsize=11)
+    ax3.set_xticklabels(["Before Change", "After Change"], fontsize=11)
     ax3.grid(axis="y", linestyle="--", alpha=0.5, which="both")
 
     fig3.tight_layout()
@@ -184,9 +186,10 @@ def main():
         height = bar.get_height()
         ax4.annotate(f"{height:.1f}%", xy=(bar.get_x() + bar.get_width() / 2, height), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=10, weight="bold")
 
-    ax4.set_ylabel("Success Rate (%)", fontsize=12)
+    # 💡 修正: 単位を角かっこ [%] に変更
+    ax4.set_ylabel("Success Rate [%]", fontsize=12)
     ax4.set_xlabel("Method Name", fontsize=12)
-    ax4.set_title("Benchmark Success Rate Comparison", fontsize=14, pad=15)
+    ax4.set_title("Patch Success Rate", fontsize=14, pad=15)
     ax4.set_xticks(positions)
     ax4.set_xticklabels(method_order, fontsize=11)
     ax4.set_ylim(0, 110)
@@ -206,11 +209,12 @@ def main():
         if not success_method_df.empty:
             ax5.scatter(success_method_df["TotalDurationMs"], success_method_df["DiffSizeBytes"], label=m, alpha=0.7, s=50, marker=markers[idx % len(markers)])
 
-    ax5.set_xlabel("Total Duration (ms) [Log Scale]", fontsize=12)
-    ax5.set_ylabel("Patch Size (Bytes) [Log Scale]", fontsize=12)
+    # 💡 修正: 縦軸横軸ともに単位を角かっこに変更
+    ax5.set_xlabel("Total Duration [ms] (Log Scale)", fontsize=12)
+    ax5.set_ylabel("Patch Size [bytes] (Log Scale)", fontsize=12)
     ax5.set_xscale("log")
     ax5.set_yscale("log")
-    ax5.set_title("Correlation between Total Duration and Patch Size", fontsize=14, pad=15)
+    ax5.set_title("Total Duration vs. Patch Size", fontsize=14, pad=15)
     ax5.legend(fontsize=11, loc="best")
     ax5.grid(True, linestyle="--", alpha=0.5, which="both")
 
@@ -219,16 +223,17 @@ def main():
     plt.close(fig5)
 
     # =========================================================================
-    # 💡 FILE 6: 【提案】パッチサイズ比率の箱髭図（Patch Size Ratio %）
+    # FILE 6: パッチサイズ比率の箱髭図（Patch Size Ratio %）
     # =========================================================================
     fig6, ax6 = plt.subplots(figsize=(8, 6))
 
-    # 成功データのみの比率分布をプロット（100%を大幅に超える外れ値対策でLog推奨）
     ratio_data = [df[(df["MethodName"] == m) & (df["IsSuccess"] == True)]["PatchSizeRatio%"] for m in method_order]
     box6 = ax6.boxplot(ratio_data, positions=positions, widths=0.5, patch_artist=True, flierprops=flier_props, medianprops=median_props)
 
-    for patch in box6["boxes"]: patch.set_facecolor("#e377c2") # ピンク系
-    ax6.set_ylabel("Patch / Class Size Ratio (%) [Log Scale]", fontsize=12)
+    for patch in box6["boxes"]: patch.set_facecolor("#e377c2")
+
+    # 💡 修正: 単位を角かっこ [%] に変更
+    ax6.set_ylabel("Patch / Class Size Ratio [%] (Log Scale)", fontsize=12)
     ax6.set_yscale("log")
     ax6.set_xlabel("Method Name", fontsize=12)
     ax6.set_title("Patch-to-Class Size Ratio Efficiency", fontsize=14, pad=15)
@@ -243,7 +248,7 @@ def main():
     print(f"Saved: {output_ratio}")
 
     # =========================================================================
-    # 💡 FILE 7: 【提案】クラスファイルサイズ vs 実行時間のスケーラビリティ相関図
+    # FILE 7: クラスファイルサイズ vs 実行時間のスケーラビリティ相関図
     # =========================================================================
     fig7, ax7 = plt.subplots(figsize=(9, 6))
 
@@ -251,16 +256,17 @@ def main():
         success_method_df = df[(df["MethodName"] == m) & (df["IsSuccess"] == True)]
         if not success_method_df.empty:
             ax7.scatter(
-                success_method_df["SrcSizeBytesAfter"], # 横軸：元のファイルサイズ
-                success_method_df["TotalDurationMs"],   # 縦軸：総実行時間
+                success_method_df["SrcSizeBytesAfter"],
+                success_method_df["TotalDurationMs"],
                 label=m, alpha=0.6, s=40, marker=markers[idx % len(markers)]
             )
 
-    ax7.set_xlabel("Original Class Size (Bytes) [Log Scale]", fontsize=12)
-    ax7.set_ylabel("Total Duration (ms) [Log Scale]", fontsize=12)
+    # 💡 修正: 縦軸横軸ともに単位を角かっこに変更
+    ax7.set_xlabel("Original Class Size [bytes] (Log Scale)", fontsize=12)
+    ax7.set_ylabel("Total Duration [ms] (Log Scale)", fontsize=12)
     ax7.set_xscale("log")
     ax7.set_yscale("log")
-    ax7.set_title("Scalability: Class Size vs. Total Duration", fontsize=14, pad=15)
+    ax7.set_title("Class Size vs. Total Duration", fontsize=14, pad=15)
     ax7.legend(fontsize=11, loc="best")
     ax7.grid(True, linestyle="--", alpha=0.5, which="both")
 
