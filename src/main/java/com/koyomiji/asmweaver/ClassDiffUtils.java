@@ -532,4 +532,10 @@ public class ClassDiffUtils {
             + KeyedListDiffUtils.distance(diff.fields, FieldDiffUtils::distance)
             + KeyedListDiffUtils.distance(diff.methods, MethodDiffUtils::distance);
   }
+
+  public static ClassDiff merge(ClassDiff diff1, ClassDiff diff2) throws ConflictException {
+    ClassDiff diff1Inv = ClassDiffUtils.invert(diff1);
+    ClassDiff diff2Prime = ClassDiffUtils.commute(diff1Inv, diff2).first;
+    return compose(diff1, diff2Prime);
+  }
 }
