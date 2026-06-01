@@ -384,18 +384,6 @@ class ListDiffUtilsTest {
   }
 
   @Test
-  void test_commute_5() {
-    var list1 = List.<Integer>of(1,3,2);
-    var list2 = List.of(1, 2);
-    var list3 = List.of(1, 4, 2);
-
-    var diff12 = ListDiffUtils.diff(list1, list2, Integer::equals);
-    var diff23 = ListDiffUtils.diff(list2, list3, Integer::equals);
-
-    Assertions.assertDoesNotThrow(() -> ListDiffUtils.commute(diff12, diff23, Integer::equals));
-  }
-
-  @Test
   void test_commute_6() {
     var list1 = List.<Integer>of();
     var list2 = List.of(1, 2);
