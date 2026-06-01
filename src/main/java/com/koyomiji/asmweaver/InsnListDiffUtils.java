@@ -82,7 +82,7 @@ public class InsnListDiffUtils {
     Set<AbstractInsnNode> pInserted = collectInserted(p);
 
     // 新しい同時イテレータを適用
-    InsnListDiffPairIterator it = new InsnListDiffPairIterator(p.operations.iterator(), q.operations.iterator());
+    InsnListDiffPairIterator it = new InsnListDiffPairIterator(p, q);
 
     while (it.hasNext()) {
       Pair<InsnListDiff.Operation, InsnListDiff.Operation> pair = it.next();
@@ -150,7 +150,7 @@ public class InsnListDiffUtils {
 
     List<InsnListDiff.Operation> result = new ArrayList<>();
 
-    InsnListDiffPairIterator it = new InsnListDiffPairIterator(p.operations.iterator(), q.operations.iterator());
+    InsnListDiffPairIterator it = new InsnListDiffPairIterator(p, q);
 
     while (it.hasNext()) {
       Pair<InsnListDiff.Operation, InsnListDiff.Operation> pair = it.next();
@@ -364,9 +364,22 @@ public class InsnListDiffUtils {
   }
 
   public static Triplet<InsnListDiff, InsnListDiff, UnionFind<LabelNode>> normalizeLabels(InsnListDiff diff1, InsnListDiff diff2) {
+//    if (diff1 == null || diff2 == null) {
+//      UnionFind<LabelNode> uf = new UnionFind<>();
+//
+//      if (diff1 != null) {
+//        for (int i = 0; i < diff1.operations.size(); i++) {
+//          AbstractInsnNode nodeJFromDiff1 = diff1.operations.get(i).operand;
+//          unionLabels(uf, nodeJFromDiff1, );
+//        }
+//      }
+//
+//      return Triplet.of(diff1, diff2, new UnionFind<>());
+//    }
+
     UnionFind<LabelNode> uf = new UnionFind<>();
 
-    InsnListDiffPairIterator it = new InsnListDiffPairIterator(diff1.operations.iterator(), diff2.operations.iterator());
+    InsnListDiffPairIterator it = new InsnListDiffPairIterator(diff1, diff2);
 
     while (it.hasNext()) {
       Pair<InsnListDiff.Operation, InsnListDiff.Operation> pair = it.next();
