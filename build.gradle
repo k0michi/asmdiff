@@ -19,6 +19,7 @@ dependencies {
     implementation('org.ow2.asm:asm-commons:9.9')
     implementation('org.ow2.asm:asm-analysis:9.9')
     implementation('org.ow2.asm:asm-util:9.9')
+    compileOnly 'org.jetbrains:annotations:24.1.0'
 }
 
 test {
