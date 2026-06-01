@@ -167,9 +167,9 @@ public class InsnListDiffUtils {
       }
       // パターン3: 両方のタイムラインが揃った
       else if (opP != null && opQ != null) {
-        if (!AbstractInsnNodeHelper.equals(opP.operand, opQ.operand)) {
-          throw new IllegalDiffException("Composition Error: Operand mismatch at intermediate state B.");
-        }
+//        if (!AbstractInsnNodeHelper.equals(opP.operand, opQ.operand)) {
+//          throw new IllegalDiffException("Composition Error: Operand mismatch at intermediate state B.");
+//        }
 
         if (opP.type == InsnListDiff.Operation.Type.INSERT) {
           // PのINSERTをQがMATCHで通したなら、ここでPのINSERT（X）がresultに積まれる

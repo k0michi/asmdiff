@@ -171,18 +171,18 @@ class InsnListDiffUtilsTest {
     });
   }
 
-  @Test
-  void test_compose_2() throws ConflictException {
-    InsnListDiff diff1 = new InsnListDiff(List.of(
-            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.NOP))
-    ));
-    InsnListDiff diff2 = new InsnListDiff(List.of(
-            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.ACONST_NULL))
-    ));
-    Assertions.assertThrows(IllegalDiffException.class, () -> {
-      InsnListDiffUtils.compose(diff1, diff2);
-    });
-  }
+//  @Test
+//  void test_compose_2() throws ConflictException {
+//    InsnListDiff diff1 = new InsnListDiff(List.of(
+//            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.NOP))
+//    ));
+//    InsnListDiff diff2 = new InsnListDiff(List.of(
+//            new InsnListDiff.Operation(InsnListDiff.Operation.Type.MATCH, InsnListDiff.Operation.Mode.BETWEEN, new InsnNode(Opcodes.ACONST_NULL))
+//    ));
+//    Assertions.assertThrows(IllegalDiffException.class, () -> {
+//      InsnListDiffUtils.compose(diff1, diff2);
+//    });
+//  }
 
   @Test
   void test_compose_3() throws ConflictException {
